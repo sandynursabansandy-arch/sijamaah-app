@@ -37,3 +37,5 @@ extract.php
 deploy.php
 custom-assets/
 public/custom-assets/
+sync_css.php
+deploy-css.bat
