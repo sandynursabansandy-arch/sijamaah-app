@@ -7,3 +7,68 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* ===== Navigasi pill: grid rapi di HP/tablet, baris horizontal di desktop ===== */
+.nav-actions > a,
+.nav-actions > .relative {
+    width: 100%;
+}
+.nav-actions > .relative > button {
+    width: 100%;
+}
+@media (max-width: 1023px) {
+    .nav-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .nav-actions > a {
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .nav-actions > .relative > button {
+        justify-content: center;
+    }
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+    .nav-actions {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* ===== Font diagram garis (tren & harian): lebih besar & mudah dibaca ===== */
+.line-chart text,
+.tren-chart text {
+    font-size: 8px;
+    font-family: system-ui, sans-serif;
+}
+.line-chart .chart-val,
+.tren-chart .chart-val {
+    font-size: 9px;
+    font-weight: 700;
+}
+@media (max-width: 1023px) {
+    .line-chart text,
+    .tren-chart text {
+        font-size: 12px;
+    }
+    .line-chart .chart-val,
+    .tren-chart .chart-val {
+        font-size: 15px;
+    }
+}
+@media (max-width: 639px) {
+    .line-chart text,
+    .tren-chart text {
+        font-size: 14px;
+    }
+    .line-chart .chart-val,
+    .tren-chart .chart-val {
+        font-size: 19px;
+    }
+    /* Di HP, tampilkan nilai hanya di setiap titik ke-3 agar tidak bertumpuk */
+    #lineChart .chart-pt:not(:nth-child(3n)) .chart-val {
+        display: none;
+    }
+}
