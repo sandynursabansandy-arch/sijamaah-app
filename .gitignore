@@ -36,3 +36,4 @@ upload-stage
 extract.php
 deploy.php
 custom-assets/
+public/custom-assets/
