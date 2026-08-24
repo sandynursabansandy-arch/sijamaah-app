@@ -30,3 +30,6 @@ Thumbs.db
 /tmp_check*.php
 sync-ke-web.sql
 *.sql
+
+upload-ke-hosting.zip
+upload-stage
