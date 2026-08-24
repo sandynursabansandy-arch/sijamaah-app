@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ranking Alfa — SIJAMAAH</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite('resources/css/app.css')
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -86,19 +86,19 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-5 animate-slide-in relative z-30">
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
                 <div class="flex items-center gap-3">
                     <div class="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden border-[3px] border-white ring-2 ring-red-200">
                         <img src="{{ asset('images/image.png') }}" alt="Logo" class="w-full h-full object-cover">
                     </div>
                     <div>
-                        <h1 class="text-[28px] leading-tight font-extrabold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+                        <h1 class="text-xl sm:text-2xl md:text-[28px] leading-tight font-extrabold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
                             Ranking Alfa
                         </h1>
                         <p class="text-slate-500 text-xs">Peringkat santri berdasarkan jumlah alfa terbanyak</p>
                     </div>
                 </div>
-                <div class="flex gap-2 items-center">
+                <div class="flex flex-wrap gap-2 items-center">
                     <a href="{{ route('presensi.index') }}" class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Dashboard</a>
                     <a href="{{ route('presensi.rekap') }}" class="bg-purple-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Rekap Presensi</a>
                     <a href="{{ route('presensi.rankingBerjamaah') }}" class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Ranking Berjamaah</a>
@@ -171,7 +171,7 @@
                 $second = $top3[1];
                 $third = $top3[2];
             @endphp
-            <div class="grid grid-cols-3 gap-3 mb-6 animate-slide-up items-end">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 animate-slide-up items-end">
                 <!-- 2nd Place -->
                 <div class="podium-card podium-2" style="margin-top: 20px;">
                     <div class="rank-medal rank-2 mx-auto mb-2" style="width:32px;height:32px;font-size:14px;">2</div>

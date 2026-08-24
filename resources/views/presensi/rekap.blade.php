@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rekap Presensi — SIJAMAAH</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite('resources/css/app.css')
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -227,19 +227,19 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 no-print">
         <!-- Header -->
         <div class="mb-5 animate-slide-in relative z-30">
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
                 <div class="flex items-center gap-3">
                     <div class="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden border-[3px] border-white ring-2 ring-emerald-200">
                         <img src="{{ asset('images/image.png') }}" alt="Logo" class="w-full h-full object-cover">
                     </div>
                     <div>
-                        <h1 class="text-[28px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+                        <h1 class="text-xl sm:text-2xl md:text-[28px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
                             Rekap Presensi
                         </h1>
                         <p class="text-slate-500 text-xs">Lihat rekap data kehadiran sholat berjamaah santri</p>
                     </div>
                 </div>
-                <div class="flex gap-2 items-center">
+                <div class="flex flex-wrap gap-2 items-center">
                     <a href="{{ route('presensi.index') }}" class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Dashboard</a>
                     <a href="{{ route('presensi.rankingBerjamaah') }}" class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Ranking Berjamaah</a>
                     <a href="{{ route('presensi.rekapBerjamaah') }}" class="bg-teal-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Rekap Berjamaah</a>
@@ -384,9 +384,9 @@
                             <tr class="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
                                 <th class="px-2 py-2.5 text-left text-[13px] font-bold w-[28%]"><span class="th-badge">Nama Santri</span></th>
                                 <th class="px-2 py-2.5 text-center text-[13px] font-bold w-[14%]"><span class="th-badge">Rating Umum</span></th>
-                                <th class="px-2 py-2.5 text-center text-[16%]"><span class="th-badge">Rating Berjamaah &middot; {{ $waktu }}</span></th>
-                                <th class="px-2 py-2.5 text-center text-[18%]"><span class="th-badge">Status</span></th>
-                                <th class="px-2 py-2.5 text-center text-[24%]"><span class="th-badge">Catatan</span></th>
+                                <th class="px-2 py-2.5 text-center w-[16%]"><span class="th-badge">Rating Berjamaah &middot; {{ $waktu }}</span></th>
+                                <th class="px-2 py-2.5 text-center w-[18%]"><span class="th-badge">Status</span></th>
+                                <th class="px-2 py-2.5 text-center w-[24%]"><span class="th-badge">Catatan</span></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">

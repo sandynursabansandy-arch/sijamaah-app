@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Rekap Berjamaah — SIJAMAAH</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite('resources/css/app.css')
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -140,19 +140,19 @@
     <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-5 animate-slide-in relative z-30">
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
                 <div class="flex items-center gap-3">
                     <div class="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden border-[3px] border-white ring-2 ring-emerald-200">
                         <img src="{{ asset('images/image.png') }}" alt="Logo" class="w-full h-full object-cover">
                     </div>
                     <div>
-                        <h1 class="text-[28px] leading-tight font-extrabold text-emerald-700">
+                        <h1 class="text-xl sm:text-2xl md:text-[28px] leading-tight font-extrabold text-emerald-700">
                             Rekap Berjamaah Bulanan
                         </h1>
                         <p class="text-slate-500 text-xs">Detail kehadiran sholat berjamaah setiap santri per hari &middot; {{ $tanggalMulai->translatedFormat('F Y') }}@if($waktuFilter !== 'all') &middot; {{ $waktuFilter }}@endif</p>
                     </div>
                 </div>
-                <div class="flex gap-2 items-center">
+                <div class="flex flex-wrap gap-2 items-center">
                     <a href="{{ route('presensi.index') }}" class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Dashboard</a>
                     <a href="{{ route('presensi.rekap') }}" class="bg-purple-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Rekap Presensi</a>
                     <a href="{{ route('presensi.rankingBerjamaah') }}" class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Ranking Berjamaah</a>
@@ -240,7 +240,7 @@
             @endphp
 
             <!-- Summary -->
-            <div class="grid grid-cols-5 gap-3 mb-5 animate-slide-up">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5 animate-slide-up">
                 <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center">
                     <p id="sum-hadir" class="text-2xl font-extrabold text-emerald-600">{{ $totalHadir }}</p>
                     <p class="text-[10px] text-slate-500 font-semibold uppercase">Total Berjamaah</p>

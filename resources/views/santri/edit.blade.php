@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Santri</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite('resources/css/app.css')
     <style>
         /* Cegah layout shift saat scrollbar muncul/hilang selama animasi masuk */
         html {
@@ -109,7 +109,7 @@
     <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-5 animate-slide-in relative z-30">
-                <div class="flex items-center justify-between">
+                <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <a href="{{ route('santri.index') }}" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 mb-3 text-xs font-medium transition-smooth">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,7 +117,7 @@
                         </svg>
                         Kembali ke Daftar Santri
                     </a>
-                    <h1 class="text-[28px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+                    <h1 class="text-xl sm:text-2xl md:text-[28px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
                         Edit Santri
                     </h1>
                     <p class="text-slate-500 text-xs">Perbarui informasi santri</p>

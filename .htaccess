@@ -1,0 +1,5 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_URI} !^/sijamaah-app/public/
+    RewriteRule ^(.*)$ /sijamaah-app/public/$1 [R=302,L]
+</IfModule>

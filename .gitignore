@@ -28,3 +28,5 @@ Thumbs.db
 
 /storage/framework/views/*.php
 /tmp_check*.php
+sync-ke-web.sql
+*.sql

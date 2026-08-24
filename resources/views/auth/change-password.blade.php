@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ganti Password — SIJAMAAH</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite('resources/css/app.css')
     <style>
         .input-glow {
             transition: all 0.3s ease;
@@ -45,7 +45,7 @@
 
         <!-- Header -->
         <div class="mb-5 animate-slide-in">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <a href="{{ route('presensi.index') }}" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 mb-3 text-xs font-medium transition-smooth">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,7 +53,7 @@
                         </svg>
                         Kembali
                     </a>
-                    <h1 class="text-[28px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+                    <h1 class="text-xl sm:text-2xl md:text-[28px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
                         Ganti Password
                     </h1>
                     <p class="text-slate-500 text-xs">Ubah password akun Anda</p>

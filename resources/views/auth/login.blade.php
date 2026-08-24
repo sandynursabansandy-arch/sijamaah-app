@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login — SIJAMAAH</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite('resources/css/app.css')
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
@@ -282,7 +282,7 @@
         <div class="lg:hidden w-full max-w-sm anim-slide-right">
             <div class="glass-card rounded-3xl p-8 text-center">
                 <!-- Logo -->
-                <div class="logo-pulse w-60 h-60 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 flex items-center justify-center mx-auto mb-6 shadow-xl p-4">
+                <div class="logo-pulse w-40 h-40 sm:w-60 sm:h-60 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 flex items-center justify-center mx-auto mb-6 shadow-xl p-4">
                     <img src="{{ asset('images/nw.png') }}" alt="Logo" class="w-full h-full object-contain drop-shadow-lg">
                 </div>
                 <h2 class="text-xl font-extrabold text-slate-800 mb-1">Selamat Datang</h2>

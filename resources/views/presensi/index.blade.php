@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Presensi Sholat Santri</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite('resources/css/app.css')
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -105,13 +105,13 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-5 animate-slide-in relative z-30">
-            <div class="flex items-center justify-between gap-3 mb-2">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
                 <div class="flex items-center gap-3 shrink-0">
                     <div class="w-14 h-14 shrink-0 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden border-[3px] border-white ring-2 ring-emerald-200">
                         <img src="{{ asset('images/image.png') }}" alt="Logo" class="w-full h-full object-cover">
                     </div>
                     <div>
-                        <h1 class="text-[28px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+                        <h1 class="text-xl sm:text-2xl md:text-[28px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
                             Dashboard Sholat Berjamaah
                         </h1>
                         <p class="text-slate-500 text-xs">Centang status kehadiran santri dengan cepat</p>
@@ -248,7 +248,7 @@
 
             <!-- Grafik Dashboard -->
             <div class="mt-8 space-y-3 animate-slide-up">
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <!-- Rating Tertinggi -->
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3">
                         <div class="flex items-center gap-2 mb-2">
@@ -612,13 +612,13 @@
             @endphp
         </script>
         <script type="application/json" id="waktuBreakdownData">
-            @php echo json_encode($waktuBreakdownDetail); @endphp
+            @php echo json_encode($waktuBreakdownDetail ?? []); @endphp
         </script>
         <script type="application/json" id="lineChartData">
-            @php echo json_encode($chartDetailData); @endphp
+            @php echo json_encode($chartDetailData ?? []); @endphp
         </script>
         <script type="application/json" id="lineChartLabels">
-            @php echo json_encode($chartDetailLabels); @endphp
+            @php echo json_encode($chartDetailLabels ?? []); @endphp
         </script>
         <script type="application/json" id="trenDetailData">
             @php echo json_encode(collect($trenBulanan)->pluck('detail')); @endphp

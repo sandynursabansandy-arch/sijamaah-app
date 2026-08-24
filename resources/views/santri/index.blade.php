@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kelola Santri</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite('resources/css/app.css')
     <style>
         /* Cegah layout shift saat scrollbar muncul/hilang selama animasi masuk */
         html {
@@ -136,19 +136,19 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-5 animate-slide-in relative z-30">
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
                 <div class="flex items-center gap-3">
                     <div class="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden border-[3px] border-white ring-2 ring-emerald-200">
                         <img src="{{ asset('images/image.png') }}" alt="Logo" class="w-full h-full object-cover">
                     </div>
                     <div>
-                        <h1 class="text-[28px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+                        <h1 class="text-xl sm:text-2xl md:text-[28px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
                             Kelola Santri
                         </h1>
                         <p class="text-slate-500 text-xs">Tambah, edit, atau hapus data santri pesantren</p>
                     </div>
                 </div>
-                <div class="flex gap-2 items-center">
+                <div class="flex flex-wrap gap-2 items-center">
                     <a href="{{ route('presensi.index') }}" class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Dashboard</a>
                     <a href="{{ route('presensi.rekap') }}" class="bg-purple-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Rekap Presensi</a>
                     <a href="{{ route('presensi.rankingBerjamaah') }}" class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Ranking Berjamaah</a>
@@ -211,7 +211,7 @@
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wide mb-1 text-slate-600 pl-0.5">Cari Santri</label>
                     <input type="text" name="search" value="{{ $search }}" placeholder="Nama atau NIS..." 
-                        class="w-48 border-0 py-1.5 px-2.5 rounded-md focus:ring-2 focus:ring-emerald-300 text-slate-800 transition-smooth focus:outline-none text-[13px] bg-slate-50 h-[34px] box-border">
+                        class="w-full sm:w-48 border-0 py-1.5 px-2.5 rounded-md focus:ring-2 focus:ring-emerald-300 text-slate-800 transition-smooth focus:outline-none text-[13px] bg-slate-50 h-[34px] box-border">
                 </div>
                 <div class="ml-auto">
                     <button type="submit" class="bg-emerald-500 text-white py-1.5 px-4 rounded-md font-semibold hover:bg-emerald-600 shadow transition-smooth text-[13px] h-[34px] box-border">
@@ -247,11 +247,11 @@
                             <tr class="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
                                 <th class="px-2 py-2.5 text-center text-[13px] font-bold w-[4%]"><span class="th-badge">No</span></th>
                                 <th class="px-2 py-2.5 text-center text-[13px] font-bold w-[26%]"><span class="th-badge">Nama</span></th>
-                                <th class="px-2 py-2.5 text-left text-[18%]"><span class="th-badge">Kamar</span></th>
-                                <th class="px-2 py-2.5 text-left text-[16%]"><span class="th-badge">Kelas</span></th>
-                                <th class="px-2 py-2.5 text-center text-[16%]"><span class="th-badge">Jabatan</span></th>
+                                <th class="px-2 py-2.5 text-left w-[18%]"><span class="th-badge">Kamar</span></th>
+                                <th class="px-2 py-2.5 text-left w-[16%]"><span class="th-badge">Kelas</span></th>
+                                <th class="px-2 py-2.5 text-center w-[16%]"><span class="th-badge">Jabatan</span></th>
                                 @if(auth()->user()?->canManagePresensi())
-                                    <th class="px-2 py-2.5 text-center text-[20%]"><span class="th-badge">Aksi</span></th>
+                                    <th class="px-2 py-2.5 text-center w-[20%]"><span class="th-badge">Aksi</span></th>
                                 @endif
                             </tr>
                         </thead>
@@ -321,7 +321,7 @@
         </div>
 
         <!-- Info Cards -->
-        <div class="mt-6 grid grid-cols-3 gap-3 animate-fade-in max-w-lg mx-auto">
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 animate-fade-in max-w-lg mx-auto">
             <div class="bg-white rounded-lg p-3 shadow-sm border border-slate-100 text-center">
                 <p class="text-slate-500 text-[10px] font-semibold uppercase">Total Santri</p>
                 <p class="text-xl font-bold text-emerald-600">{{ $santris->total() }}</p>

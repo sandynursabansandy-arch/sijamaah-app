@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Input Cepat Presensi</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite('resources/css/app.css')
     <style>
         .status-btn { transition: all .15s ease; }
         .status-btn:active { transform: scale(0.92); }
@@ -50,7 +50,7 @@
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 Dashboard
             </a>
-            <h1 class="text-[26px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 class="text-xl sm:text-2xl md:text-[26px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
                 Input Cepat
             </h1>
             <p class="text-slate-500 text-xs">Ketuk status untuk tiap santri, lalu simpan</p>
@@ -100,7 +100,7 @@
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
-                    <div class="grid grid-cols-4 gap-1.5">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                         @foreach(['Jamaah' => 'jamaah', 'Masbuq' => 'masbuq', 'Izin' => 'izin', 'Alfa' => 'alfa'] as $label => $key)
                             <button type="button"
                                 data-status-btn="{{ $santri->id }}" data-value="{{ $label }}"

@@ -8,6 +8,7 @@ use App\Models\Santri;
 use App\Models\PresensiSholat;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 
 class DatabaseSeeder extends Seeder
 {
@@ -28,9 +29,11 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        User::factory()->create([
-            'name' => 'Test User',
+        User::updateOrCreate([
             'email' => 'test@example.com',
+        ], [
+            'name' => 'Test User',
+            'password' => 'password',
         ]);
 
         // Seed Kamars
@@ -41,7 +44,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($kamars as $kamar) {
-            Kamar::create($kamar);
+            Kamar::firstOrCreate(['nama_kamar' => $kamar['nama_kamar']], $kamar);
         }
 
         // Seed Santris
@@ -58,7 +61,6 @@ class DatabaseSeeder extends Seeder
         foreach ($santriNames as $santri) {
             $payload = [
                 'nama' => $santri['nama'],
-                'nis' => $santri['nis'],
                 'kamar_id' => $kamarA->id,
                 'kelas' => 'Kelas 1 Aliyah',
             ];
@@ -71,7 +73,7 @@ class DatabaseSeeder extends Seeder
                 $payload['status'] = 'Aktif';
             }
 
-            Santri::create($payload);
+            Santri::updateOrCreate(['nis' => $santri['nis']], $payload);
         }
 
         // Seed sample PresensiSholat data (untuk rating calculation)
@@ -86,14 +88,11 @@ class DatabaseSeeder extends Seeder
                 foreach (['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'] as $waktu) {
                     $statuses = ['Jamaah', 'Jamaah', 'Jamaah', 'Masbuq', 'Izin']; // Weighted toward Jamaah
                     $status = $statuses[array_rand($statuses)];
-                    
-                    PresensiSholat::create([
-                        'santri_id' => $santri->id,
-                        'tanggal' => $date,
-                        'waktu_sholat' => $waktu,
-                        'status' => $status,
-                        'catatan' => null,
-                    ]);
+
+                    PresensiSholat::updateOrCreate(
+                        ['santri_id' => $santri->id, 'tanggal' => $date, 'waktu_sholat' => $waktu],
+                        ['status' => $status, 'catatan' => null]
+                    );
                 }
             }
         }

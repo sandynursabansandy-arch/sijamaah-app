@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Cetak Rekap Presensi — SIJAMAAH</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -273,6 +274,24 @@
         .no-data {
             text-align: center; padding: 40px 20px; color: #94a3b8;
             font-size: 11pt; font-weight: 600;
+        }
+
+        /* === RESPONSIVE (layar HP) — tidak memengaruhi cetak/PDF === */
+        @media screen and (max-width: 820px) {
+            body { font-size: 10pt; }
+            .screen-only { margin: 0 12px 12px; }
+            #printContent {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding: 0 12px 16px;
+            }
+            #printContent table { min-width: 860px; }
+            .info-bar { grid-template-columns: repeat(3, 1fr); row-gap: 4px; }
+            .info-bar .info-item:nth-child(3n) { border-right: none; }
+            .summary-grid { grid-template-columns: repeat(3, 1fr); }
+            .summary-grid.filtered .stat-card.active-filter { grid-column: span 3; }
+            .kop { flex-direction: column; text-align: center; gap: 6px; }
+            .footer .sign-line { margin-right: 12px; }
         }
 
         @media print {
