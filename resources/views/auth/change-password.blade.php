@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ganti Password — SIJAMAAH</title>
-    @vite('resources/css/app.css')
+    <link rel="stylesheet" href="{{ asset('custom-assets/app.css') }}?v={{ filemtime(public_path('build/assets/app-B60Kc5GY.css')) }}">
     <style>
         .input-glow {
             transition: all 0.3s ease;
