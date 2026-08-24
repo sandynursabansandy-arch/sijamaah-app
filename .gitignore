@@ -34,3 +34,4 @@ sync-ke-web.sql
 upload-ke-hosting.zip
 upload-stage
 extract.php
+deploy.php
