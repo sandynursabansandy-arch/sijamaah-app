@@ -152,7 +152,7 @@
                         <p class="text-slate-500 text-xs">Detail kehadiran sholat berjamaah setiap santri per hari &middot; {{ $tanggalMulai->translatedFormat('F Y') }}@if($waktuFilter !== 'all') &middot; {{ $waktuFilter }}@endif</p>
                     </div>
                 </div>
-                <div class="flex flex-wrap gap-2 items-center">
+                <div class="nav-actions flex flex-wrap gap-2 items-center">
                     <a href="{{ route('presensi.index') }}" class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Dashboard</a>
                     <a href="{{ route('presensi.rekap') }}" class="bg-purple-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Rekap Presensi</a>
                     <a href="{{ route('presensi.rankingBerjamaah') }}" class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Ranking Berjamaah</a>

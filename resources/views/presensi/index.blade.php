@@ -117,7 +117,7 @@
                         <p class="text-slate-500 text-xs">Centang status kehadiran santri dengan cepat</p>
                     </div>
                 </div>
-                <div class="flex flex-wrap gap-2 items-center justify-end">
+                <div class="nav-actions flex flex-wrap gap-2 items-center justify-end">
                     <a href="{{ route('presensi.rekap') }}" class="bg-purple-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Rekap Presensi</a>
                     <a href="{{ route('presensi.rankingBerjamaah') }}" class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Ranking Berjamaah</a>
                     <a href="{{ route('presensi.rekapBerjamaah') }}" class="bg-teal-500 text-white px-4 py-2 rounded-lg font-semibold hover-lift shadow text-xs">Rekap Berjamaah</a>
@@ -444,34 +444,34 @@
 
                 <!-- Kehadiran Chart + Filter Tabs -->
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                    <div class="flex items-center justify-between mb-3">
+                    <div class="mb-3">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
+                            <div class="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
                                 <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                                 </svg>
                             </div>
-                            <div>
+                            <div class="min-w-0">
                                 <h3 class="text-[14px] font-bold text-slate-800">{{ $chartTitle }}</h3>
                                 <p class="text-[11px] text-slate-400">{{ $chartSubtitle }} &middot; Klik untuk detail</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 flex-wrap">
+                        <div class="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap items-center gap-2">
                             @php $filters = ['minggu' => 'Per Minggu', 'bulan' => 'Per Bulan', 'tahun' => 'Per Tahun']; @endphp
                             @foreach($filters as $key => $label)
                                 <button type="button" class="filter-tab chart-filter-tab {{ $chartFilter === $key ? 'active' : '' }}" onclick="switchChartFilter('{{ $key }}', event)">{{ $label }}</button>
                             @endforeach
-                            <div id="mingguRange" class="hidden items-center gap-1 ml-1">
-                                <input type="date" id="chartStartDate" value="{{ $chartStartDate }}" class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
-                                <span class="text-[10px] text-slate-400">s/d</span>
-                                <input type="date" id="chartEndDate" value="{{ $chartEndDate }}" class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
-                                <button type="button" onclick="applyChartFilter()" class="bg-emerald-500 text-white px-2 py-1 rounded text-[10px] font-semibold hover:bg-emerald-600 transition">Terapkan</button>
+                            <div id="mingguRange" class="hidden flex-wrap items-center gap-1.5 w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg p-2">
+                                <input type="date" id="chartStartDate" value="{{ $chartStartDate }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
+                                <span class="text-[10px] text-slate-400 shrink-0">s/d</span>
+                                <input type="date" id="chartEndDate" value="{{ $chartEndDate }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
+                                <button type="button" onclick="applyChartFilter()" class="shrink-0 bg-emerald-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-emerald-600 transition">Terapkan</button>
                             </div>
-                            <div id="bulanRange" class="hidden items-center gap-1 ml-1">
-                                <input type="month" id="chartStartMonth" value="{{ $chartStartMonth }}" class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
-                                <span class="text-[10px] text-slate-400">s/d</span>
-                                <input type="month" id="chartEndMonth" value="{{ $chartEndMonth }}" class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
-                                <button type="button" onclick="applyChartFilter()" class="bg-emerald-500 text-white px-2 py-1 rounded text-[10px] font-semibold hover:bg-emerald-600 transition">Terapkan</button>
+                            <div id="bulanRange" class="hidden flex-wrap items-center gap-1.5 w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg p-2">
+                                <input type="month" id="chartStartMonth" value="{{ $chartStartMonth }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
+                                <span class="text-[10px] text-slate-400 shrink-0">s/d</span>
+                                <input type="month" id="chartEndMonth" value="{{ $chartEndMonth }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
+                                <button type="button" onclick="applyChartFilter()" class="shrink-0 bg-emerald-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-emerald-600 transition">Terapkan</button>
                             </div>
                         </div>
                     </div>
