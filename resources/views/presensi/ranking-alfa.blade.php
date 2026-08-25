@@ -64,21 +64,120 @@
 
         .alfa-bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, #ef4444, #dc2626); transition: width 0.6s ease-out; }
 
-        .podium-card {
-            text-align: center; padding: 16px 12px; border-radius: 16px;
-            background: white; border: 2px solid transparent;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-            transition: all 0.3s ease;
+        /* ---- Podium Section (Mobile-first, Horizontal) ---- */
+        .podium-wrapper {
+            display: flex; flex-direction: row; align-items: flex-start;
+            justify-content: center; gap: 6px; max-width: 480px;
+            margin: 0 auto 24px; padding: 36px 0 0;
         }
-        .podium-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
-        .podium-1 { border-color: #fbbf24; background: linear-gradient(180deg, #fffbeb, #ffffff); }
-        .podium-2 { border-color: #d1d5db; background: linear-gradient(180deg, #f9fafb, #ffffff); }
-        .podium-3 { border-color: #f59e0b; background: linear-gradient(180deg, #fffbeb, #ffffff); }
+        .podium-card {
+            flex: 1; min-width: 0; max-width: 140px; min-height: 200px;
+            background: #fff; border-radius: 14px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: visible; position: relative; text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex; flex-direction: column; justify-content: flex-end;
+        }
+        .podium-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
 
-        .podium-avatar {
-            width: 48px; height: 48px; border-radius: 50%; margin: 0 auto 8px;
+        /* Staggered Top Podium */
+        .podium-1 { margin-top: 0; }
+        .podium-2 { margin-top: 20px; }
+        .podium-3 { margin-top: 40px; }
+
+        /* Badge Peringkat */
+        .podium-badge {
+            position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+            width: 32px; height: 32px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-weight: 800; font-size: 18px; color: white;
+            font-weight: 800; font-size: 14px; color: #fff;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2); z-index: 2;
+        }
+        .podium-1 .podium-badge {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            border: 3px solid #fff; width: 38px; height: 38px; font-size: 16px; top: -18px;
+        }
+        .podium-2 .podium-badge {
+            background: linear-gradient(135deg, #9ca3af, #6b7280); border: 3px solid #fff;
+        }
+        .podium-3 .podium-badge {
+            background: linear-gradient(135deg, #fb923c, #f97316); border: 3px solid #fff;
+        }
+
+        /* Isi Kartu */
+        .podium-body {
+            flex: 1; padding: 28px 6px 8px;
+            display: flex; flex-direction: column; justify-content: flex-start;
+            align-items: center;
+        }
+
+        /* Avatar */
+        .podium-avatar {
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 18px; color: #fff;
+            margin: 0 auto 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .podium-1 .podium-avatar {
+            width: 52px; height: 52px; font-size: 22px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        }
+        .podium-2 .podium-avatar {
+            background: linear-gradient(135deg, #9ca3af, #6b7280);
+        }
+        .podium-3 .podium-avatar {
+            background: linear-gradient(135deg, #fb923c, #f97316);
+        }
+
+        /* Nama & Detail */
+        .podium-name {
+            font-weight: 700; font-size: 12px; color: #1e293b;
+            line-height: 1.3; margin-bottom: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            padding: 0 4px;
+        }
+        .podium-detail {
+            font-size: 10px; color: #94a3b8; line-height: 1.4;
+            margin-bottom: 10px; padding: 0 4px;
+        }
+        .podium-detail strong { color: #64748b; font-weight: 600; }
+
+        /* Bar Berwarna di Bawah */
+        .podium-bar {
+            padding: 8px 0; font-weight: 800; font-size: 16px;
+            color: #fff; border-radius: 0 0 14px 14px;
+            margin-top: auto;
+        }
+        .podium-1 .podium-bar {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            font-size: 18px; padding: 10px 0;
+        }
+        .podium-2 .podium-bar {
+            background: linear-gradient(135deg, #9ca3af, #6b7280);
+        }
+        .podium-3 .podium-bar {
+            background: linear-gradient(135deg, #fb923c, #f97316);
+        }
+
+        /* Border Podium */
+        .podium-1 { border: 2px solid #fbbf24; }
+        .podium-2 { border: 2px solid #d1d5db; }
+        .podium-3 { border: 2px solid #fdba74; }
+
+        /* Responsive: Tablet & Desktop */
+        @media (min-width: 640px) {
+            .podium-wrapper { gap: 16px; max-width: 560px; padding-top: 44px; }
+            .podium-card { max-width: 170px; border-radius: 18px; min-height: 240px; }
+            .podium-body { padding: 32px 12px 10px; }
+            .podium-name { font-size: 14px; }
+            .podium-detail { font-size: 11px; }
+            .podium-avatar { width: 52px; height: 52px; font-size: 20px; }
+            .podium-1 .podium-avatar { width: 60px; height: 60px; font-size: 24px; }
+            .podium-badge { width: 36px; height: 36px; font-size: 15px; top: -18px; }
+            .podium-1 .podium-badge { width: 42px; height: 42px; font-size: 18px; top: -20px; }
+            .podium-1 { margin-top: 0; }
+            .podium-2 { margin-top: 28px; }
+            .podium-3 { margin-top: 56px; }
         }
     </style>
 </head>
@@ -138,54 +237,36 @@
                 $second = $top3[1];
                 $third = $top3[2];
             @endphp
-            <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-6 animate-slide-up items-end">
-                <!-- 2nd Place -->
-                <div class="podium-card podium-2 relative overflow-hidden" style="margin-top: 12px;">
-                    <div class="p-2 sm:p-3">
-                        <div class="rank-medal rank-2 mx-auto mb-1.5" style="width:26px;height:26px;font-size:12px;">2</div>
-                        <div class="podium-avatar mx-auto" style="background: linear-gradient(135deg, #9ca3af, #6b7280); width:40px; height:40px; font-size:16px;">{{ substr($second['nama'], 0, 1) }}</div>
-                        <p class="font-bold text-slate-800 text-[11px] sm:text-sm truncate mt-1.5 text-center">{{ $second['nama'] }}</p>
-                        <p class="text-[8px] sm:text-[10px] text-slate-400 mb-1.5 text-center">{{ $second['kamar'] }}</p>
-                        <div class="bg-red-50 rounded-lg py-1 sm:py-1.5 px-1.5 sm:px-2 border border-red-200">
-                            <p class="text-base sm:text-lg font-extrabold text-red-600 text-center">{{ $second['alfa_count'] }}</p>
-                            <p class="text-[8px] sm:text-[9px] text-slate-500 uppercase font-semibold text-center">Kali Alfa</p>
-                        </div>
+            <div class="podium-wrapper animate-slide-up">
+                <!-- 2nd Place (Kiri) -->
+                <div class="podium-card podium-2" data-rank="2">
+                    <div class="podium-badge">2</div>
+                    <div class="podium-body">
+                        <div class="podium-avatar">{{ substr($second['nama'], 0, 1) }}</div>
+                        <div class="podium-name">{{ $second['nama'] }}</div>
+                        <div class="podium-detail">{{ $second['kamar'] }} &middot; <strong>Kali Alfa: {{ $second['alfa_count'] }}</strong></div>
                     </div>
-                    <div class="bg-gradient-to-t from-slate-400 to-slate-300 py-1.5 text-center">
-                        <span class="text-white font-extrabold text-sm sm:text-base">2</span>
-                    </div>
+                    <div class="podium-bar">{{ $second['alfa_count'] }}</div>
                 </div>
-                <!-- 1st Place -->
-                <div class="podium-card podium-1 relative overflow-hidden">
-                    <div class="p-2 sm:p-3">
-                        <div class="rank-medal rank-1 mx-auto mb-1.5" style="width:30px;height:30px;font-size:14px;">1</div>
-                        <div class="podium-avatar mx-auto" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); width:48px; height:48px; font-size:20px;">{{ substr($first['nama'], 0, 1) }}</div>
-                        <p class="font-bold text-slate-800 text-[11px] sm:text-sm truncate mt-1.5 text-center">{{ $first['nama'] }}</p>
-                        <p class="text-[8px] sm:text-[10px] text-slate-400 mb-1.5 text-center">{{ $first['kamar'] }}</p>
-                        <div class="bg-red-50 rounded-lg py-1 sm:py-1.5 px-1.5 sm:px-2 border border-red-300">
-                            <p class="text-lg sm:text-xl font-extrabold text-red-600 text-center">{{ $first['alfa_count'] }}</p>
-                            <p class="text-[8px] sm:text-[9px] text-slate-500 uppercase font-semibold text-center">Kali Alfa</p>
-                        </div>
+                <!-- 1st Place (Tengah) -->
+                <div class="podium-card podium-1" data-rank="1">
+                    <div class="podium-badge">1</div>
+                    <div class="podium-body">
+                        <div class="podium-avatar">{{ substr($first['nama'], 0, 1) }}</div>
+                        <div class="podium-name">{{ $first['nama'] }}</div>
+                        <div class="podium-detail">{{ $first['kamar'] }} &middot; <strong>Kali Alfa: {{ $first['alfa_count'] }}</strong></div>
                     </div>
-                    <div class="bg-gradient-to-t from-red-500 to-red-400 py-2 text-center">
-                        <span class="text-white font-extrabold text-lg sm:text-xl">1</span>
-                    </div>
+                    <div class="podium-bar">{{ $first['alfa_count'] }}</div>
                 </div>
-                <!-- 3rd Place -->
-                <div class="podium-card podium-3 relative overflow-hidden" style="margin-top: 18px;">
-                    <div class="p-2 sm:p-3">
-                        <div class="rank-medal rank-3 mx-auto mb-1.5" style="width:26px;height:26px;font-size:12px;">3</div>
-                        <div class="podium-avatar mx-auto" style="background: linear-gradient(135deg, #f59e0b, #d97706); width:40px; height:40px; font-size:16px;">{{ substr($third['nama'], 0, 1) }}</div>
-                        <p class="font-bold text-slate-800 text-[11px] sm:text-sm truncate mt-1.5 text-center">{{ $third['nama'] }}</p>
-                        <p class="text-[8px] sm:text-[10px] text-slate-400 mb-1.5 text-center">{{ $third['kamar'] }}</p>
-                        <div class="bg-red-50 rounded-lg py-1 sm:py-1.5 px-1.5 sm:px-2 border border-orange-200">
-                            <p class="text-base sm:text-lg font-extrabold text-red-600 text-center">{{ $third['alfa_count'] }}</p>
-                            <p class="text-[8px] sm:text-[9px] text-slate-500 uppercase font-semibold text-center">Kali Alfa</p>
-                        </div>
+                <!-- 3rd Place (Kanan) -->
+                <div class="podium-card podium-3" data-rank="3">
+                    <div class="podium-badge">3</div>
+                    <div class="podium-body">
+                        <div class="podium-avatar">{{ substr($third['nama'], 0, 1) }}</div>
+                        <div class="podium-name">{{ $third['nama'] }}</div>
+                        <div class="podium-detail">{{ $third['kamar'] }} &middot; <strong>Kali Alfa: {{ $third['alfa_count'] }}</strong></div>
                     </div>
-                    <div class="bg-gradient-to-t from-orange-400 to-orange-300 py-1 text-center">
-                        <span class="text-white font-extrabold text-sm">3</span>
-                    </div>
+                    <div class="podium-bar">{{ $third['alfa_count'] }}</div>
                 </div>
             </div>
         @endif
