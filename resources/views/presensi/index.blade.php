@@ -343,7 +343,7 @@
                     @php
                         $trenVals = collect($trenBulanan)->pluck('pct')->all();
                         $trenMax = max(100, max($trenVals ?: [100]));
-                        $trenLeft = 54; $trenRight = 600; $trenTop = 30; $trenBottom = 132;
+                        $trenLeft = 54; $trenRight = 600; $trenTop = 40; $trenBottom = 155;
                         $trenStep = count($trenBulanan) > 1 ? ($trenRight - $trenLeft) / (count($trenBulanan) - 1) : 0;
                         $trenPoints = [];
                         foreach ($trenBulanan as $i => $t) {
@@ -354,7 +354,7 @@
                         $trenLinePath = implode(' ', array_map(fn ($p) => "{$p['x']},{$p['y']}", $trenPoints));
                         $trenAreaPath = $trenLinePath . " " . end($trenPoints)['x'] . ",$trenBottom $trenLeft,$trenBottom";
                     @endphp
-                    <svg viewBox="0 0 620 175" class="w-full h-auto tren-chart">
+                    <svg viewBox="0 0 620 200" class="w-full h-auto tren-chart">
                         <!-- Grid lines -->
                         <g stroke="#e2e8f0" stroke-width="0.5">
                             <line x1="{{ $trenLeft }}" y1="{{ $trenBottom }}" x2="{{ $trenRight }}" y2="{{ $trenBottom }}"/>
@@ -372,12 +372,12 @@
                         </g>
 
                         <!-- Y-axis labels -->
-                        <g fill="#94a3b8" font-family="'Instrument Sans', ui-sans-serif, system-ui, sans-serif" font-size="11">
-                            <text x="36" y="{{ $trenBottom + 4 }}" text-anchor="end">0%</text>
-                            <text x="36" y="{{ round($trenBottom - (25 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">25%</text>
-                            <text x="36" y="{{ round($trenBottom - (50 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">50%</text>
-                            <text x="36" y="{{ round($trenBottom - (75 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">75%</text>
-                            <text x="36" y="{{ $trenTop + 4 }}" text-anchor="end">100%</text>
+                        <g fill="#94a3b8" font-family="'Instrument Sans', ui-sans-serif, system-ui, sans-serif" font-size="12">
+                            <text x="38" y="{{ $trenBottom + 4 }}" text-anchor="end">0%</text>
+                            <text x="38" y="{{ round($trenBottom - (25 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">25%</text>
+                            <text x="38" y="{{ round($trenBottom - (50 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">50%</text>
+                            <text x="38" y="{{ round($trenBottom - (75 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">75%</text>
+                            <text x="38" y="{{ $trenTop + 4 }}" text-anchor="end">100%</text>
                         </g>
 
                         <!-- Area fill -->
@@ -394,18 +394,18 @@
 
                         <!-- Data points -->
                         @foreach ($trenPoints as $i => $p)
-                            <circle cx="{{ $p['x'] }}" cy="{{ $p['y'] }}" r="3.5" fill="white" stroke="#2563eb" stroke-width="2"
+                            <circle cx="{{ $p['x'] }}" cy="{{ $p['y'] }}" r="5" fill="white" stroke="#2563eb" stroke-width="2.5"
                                     class="chart-clickable" onclick="showTrenDetail({{ $i }})">
                                 <title>{{ $p['label'] }}: {{ $p['pct'] }}% â€” klik untuk detail</title>
                             </circle>
                             <!-- Value label -->
-                            <text x="{{ $p['x'] }}" y="{{ $p['y'] - 11 }}" text-anchor="middle" fill="#2563eb" font-size="11" font-weight="600" class="chart-val">{{ $p['pct'] }}%</text>
+                            <text x="{{ $p['x'] }}" y="{{ $p['y'] - 12 }}" text-anchor="middle" fill="#2563eb" font-size="13" font-weight="700" class="chart-val">{{ $p['pct'] }}%</text>
                         @endforeach
 
                         <!-- X-axis labels -->
-                        <g fill="#64748b" font-family="'Instrument Sans', ui-sans-serif, system-ui, sans-serif" font-size="11">
+                        <g fill="#64748b" font-family="'Instrument Sans', ui-sans-serif, system-ui, sans-serif" font-size="12">
                             @foreach ($trenPoints as $p)
-                                <text x="{{ $p['x'] }}" y="160" text-anchor="middle">{{ $p['label'] }}</text>
+                                <text x="{{ $p['x'] }}" y="180" text-anchor="middle">{{ $p['label'] }}</text>
                             @endforeach
                         </g>
                     </svg>
@@ -448,8 +448,8 @@
                     @php
                         $chartWidth = 546;
                         $chartLeft = 54;
-                        $chartTop = 20;
-                        $chartBottom = 132;
+                        $chartTop = 40;
+                        $chartBottom = 155;
                         $chartHeight = $chartBottom - $chartTop;
                         $step = $numLabels > 1 ? $chartWidth / ($numLabels - 1) : 0;
 
@@ -465,14 +465,14 @@
                         $areaPath = $linePath . " " . ($chartLeft + ($numLabels - 1) * $step) . ",$chartBottom $chartLeft,$chartBottom";
                     @endphp
 
-                    <svg viewBox="0 0 620 175" class="w-full h-auto line-chart" id="lineChart">
+                    <svg viewBox="0 0 620 200" class="w-full h-auto line-chart" id="lineChart">
                         <!-- Horizontal grid lines -->
                         <g stroke="#e2e8f0" stroke-width="0.5">
-                            <line x1="54" y1="132" x2="600" y2="132"/>
-                            <line x1="54" y1="105" x2="600" y2="105"/>
-                            <line x1="54" y1="78" x2="600" y2="78"/>
-                            <line x1="54" y1="50" x2="600" y2="50"/>
-                            <line x1="54" y1="20" x2="600" y2="20"/>
+                            <line x1="{{ $chartLeft }}" y1="{{ $chartBottom }}" x2="600" y2="{{ $chartBottom }}"/>
+                            <line x1="{{ $chartLeft }}" y1="{{ round($chartBottom - (25 / $chartMax) * $chartHeight, 1) }}" x2="600" y2="{{ round($chartBottom - (25 / $chartMax) * $chartHeight, 1) }}"/>
+                            <line x1="{{ $chartLeft }}" y1="{{ round($chartBottom - (50 / $chartMax) * $chartHeight, 1) }}" x2="600" y2="{{ round($chartBottom - (50 / $chartMax) * $chartHeight, 1) }}"/>
+                            <line x1="{{ $chartLeft }}" y1="{{ round($chartBottom - (75 / $chartMax) * $chartHeight, 1) }}" x2="600" y2="{{ round($chartBottom - (75 / $chartMax) * $chartHeight, 1) }}"/>
+                            <line x1="{{ $chartLeft }}" y1="{{ $chartTop }}" x2="600" y2="{{ $chartTop }}"/>
                         </g>
 
                         <!-- Vertical grid lines -->
@@ -486,12 +486,12 @@
                         </g>
 
                         <!-- Y-axis labels -->
-                        <g fill="#94a3b8" font-family="'Instrument Sans', ui-sans-serif, system-ui, sans-serif" font-size="11">
-                            <text x="36" y="135" text-anchor="end">0%</text>
-                            <text x="36" y="108" text-anchor="end">25%</text>
-                            <text x="36" y="81" text-anchor="end">50%</text>
-                            <text x="36" y="53" text-anchor="end">75%</text>
-                            <text x="36" y="23" text-anchor="end">100%</text>
+                        <g fill="#94a3b8" font-family="'Instrument Sans', ui-sans-serif, system-ui, sans-serif" font-size="12">
+                            <text x="38" y="{{ $chartBottom + 4 }}" text-anchor="end">0%</text>
+                            <text x="38" y="{{ round($chartBottom - (25 / $chartMax) * $chartHeight, 1) + 4 }}" text-anchor="end">25%</text>
+                            <text x="38" y="{{ round($chartBottom - (50 / $chartMax) * $chartHeight, 1) + 4 }}" text-anchor="end">50%</text>
+                            <text x="38" y="{{ round($chartBottom - (75 / $chartMax) * $chartHeight, 1) + 4 }}" text-anchor="end">75%</text>
+                            <text x="38" y="{{ $chartTop + 4 }}" text-anchor="end">100%</text>
                         </g>
 
                         <!-- Area fill -->
@@ -509,22 +509,22 @@
                         <!-- Data points -->
                         @foreach ($areaPoints as $index => $point)
                             <g class="chart-pt">
-                                <circle cx="{{ $point['x'] }}" cy="{{ $point['y'] }}" r="3.5" fill="white" stroke="#10b981" stroke-width="2"
+                                <circle cx="{{ $point['x'] }}" cy="{{ $point['y'] }}" r="5" fill="white" stroke="#10b981" stroke-width="2.5"
                                         class="chart-clickable" onclick="showLineChartDetail({{ $index }})"
                                         style="animation: countUp 0.4s ease-out {{ $index * 0.08 }}s both;">
                                     <title>{{ $chartDetailLabels[$index] ?? $chartLabels[$index] }}: {{ $chartValues[$index] }}%</title>
                                 </circle>
                                 <!-- Value label -->
-                                <text x="{{ $point['x'] }}" y="{{ max($point['y'] - 10, 17) }}" text-anchor="middle" fill="#059669" font-size="11" font-weight="600" class="chart-val"
+                                <text x="{{ $point['x'] }}" y="{{ max($point['y'] - 12, 24) }}" text-anchor="middle" fill="#059669" font-size="13" font-weight="700" class="chart-val"
                                       style="animation: countUp 0.4s ease-out {{ $index * 0.08 + 0.1 }}s both;">{{ $chartValues[$index] }}%</text>
                             </g>
                         @endforeach
 
                         <!-- X-axis labels -->
-                        <g fill="#64748b" font-family="'Instrument Sans', ui-sans-serif, system-ui, sans-serif" font-size="11">
+                        <g fill="#64748b" font-family="'Instrument Sans', ui-sans-serif, system-ui, sans-serif" font-size="12">
                             @foreach ($chartLabels as $index => $label)
                                 @if($index % $labelStep === 0 || $index === $numLabels - 1)
-                                    <text x="{{ $chartLeft + ($index * $step) }}" y="158" text-anchor="middle">{{ $label }}</text>
+                                    <text x="{{ $chartLeft + ($index * $step) }}" y="180" text-anchor="middle">{{ $label }}</text>
                                 @endif
                             @endforeach
                         </g>
