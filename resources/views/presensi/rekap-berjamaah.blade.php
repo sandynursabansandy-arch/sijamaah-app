@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Rekap Berjamaah — SIJAMAAH</title>
+    <title>Rekap Berjamaah â€” SIJAMAAH</title>
     <link rel="stylesheet" href="{{ asset('custom-assets/app.css') }}?v={{ filemtime(public_path('custom-assets/app.css')) }}">
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -137,25 +137,8 @@
     </style>
 </head>
 <body class="bg-gradient-to-b from-slate-100 via-white to-emerald-50 text-slate-800 min-h-screen py-8">
+                @include('partials.app-header')
     <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="mb-5 animate-slide-in relative z-30">
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
-                <div class="flex items-center gap-3">
-                    <div class="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden border-[3px] border-white ring-2 ring-emerald-200">
-                        <img src="{{ asset('images/image.png') }}" alt="Logo" class="w-full h-full object-cover">
-                    </div>
-                    <div>
-                        <h1 class="text-xl sm:text-2xl md:text-[28px] leading-tight font-extrabold text-emerald-700">
-                            Rekap Berjamaah Bulanan
-                        </h1>
-                        <p class="text-slate-500 text-xs">Detail kehadiran sholat berjamaah setiap santri per hari &middot; {{ $tanggalMulai->translatedFormat('F Y') }}@if($waktuFilter !== 'all') &middot; {{ $waktuFilter }}@endif</p>
-                    </div>
-                </div>
-                @include('partials.app-sidebar')
-            </div>
-        </div>
-
         <!-- Filter -->
         <form method="GET" action="{{ route('presensi.rekapBerjamaah') }}" class="filter-gradient rounded-xl p-3 mb-5 animate-fade-in shadow-sm">
             <div class="flex flex-wrap items-end gap-2.5">
@@ -248,7 +231,7 @@
             </div>
             <div id="viewOnlyBannerBJ" class="view-only-banner show">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                <span id="viewOnlyBannerBJText">@if(auth()->user()?->canManagePresensi())Mode Lihat Saja — klik gembok untuk membuka pengubahan presensi@else Mode Lihat Saja — hanya admin/musyrif yang dapat mengubah presensi @endif</span>
+                <span id="viewOnlyBannerBJText">@if(auth()->user()?->canManagePresensi())Mode Lihat Saja â€” klik gembok untuk membuka pengubahan presensi@else Mode Lihat Saja â€” hanya admin/musyrif yang dapat mengubah presensi @endif</span>
             </div>
 
             <!-- Table -->
@@ -284,7 +267,7 @@
                                             <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-blue-400 flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">{{ substr($santri['nama'], 0, 1) }}</div>
                                             <div class="min-w-0">
                                                 <p class="font-semibold text-slate-900 truncate text-[12px]">{{ $santri['nama'] }}</p>
-                                                <p class="text-[10px] text-slate-400 truncate">{{ $santri['kamar'] }}{{ $santri['jabatan'] ? ' · ' . $santri['jabatan'] : '' }}</p>
+                                                <p class="text-[10px] text-slate-400 truncate">{{ $santri['kamar'] }}{{ $santri['jabatan'] ? ' Â· ' . $santri['jabatan'] : '' }}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -442,7 +425,7 @@
         var pendingChangesFinal = [];
 
         var CHECK_SVG = '<svg class="w-[11px] h-[11px]" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
-        var STATUS_OPTIONS = [['Jamaah', '✓ Berjamaah'], ['Masbuq', 'M Masbuq'], ['Izin', 'I Izin'], ['Alfa', 'A Alfa'], ['-', '— Kosong']];
+        var STATUS_OPTIONS = [['Jamaah', 'âœ“ Berjamaah'], ['Masbuq', 'M Masbuq'], ['Izin', 'I Izin'], ['Alfa', 'A Alfa'], ['-', 'â€” Kosong']];
         var STATUS_LABEL = { 'Jamaah': 'Berjamaah', 'Masbuq': 'Masbuq', 'Izin': 'Izin', 'Alfa': 'Alfa', '-': 'Kosong' };
 
         function badgeHtml(st) {

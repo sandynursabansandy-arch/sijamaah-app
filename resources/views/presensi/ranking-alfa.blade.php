@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ranking Alfa — SIJAMAAH</title>
+    <title>Ranking Alfa â€” SIJAMAAH</title>
     <link rel="stylesheet" href="{{ asset('custom-assets/app.css') }}?v={{ filemtime(public_path('custom-assets/app.css')) }}">
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -83,25 +83,8 @@
     </style>
 </head>
 <body class="bg-gradient-to-b from-slate-100 via-white to-red-50 text-slate-800 min-h-screen py-8">
+                @include('partials.app-header')
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="mb-5 animate-slide-in relative z-30">
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
-                <div class="flex items-center gap-3">
-                    <div class="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden border-[3px] border-white ring-2 ring-red-200">
-                        <img src="{{ asset('images/image.png') }}" alt="Logo" class="w-full h-full object-cover">
-                    </div>
-                    <div>
-                        <h1 class="text-xl sm:text-2xl md:text-[28px] leading-tight font-extrabold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
-                            Ranking Alfa
-                        </h1>
-                        <p class="text-slate-500 text-xs">Peringkat santri berdasarkan jumlah alfa terbanyak</p>
-                    </div>
-                </div>
-                @include('partials.app-sidebar')
-            </div>
-        </div>
-
         <!-- Filter Section -->
         <form method="GET" action="{{ route('presensi.rankingAlfa') }}" class="filter-gradient rounded-xl p-3 mb-5 animate-fade-in shadow-sm">
             <div class="flex flex-wrap items-end gap-2.5">
@@ -253,7 +236,7 @@
                                     <td class="px-3 py-3 text-center">
                                         @php
                                             $poinFlag = $item['poin'] >= 25;
-                                            $poinTitle = "Alfa {$item['alfa_count']}×5 + Masbuq {$item['masbuq_count']}×2 + Izin {$item['izin_count']}×1 = {$item['poin']} poin";
+                                            $poinTitle = "Alfa {$item['alfa_count']}Ã—5 + Masbuq {$item['masbuq_count']}Ã—2 + Izin {$item['izin_count']}Ã—1 = {$item['poin']} poin";
                                         @endphp
                                         <span title="{{ $poinTitle }}" class="inline-flex items-center gap-1 justify-center min-w-[44px] px-2 py-0.5 rounded-full text-sm font-extrabold {{ $poinFlag ? 'bg-red-600 text-white ring-2 ring-red-300' : ($item['poin'] > 0 ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-400') }}">
                                             {{ $item['poin'] }}

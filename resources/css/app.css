@@ -8,11 +8,6 @@
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
-/* ===== Ruang untuk tombol hamburger mengapung kiri-atas ===== */
-body {
-    padding-top: 4.25rem;
-}
-
 /* ===== Font diagram garis (tren & harian): besar di layar kecil, semula di desktop ===== */
 .line-chart text,
 .tren-chart text {

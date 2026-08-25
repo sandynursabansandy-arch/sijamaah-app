@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekap Presensi — SIJAMAAH</title>
+    <title>Rekap Presensi â€” SIJAMAAH</title>
     <link rel="stylesheet" href="{{ asset('custom-assets/app.css') }}?v={{ filemtime(public_path('custom-assets/app.css')) }}">
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -223,26 +223,9 @@
     </style>
 </head>
 <body class="bg-gradient-to-b from-slate-100 via-white to-emerald-50 text-slate-800 min-h-screen py-8">
+                @include('partials.app-header')
     <div id="toast-container"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 no-print">
-        <!-- Header -->
-        <div class="mb-5 animate-slide-in relative z-30">
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
-                <div class="flex items-center gap-3">
-                    <div class="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden border-[3px] border-white ring-2 ring-emerald-200">
-                        <img src="{{ asset('images/image.png') }}" alt="Logo" class="w-full h-full object-cover">
-                    </div>
-                    <div>
-                        <h1 class="text-xl sm:text-2xl md:text-[28px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                            Rekap Presensi
-                        </h1>
-                        <p class="text-slate-500 text-xs">Lihat rekap data kehadiran sholat berjamaah santri</p>
-                    </div>
-                </div>
-                @include('partials.app-sidebar')
-            </div>
-        </div>
-
         @if(session('success'))
             <div class="alert-animate mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg flex items-center gap-2 text-sm">
                 <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
@@ -345,7 +328,7 @@
         <!-- View-Only Banner -->
         <div id="viewOnlyBanner" class="view-only-banner no-print">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-            <span id="viewOnlyBannerText">Mode Lihat Saja — Klik gembok untuk mengubah presensi</span>
+            <span id="viewOnlyBannerText">Mode Lihat Saja â€” Klik gembok untuk mengubah presensi</span>
         </div>
 
         <!-- Santri Table -->
@@ -757,7 +740,7 @@
                     <div class="max-h-64 overflow-y-auto pr-1">${rows}</div>
                 </div>
             `;
-            openModal('Rincian ' + nama + ' — ' + waktu, content);
+            openModal('Rincian ' + nama + ' â€” ' + waktu, content);
         }
     </script>
 
@@ -917,7 +900,7 @@
         var tableWrap = document.querySelector('.presensi-scroll')?.closest('.bg-white');
         if (!canManageRekap) {
             if (document.getElementById('viewOnlyBannerText')) {
-                document.getElementById('viewOnlyBannerText').textContent = 'Mode Lihat Saja — hanya admin/musyrif yang dapat mengubah presensi';
+                document.getElementById('viewOnlyBannerText').textContent = 'Mode Lihat Saja â€” hanya admin/musyrif yang dapat mengubah presensi';
             }
             if (banner) banner.classList.add('show');
             if (tableWrap) tableWrap.classList.add('is-viewonly');

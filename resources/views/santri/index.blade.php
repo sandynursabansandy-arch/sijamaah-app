@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -131,27 +131,10 @@
         @keyframes toastOut { from { opacity:1; transform:translateY(0) scale(1); } to { opacity:0; transform:translateY(-20px) scale(0.95); } }
     </style>
 </head>
-<body class="bg-gradient-to-b from-slate-100 via-white to-emerald-50 text-slate-800 min-h-screen py-8">
+<body class="bg-gradient-to-b from-slate-100 via-white to-emerald-50 text-slate-800 min-h-screen py-8">                @include('partials.app-header')
+
     <div id="toast-container"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="mb-5 animate-slide-in relative z-30">
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
-                <div class="flex items-center gap-3">
-                    <div class="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden border-[3px] border-white ring-2 ring-emerald-200">
-                        <img src="{{ asset('images/image.png') }}" alt="Logo" class="w-full h-full object-cover">
-                    </div>
-                    <div>
-                        <h1 class="text-xl sm:text-2xl md:text-[28px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                            Kelola Santri
-                        </h1>
-                        <p class="text-slate-500 text-xs">Tambah, edit, atau hapus data santri pesantren</p>
-                    </div>
-                </div>
-                @include('partials.app-sidebar')
-            </div>
-        </div>
-
         <!-- Success Message (toast) -->
         @if(session('success'))
             <script>

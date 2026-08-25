@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -102,25 +102,8 @@
     </style>
 </head>
         <body class="bg-gradient-to-b from-slate-100 via-slate-50 to-emerald-50 text-slate-800 min-h-screen py-8">
+                @include('partials.app-header')
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="mb-5 animate-slide-in relative z-30">
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
-                <div class="flex items-center gap-3 shrink-0">
-                    <div class="w-14 h-14 shrink-0 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden border-[3px] border-white ring-2 ring-emerald-200">
-                        <img src="{{ asset('images/image.png') }}" alt="Logo" class="w-full h-full object-cover">
-                    </div>
-                    <div>
-                        <h1 class="text-xl sm:text-2xl md:text-[28px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                            Dashboard Sholat Berjamaah
-                        </h1>
-                        <p class="text-slate-500 text-xs">Centang status kehadiran santri dengan cepat</p>
-                    </div>
-                </div>
-                @include('partials.app-sidebar')
-            </div>
-        </div>
-
         @if(session('success'))
             <div class="alert-animate mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg flex items-center gap-2 text-sm">
                 <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
@@ -395,7 +378,7 @@
                         @foreach ($trenPoints as $i => $p)
                             <circle cx="{{ $p['x'] }}" cy="{{ $p['y'] }}" r="3.5" fill="white" stroke="#2563eb" stroke-width="2"
                                     class="chart-clickable" onclick="showTrenDetail({{ $i }})">
-                                <title>{{ $p['label'] }}: {{ $p['pct'] }}% — klik untuk detail</title>
+                                <title>{{ $p['label'] }}: {{ $p['pct'] }}% â€” klik untuk detail</title>
                             </circle>
                             <!-- Value label -->
                             <text x="{{ $p['x'] }}" y="{{ $p['y'] - 11 }}" text-anchor="middle" fill="#2563eb" class="chart-val">{{ $p['pct'] }}%</text>
@@ -780,7 +763,7 @@
                 tglArr.sort((a, b) => a.y - b.y || a.m - b.m || a.d - b.d);
                 const dateStr = tglArr.map(t => t.d + ' ' + months[t.m - 1]).join(', ');
                 const yearStr = tglArr.length > 0 ? ' ' + tglArr[0].y : '';
-                return `<div class="text-[11px] py-0.5"><span class="font-medium">${nama}</span><span class="opacity-60 ml-1">· ${dateStr}${yearStr}</span></div>`;
+                return `<div class="text-[11px] py-0.5"><span class="font-medium">${nama}</span><span class="opacity-60 ml-1">Â· ${dateStr}${yearStr}</span></div>`;
             }).join('');
         }
 
@@ -1042,7 +1025,7 @@
                     <div class="max-h-64 overflow-y-auto pr-1">${rows}</div>
                 </div>
             `;
-            openModal('Rincian ' + nama + ' — ' + waktu, content);
+            openModal('Rincian ' + nama + ' â€” ' + waktu, content);
         }
 
         function showSantriRating(nama, rating, period) {
