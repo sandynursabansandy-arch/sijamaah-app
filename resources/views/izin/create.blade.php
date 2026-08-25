@@ -3,25 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ajukan Izin</title>
+    <title>Ajukan Izin — SIJAMAAH</title>
     <link rel="stylesheet" href="{{ asset('custom-assets/app.css') }}?v={{ filemtime(public_path('custom-assets/app.css')) }}">
+    <style>
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.6s ease-in; }
+        .animate-slide-up { animation: slideUp 0.6s ease-out; }
+        .animate-slide-in { animation: slideIn 0.5s ease-out both; }
+        .alert-animate { animation: slideDown 0.5s ease-out; }
+    </style>
 </head>
-<body class="bg-gradient-to-b from-slate-100 via-white to-emerald-50 text-slate-800 min-h-screen py-8">
-    <div class="max-w-2xl mx-auto px-4 sm:px-6">
-        <!-- Header -->
-        <div class="mb-5">
-            <a href="{{ route('izin.index') }}" class="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-800 mb-3 text-xs font-medium">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                Kembali ke Daftar Izin
-            </a>
-            <h1 class="text-xl sm:text-2xl md:text-[28px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                Ajukan Izin
-            </h1>
-            <p class="text-slate-500 text-xs">Pengajuan akan diverifikasi sebelum presensi Izin dibuat</p>
+<body class="bg-gradient-to-b from-slate-100 via-slate-50 to-emerald-50 text-slate-800 min-h-screen pb-8">
+    @include('partials.app-header')
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 mt-5">
+
+        <!-- Page Title -->
+        <div class="mb-4 flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-md">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <div>
+                <h1 class="text-[15px] font-bold text-slate-800 leading-tight">Ajukan Izin</h1>
+                <p class="text-[11px] text-slate-400">Pengajuan akan diverifikasi sebelum presensi Izin dibuat</p>
+            </div>
         </div>
 
         @if($errors->any())
-            <div class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2.5 text-sm">
+            <div class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2.5 text-sm alert-animate animate-fade-in">
                 <ul class="list-disc list-inside">
                     @foreach($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -30,7 +41,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('izin.store') }}" class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 space-y-4">
+        <form method="POST" action="{{ route('izin.store') }}" class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 space-y-4 animate-slide-up">
             @csrf
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wide mb-1.5 text-slate-600">Santri</label>

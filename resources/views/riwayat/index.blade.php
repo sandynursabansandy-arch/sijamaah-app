@@ -3,25 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Riwayat Perubahan Presensi</title>
+    <title>Riwayat Perubahan Presensi — SIJAMAAH</title>
     <link rel="stylesheet" href="{{ asset('custom-assets/app.css') }}?v={{ filemtime(public_path('custom-assets/app.css')) }}">
+    <style>
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.6s ease-in; }
+        .animate-slide-up { animation: slideUp 0.6s ease-out; }
+        .animate-slide-in { animation: slideIn 0.5s ease-out both; }
+        .alert-animate { animation: slideDown 0.5s ease-out; }
+        tbody tr { animation: fadeIn 0.3s ease-out both; }
+        @for($i = 1; $i <= 20; $i++)
+            tbody tr:nth-child({{ $i }}) { animation-delay: {{ $i * 0.04 }}s; }
+        @endfor
+    </style>
 </head>
-<body class="bg-gradient-to-b from-slate-100 via-white to-emerald-50 text-slate-800 min-h-screen py-8">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="mb-5">
-            <a href="{{ route('presensi.index') }}" class="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-800 mb-3 text-xs font-medium">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                Kembali ke Dashboard
-            </a>
-            <h1 class="text-xl sm:text-2xl md:text-[28px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                Riwayat Perubahan Presensi
-            </h1>
-            <p class="text-slate-500 text-xs">Audit log semua perubahan status presensi santri</p>
+<body class="bg-gradient-to-b from-slate-100 via-slate-50 to-emerald-50 text-slate-800 min-h-screen pb-8">
+    @include('partials.app-header')
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-5">
+
+        <!-- Page Title -->
+        <div class="mb-4 flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+                <h1 class="text-[15px] font-bold text-slate-800 leading-tight">Riwayat Perubahan Presensi</h1>
+                <p class="text-[11px] text-slate-400">Audit log semua perubahan status presensi santri</p>
+            </div>
         </div>
 
         <!-- Search -->
-        <form method="GET" action="{{ route('riwayat.index') }}" class="bg-white rounded-xl p-3 mb-5 shadow-sm border border-slate-100 flex flex-wrap items-end gap-2.5">
+        <form method="GET" action="{{ route('riwayat.index') }}" class="bg-white rounded-xl p-3 mb-5 shadow-sm border border-slate-100 flex flex-wrap items-end gap-2.5 animate-slide-up">
             <div class="flex-1 min-w-[200px]">
                 <label class="block text-[10px] font-bold uppercase tracking-wide mb-1 text-slate-600 pl-0.5">Cari Nama Santri</label>
                 <input type="text" name="search" value="{{ $search }}" placeholder="Nama santri..."
@@ -31,7 +46,7 @@
         </form>
 
         <!-- Table -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden animate-slide-up" style="animation-delay: 0.1s">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-100 text-sm">
                     <thead class="bg-slate-50">
