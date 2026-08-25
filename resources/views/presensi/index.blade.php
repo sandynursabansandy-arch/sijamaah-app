@@ -427,13 +427,43 @@
                         </div>
                     </div>
 
+                    @php
+                        $chartWidth = 546;
+                        $chartLeft = 54;
+                        $chartTop = 23;
+                        $chartBottom = 132;
+                        $chartHeight = $chartBottom - $chartTop;
+                        $step = $numLabels > 1 ? $chartWidth / ($numLabels - 1) : 0;
+
+                        $linePoints = [];
+                        $areaPoints = [];
+                        foreach ($chartValues as $index => $value) {
+                            $x = $chartLeft + ($index * $step);
+                            $y = $chartBottom - (($value / $chartMax) * $chartHeight);
+                            $linePoints[] = "$x,$y";
+                            $areaPoints[] = ['x' => $x, 'y' => $y];
+                        }
+                        $linePath = implode(' ', $linePoints);
+                        $areaPath = $linePath . " " . ($chartLeft + ($numLabels - 1) * $step) . ",$chartBottom $chartLeft,$chartBottom";
+                    @endphp
+
                     <svg viewBox="0 0 620 175" class="w-full h-auto line-chart" id="lineChart">
-                        <!-- Grid lines -->
+                        <!-- Horizontal grid lines -->
                         <g stroke="#e2e8f0" stroke-width="0.5">
                             <line x1="54" y1="132" x2="600" y2="132"/>
                             <line x1="54" y1="105" x2="600" y2="105"/>
                             <line x1="54" y1="78" x2="600" y2="78"/>
                             <line x1="54" y1="50" x2="600" y2="50"/>
+                        </g>
+
+                        <!-- Vertical grid lines -->
+                        <g stroke="#e2e8f0" stroke-width="0.5" opacity="0.5">
+                            @for($i = 0; $i < $numLabels; $i += $labelStep)
+                                <line x1="{{ $chartLeft + ($i * $step) }}" y1="{{ $chartTop }}" x2="{{ $chartLeft + ($i * $step) }}" y2="{{ $chartBottom }}"/>
+                            @endfor
+                            @if(($numLabels - 1) % $labelStep !== 0)
+                                <line x1="{{ $chartLeft + (($numLabels - 1) * $step) }}" y1="{{ $chartTop }}" x2="{{ $chartLeft + (($numLabels - 1) * $step) }}" y2="{{ $chartBottom }}"/>
+                            @endif
                         </g>
 
                         <!-- Y-axis labels -->
@@ -444,26 +474,6 @@
                             <text x="36" y="53" text-anchor="end">75%</text>
                             <text x="36" y="26" text-anchor="end">100%</text>
                         </g>
-
-                        @php
-                            $chartWidth = 546;
-                            $chartLeft = 54;
-                            $chartTop = 23;
-                            $chartBottom = 132;
-                            $chartHeight = $chartBottom - $chartTop;
-                            $step = $numLabels > 1 ? $chartWidth / ($numLabels - 1) : 0;
-
-                            $linePoints = [];
-                            $areaPoints = [];
-                            foreach ($chartValues as $index => $value) {
-                                $x = $chartLeft + ($index * $step);
-                                $y = $chartBottom - (($value / $chartMax) * $chartHeight);
-                                $linePoints[] = "$x,$y";
-                                $areaPoints[] = ['x' => $x, 'y' => $y];
-                            }
-                            $linePath = implode(' ', $linePoints);
-                            $areaPath = $linePath . " " . ($chartLeft + ($numLabels - 1) * $step) . ",$chartBottom $chartLeft,$chartBottom";
-                        @endphp
 
                         <!-- Area fill -->
                         <polygon points="{{ $areaPath }}" fill="url(#areaGradient)" opacity="0.3"/>
