@@ -135,6 +135,17 @@
 
     <div id="toast-container"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-5">
+        <!-- Page Title -->
+        <div class="mb-4 flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-md">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+            <div>
+                <h1 class="text-[15px] font-bold text-slate-800 leading-tight">Data Santri</h1>
+                <p class="text-[11px] text-slate-400">Manajemen data santri aktif</p>
+            </div>
+        </div>
+
         <!-- Success Message (toast) -->
         @if(session('success'))
             <script>

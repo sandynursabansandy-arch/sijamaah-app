@@ -226,6 +226,17 @@
                 @include('partials.app-header')
     <div id="toast-container"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-5 no-print">
+        <!-- Page Title -->
+        <div class="mb-4 flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-md">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <div>
+                <h1 class="text-[15px] font-bold text-slate-800 leading-tight">Rekap Presensi</h1>
+                <p class="text-[11px] text-slate-400">Rekap kehadiran santri per periode</p>
+            </div>
+        </div>
+
         @if(session('success'))
             <div class="alert-animate mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg flex items-center gap-2 text-sm">
                 <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
@@ -290,7 +301,7 @@
         <div class="flex flex-wrap items-center gap-2 mb-5 animate-slide-up">
             <div class="flex items-center gap-1.5 bg-white rounded-lg px-3 py-1.5 shadow-sm border border-slate-100">
                 <span class="font-bold text-slate-900 text-[11px]">Hadir</span>
-                <span class="text-[9px] text-slate-400">Jamaah lengkap</span>
+                <span class="text-[9px] text-slate-400">Berjamaah</span>
             </div>
             <div class="flex items-center gap-1.5 bg-white rounded-lg px-3 py-1.5 shadow-sm border border-slate-100">
                 <span class="font-bold text-slate-900 text-[11px]">Masbuq</span>
