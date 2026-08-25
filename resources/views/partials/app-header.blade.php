@@ -71,11 +71,10 @@
             </div>
         </div>
     </div>
-</div>
 
-{{-- ===== DRAWER MENU (tirai dari kiri, di bawah header profil) ===== --}}
-<aside id="navPanel" aria-label="Menu navigasi utama"
-       class="fixed top-16 bottom-0 left-0 z-[998] w-1/2 min-w-[240px] max-w-[300px] bg-white shadow-2xl -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto scrollbar-thin">
+    {{-- ===== DRAWER MENU (tirai dari kiri, menempel tepat di bawah Header 2) ===== --}}
+    <aside id="navPanel" aria-label="Menu navigasi utama"
+           class="absolute top-full left-0 z-[998] w-1/2 min-w-[240px] max-w-[300px] h-[calc(100vh-5rem)] bg-white shadow-2xl -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto scrollbar-thin">
     <div class="p-3 space-y-1">
         @php
             $navItems = [
@@ -103,10 +102,11 @@
             </a>
         @endforeach
     </div>
-</aside>
+    </aside>
 
-{{-- Overlay gelap: hanya area di bawah header profil agar header tetap terlihat --}}
-<div id="navOverlay" onclick="closeNavPanel()" class="hidden fixed inset-x-0 top-16 bottom-0 bg-black/50 backdrop-blur-sm z-[997]"></div>
+    {{-- Overlay gelap: hanya area di bawah Header 2 agar header tetap terlihat --}}
+    <div id="navOverlay" onclick="closeNavPanel()" class="hidden absolute top-full inset-x-0 z-[997] h-[calc(100vh-5rem)] bg-black/50 backdrop-blur-sm"></div>
+</div>
 
 <script>
     function openNavPanel() {
