@@ -21,6 +21,11 @@ class PresensiSholatController extends Controller
         $chartStart = $request->get('chart_start');
         $chartEnd = $request->get('chart_end');
 
+        $perOrangPeriode = $request->get('per_orang_periode', 'minggu');
+        $perOrangStart = $request->get('per_orang_start');
+        $perOrangEnd = $request->get('per_orang_end');
+        $perOrangWaktu = $request->get('per_orang_waktu', 'all');
+
         $daftarKamar = Kamar::all();
 
         $santriQuery = Santri::query();
@@ -48,12 +53,19 @@ class PresensiSholatController extends Controller
         $chartData = $this->buildChartData($chartFilter, $chartStart, $chartEnd);
         $statusBreakdown = $this->buildStatusBreakdown($tanggal, $waktu);
 
+        $perOrangFilterNama = null;
+        if (auth()->check() && !auth()->user()->isAdmin()) {
+            $perOrangFilterNama = auth()->user()->name;
+        }
+        $perOrangData = $this->buildPerOrangData($kamarId, $perOrangPeriode, $perOrangStart, $perOrangEnd, $perOrangWaktu, $perOrangFilterNama);
+
         $topRating = $santris->sortByDesc('rating')->values();
 
         return view('presensi.index', compact(
             'tanggal', 'waktu', 'kamarId', 'daftarKamar', 'santris',
             'periodRating', 'chartData', 'statusBreakdown', 'chartFilter',
-            'chartStart', 'chartEnd', 'topRating'
+            'chartStart', 'chartEnd', 'topRating', 'perOrangData',
+            'perOrangPeriode', 'perOrangStart', 'perOrangEnd', 'perOrangWaktu'
         ) + [
             'alfaBeruntun' => $this->getAlfaBeruntun(),
             'trenBulanan' => $this->getTrenBulanan(),
@@ -399,6 +411,94 @@ class PresensiSholatController extends Controller
         }
 
         return $breakdown;
+    }
+
+    protected function buildPerOrangData(?string $kamarId, string $periode = 'minggu', ?string $startDate = null, ?string $endDate = null, ?string $waktuSholat = null, ?string $filterNama = null): array
+    {
+        $ref = now();
+        switch ($periode) {
+            case 'bulan':
+                $start = $endDate ? Carbon::parse($endDate)->startOfMonth() : $ref->copy()->startOfMonth();
+                $end = $endDate ? Carbon::parse($endDate)->endOfMonth() : $ref->copy()->endOfMonth();
+                break;
+            case 'tanggal':
+                $start = $startDate ? Carbon::parse($startDate) : $ref->copy()->startOfWeek(Carbon::MONDAY);
+                $end = $endDate ? Carbon::parse($endDate) : $ref->copy()->endOfWeek(Carbon::SUNDAY);
+                break;
+            default: // minggu
+                $start = $startDate ? Carbon::parse($startDate) : $ref->copy()->startOfWeek(Carbon::MONDAY);
+                $end = $endDate ? Carbon::parse($endDate) : $ref->copy()->endOfWeek(Carbon::SUNDAY);
+                break;
+        }
+
+        $startStr = $start->format('Y-m-d');
+        $endStr = $end->format('Y-m-d');
+
+        $allWaktu = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'];
+        $waktuList = $waktuSholat && $waktuSholat !== 'all' ? [$waktuSholat] : $allWaktu;
+
+        $santriQuery = Santri::query();
+        if ($kamarId && $kamarId !== 'all' && $kamarId !== '') {
+            $santriQuery->where('kamar_id', $kamarId);
+        }
+        if (Schema::hasColumn('santris', 'status')) {
+            $santriQuery->where('status', 'Aktif');
+        }
+        if ($filterNama) {
+            $santriQuery->where('nama', $filterNama);
+        }
+
+        $santris = $santriQuery
+            ->with(['presensis' => function ($q) use ($startStr, $endStr, $waktuList) {
+                $q->where('tanggal', '>=', $startStr)
+                  ->where('tanggal', '<=', $endStr)
+                  ->whereIn('waktu_sholat', $waktuList);
+            }])
+            ->orderBy('nama', 'asc')
+            ->get();
+
+        $days = (int) $start->diffInDays($end) + 1;
+        $totalJadwal = $days * count($waktuList);
+
+        $perOrang = $santris->map(function ($santri) use ($totalJadwal) {
+            $hadir = 0; $masbuq = 0; $izin = 0; $alfa = 0;
+            foreach ($santri->presensis as $p) {
+                match ($p->status) {
+                    'Jamaah' => $hadir++,
+                    'Masbuq' => $masbuq++,
+                    'Izin'   => $izin++,
+                    'Alfa'   => $alfa++,
+                    default  => null,
+                };
+            }
+            $totalIsi = $hadir + $masbuq + $izin + $alfa;
+            $persentase = $totalJadwal > 0 ? round(($hadir / $totalJadwal) * 100) : 0;
+
+            return [
+                'id' => $santri->id,
+                'nama' => $santri->nama,
+                'nis' => $santri->nis,
+                'kamar' => $santri->kamar?->nama_kamar ?? '-',
+                'jabatan' => $santri->jabatan ?? '-',
+                'hadir' => $hadir,
+                'masbuq' => $masbuq,
+                'izin' => $izin,
+                'alfa' => $alfa,
+                'total' => $totalIsi,
+                'persentase' => $persentase,
+            ];
+        })->sortByDesc('persentase')->sortByDesc('hadir')->values();
+
+        return [
+            'data' => $perOrang,
+            'totalJadwal' => $totalJadwal,
+            'dateRange' => [
+                'start' => $start->format('d M Y'),
+                'end' => $end->format('d M Y'),
+            ],
+            'periodeLabel' => $start->translatedFormat('d M') . ' – ' . $end->translatedFormat('d M Y'),
+            'isSelf' => (bool) $filterNama,
+        ];
     }
 
     public function rekap(Request $request)

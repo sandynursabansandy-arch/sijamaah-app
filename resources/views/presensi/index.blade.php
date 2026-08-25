@@ -565,13 +565,13 @@
             <!-- Diagram Per Orang: Stacked Bar -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mt-3">
                 <div class="flex items-center gap-2.5 mb-3">
-                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-md">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-red-400 to-red-500 flex items-center justify-center shadow-md">
                         <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
                     </div>
                     <div>
-                        <h3 class="text-[14px] font-bold text-slate-800">Diagram Per Orang</h3>
+                        <h3 class="text-[14px] font-bold text-slate-800">{{ $perOrangData['isSelf'] ? 'Diagram Kehadiran Saya' : 'Diagram Per Orang' }}</h3>
                         <p class="text-[11px] text-slate-400">{{ $perOrangData['periodeLabel'] }} &middot; Klik bar untuk detail</p>
                     </div>
                 </div>
@@ -583,7 +583,7 @@
                         @foreach($poFilters as $key => $label)
                             <button type="button" class="filter-tab perorang-filter-tab {{ $perOrangPeriode === $key ? 'active' : '' }}" onclick="switchPerOrangFilter('{{ $key }}', event)">{{ $label }}</button>
                         @endforeach
-                        <select id="perOrangWaktu" onchange="applyPerOrangFilter()" class="ml-2 border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-rose-400 focus:outline-none">
+                        <select id="perOrangWaktu" onchange="applyPerOrangFilter()" class="ml-2 border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
                             <option value="all" {{ $perOrangWaktu === 'all' ? 'selected' : '' }}>Semua Waktu</option>
                             @foreach(['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'] as $w)
                                 <option value="{{ $w }}" {{ $perOrangWaktu === $w ? 'selected' : '' }}>{{ $w }}</option>
@@ -592,22 +592,22 @@
                     </div>
                     <!-- Date Range Picker -->
                     <div id="perOrangMingguRange" class="hidden flex-wrap items-center gap-1.5 w-full mt-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
-                        <input type="date" id="perOrangStartDate" value="{{ $perOrangStart ?? now()->startOfWeek(Carbon::MONDAY)->format('Y-m-d') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-rose-400 focus:outline-none">
+                        <input type="date" id="perOrangStartDate" value="{{ $perOrangStart ?? now()->startOfWeek(\Carbon\Carbon::MONDAY)->format('Y-m-d') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
                         <span class="text-[10px] text-slate-400 shrink-0">s/d</span>
-                        <input type="date" id="perOrangEndDate" value="{{ $perOrangEnd ?? now()->endOfWeek(Carbon::SUNDAY)->format('Y-m-d') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-rose-400 focus:outline-none">
-                        <button type="button" onclick="applyPerOrangFilter()" class="shrink-0 bg-rose-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-rose-600 transition">Terapkan</button>
+                        <input type="date" id="perOrangEndDate" value="{{ $perOrangEnd ?? now()->endOfWeek(\Carbon\Carbon::SUNDAY)->format('Y-m-d') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
+                        <button type="button" onclick="applyPerOrangFilter()" class="shrink-0 bg-emerald-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-emerald-600 transition">Terapkan</button>
                     </div>
                     <div id="perOrangBulanRange" class="hidden flex-wrap items-center gap-1.5 w-full mt-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
-                        <input type="month" id="perOrangStartMonth" value="{{ $perOrangStart ?? now()->format('Y-m') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-rose-400 focus:outline-none">
+                        <input type="month" id="perOrangStartMonth" value="{{ $perOrangStart ?? now()->format('Y-m') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
                         <span class="text-[10px] text-slate-400 shrink-0">s/d</span>
-                        <input type="month" id="perOrangEndMonth" value="{{ $perOrangEnd ?? now()->format('Y-m') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-rose-400 focus:outline-none">
-                        <button type="button" onclick="applyPerOrangFilter()" class="shrink-0 bg-rose-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-rose-600 transition">Terapkan</button>
+                        <input type="month" id="perOrangEndMonth" value="{{ $perOrangEnd ?? now()->format('Y-m') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
+                        <button type="button" onclick="applyPerOrangFilter()" class="shrink-0 bg-emerald-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-emerald-600 transition">Terapkan</button>
                     </div>
                     <div id="perOrangTanggalRange" class="hidden flex-wrap items-center gap-1.5 w-full mt-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
-                        <input type="date" id="perOrangTglStart" value="{{ $perOrangStart ?? now()->format('Y-m-d') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-rose-400 focus:outline-none">
+                        <input type="date" id="perOrangTglStart" value="{{ $perOrangStart ?? now()->format('Y-m-d') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
                         <span class="text-[10px] text-slate-400 shrink-0">s/d</span>
-                        <input type="date" id="perOrangTglEnd" value="{{ $perOrangEnd ?? now()->format('Y-m-d') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-rose-400 focus:outline-none">
-                        <button type="button" onclick="applyPerOrangFilter()" class="shrink-0 bg-rose-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-rose-600 transition">Terapkan</button>
+                        <input type="date" id="perOrangTglEnd" value="{{ $perOrangEnd ?? now()->format('Y-m-d') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
+                        <button type="button" onclick="applyPerOrangFilter()" class="shrink-0 bg-emerald-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-emerald-600 transition">Terapkan</button>
                     </div>
                 </div>
 
@@ -636,7 +636,7 @@
                             <div class="flex items-center gap-2 group cursor-pointer hover:bg-slate-50 p-1 rounded-lg transition-smooth"
                                  onclick="showPerOrangDetail('{{ addslashes($po['nama']) }}', {{ $po['hadir'] }}, {{ $po['masbuq'] }}, {{ $po['izin'] }}, {{ $po['alfa'] }}, {{ $perOrangData['totalJadwal'] }}, '{{ addslashes($po['kamar']) }}')">
                                 <div class="w-28 sm:w-36 shrink-0 text-right">
-                                    <p class="text-[11px] font-semibold text-slate-800 truncate group-hover:text-rose-600 transition-colors">{{ $po['nama'] }}</p>
+                                    <p class="text-[11px] font-semibold text-slate-800 truncate group-hover:text-emerald-600 transition-colors">{{ $po['nama'] }}</p>
                                     <p class="text-[9px] text-slate-400">{{ $po['kamar'] }}</p>
                                 </div>
                                 <div class="flex-1 h-5 bg-slate-100 rounded-full overflow-hidden flex" title="J:{{ $po['hadir'] }} M:{{ $po['masbuq'] }} I:{{ $po['izin'] }} A:{{ $po['alfa'] }}">
@@ -644,13 +644,13 @@
                                         <div class="h-full bg-emerald-500 transition-all duration-500" style="width: {{ $pHadir }}%"></div>
                                     @endif
                                     @if($po['masbuq'] > 0)
-                                        <div class="h-full bg-orange-400 transition-all duration-500" style="width: {{ $pMasbuq }}%"></div>
+                                        <div class="h-full transition-all duration-500" style="background-color: #fb923c; width: {{ $pMasbuq }}%"></div>
                                     @endif
                                     @if($po['izin'] > 0)
                                         <div class="h-full bg-blue-500 transition-all duration-500" style="width: {{ $pIzin }}%"></div>
                                     @endif
                                     @if($po['alfa'] > 0)
-                                        <div class="h-full bg-slate-400 transition-all duration-500" style="width: {{ $pAlfa }}%"></div>
+                                        <div class="h-full transition-all duration-500" style="background-color: #94a3b8; width: {{ $pAlfa }}%"></div>
                                     @endif
                                 </div>
                                 <span class="w-10 text-right text-[11px] font-bold text-slate-700 shrink-0">{{ $po['persentase'] }}%</span>
@@ -1236,6 +1236,145 @@
         } else if (currentChartFilter === 'bulan') {
             document.getElementById('bulanRange').classList.remove('hidden');
             document.getElementById('bulanRange').classList.add('flex');
+        }
+
+        // === PER ORANG FILTER ===
+        let currentPerOrangFilter = '{{ $perOrangPeriode }}';
+
+        function switchPerOrangFilter(filter, e) {
+            currentPerOrangFilter = filter;
+            document.querySelectorAll('.perorang-filter-tab').forEach(t => t.classList.remove('active'));
+            e.target.classList.add('active');
+            document.getElementById('perOrangMingguRange').classList.toggle('hidden', filter !== 'minggu');
+            document.getElementById('perOrangMingguRange').classList.toggle('flex', filter === 'minggu');
+            document.getElementById('perOrangBulanRange').classList.toggle('hidden', filter !== 'bulan');
+            document.getElementById('perOrangBulanRange').classList.toggle('flex', filter === 'bulan');
+            document.getElementById('perOrangTanggalRange').classList.toggle('hidden', filter !== 'tanggal');
+            document.getElementById('perOrangTanggalRange').classList.toggle('flex', filter === 'tanggal');
+        }
+
+        function applyPerOrangFilter() {
+            const params = new URLSearchParams(window.location.search);
+            params.set('per_orang_periode', currentPerOrangFilter);
+
+            const waktu = document.getElementById('perOrangWaktu').value;
+            if (waktu && waktu !== 'all') params.set('per_orang_waktu', waktu);
+            else params.delete('per_orang_waktu');
+
+            if (currentPerOrangFilter === 'minggu') {
+                const s = document.getElementById('perOrangStartDate').value;
+                const e = document.getElementById('perOrangEndDate').value;
+                if (s) params.set('per_orang_start', s);
+                if (e) params.set('per_orang_end', e);
+            } else if (currentPerOrangFilter === 'bulan') {
+                const s = document.getElementById('perOrangStartMonth').value;
+                const e = document.getElementById('perOrangEndMonth').value;
+                if (s) params.set('per_orang_start', s);
+                if (e) params.set('per_orang_end', e);
+            } else if (currentPerOrangFilter === 'tanggal') {
+                const s = document.getElementById('perOrangTglStart').value;
+                const e = document.getElementById('perOrangTglEnd').value;
+                if (s) params.set('per_orang_start', s);
+                if (e) params.set('per_orang_end', e);
+            }
+
+            window.location.href = '?' + params.toString();
+        }
+
+        if (currentPerOrangFilter === 'minggu') {
+            document.getElementById('perOrangMingguRange').classList.remove('hidden');
+            document.getElementById('perOrangMingguRange').classList.add('flex');
+        } else if (currentPerOrangFilter === 'bulan') {
+            document.getElementById('perOrangBulanRange').classList.remove('hidden');
+            document.getElementById('perOrangBulanRange').classList.add('flex');
+        } else if (currentPerOrangFilter === 'tanggal') {
+            document.getElementById('perOrangTanggalRange').classList.remove('hidden');
+            document.getElementById('perOrangTanggalRange').classList.add('flex');
+        }
+
+        function showPerOrangDetail(nama, hadir, masbuq, izin, alfa, totalJadwal, kamar) {
+            const totalIsi = hadir + masbuq + izin + alfa;
+            const pctJadwal = totalJadwal > 0 ? Math.round((hadir / totalJadwal) * 100) : 0;
+            const pctIsi = totalIsi > 0 ? Math.round((hadir / totalIsi) * 100) : 0;
+
+            const content = `
+                <div class="space-y-4">
+                    <div class="text-center p-4 bg-gradient-to-br from-rose-50 to-pink-50 rounded-xl">
+                        <p class="text-sm font-semibold text-slate-800">${nama}</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5">${kamar}</p>
+                        <p class="text-3xl font-bold text-emerald-600 mt-2">${pctJadwal}%</p>
+                        <p class="text-xs text-slate-500 mt-1">Persentase berjamaah dari total jadwal (${totalJadwal})</p>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-2">
+                        <div class="bg-emerald-50 p-3 rounded-xl text-center">
+                            <p class="text-xl font-bold text-emerald-600">${hadir}</p>
+                            <p class="text-[10px] text-slate-500">Jamaah</p>
+                        </div>
+                        <div class="bg-orange-50 p-3 rounded-xl text-center">
+                            <p class="text-xl font-bold text-orange-500">${masbuq}</p>
+                            <p class="text-[10px] text-slate-500">Masbuq</p>
+                        </div>
+                        <div class="bg-blue-50 p-3 rounded-xl text-center">
+                            <p class="text-xl font-bold text-blue-600">${izin}</p>
+                            <p class="text-[10px] text-slate-500">Izin</p>
+                        </div>
+                        <div class="bg-slate-100 p-3 rounded-xl text-center">
+                            <p class="text-xl font-bold text-slate-500">${alfa}</p>
+                            <p class="text-[10px] text-slate-500">Alfa</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] text-slate-500 w-20">Jamaah</span>
+                            <div class="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
+                                <div class="h-full rounded-full bg-emerald-500 flex items-center pl-2" style="width: ${Math.max(hadir / Math.max(1, totalJadwal) * 100, 2)}%">
+                                    ${hadir / Math.max(1, totalJadwal) * 100 > 15 ? '<span class="text-[9px] font-bold text-white">' + hadir + '</span>' : ''}
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-slate-600 w-10 text-right">${Math.round(hadir / Math.max(1, totalJadwal) * 100)}%</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] text-slate-500 w-20">Masbuq</span>
+                            <div class="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
+                                <div class="h-full rounded-full bg-orange-400 flex items-center pl-2" style="width: ${Math.max(masbuq / Math.max(1, totalJadwal) * 100, 2)}%">
+                                    ${masbuq / Math.max(1, totalJadwal) * 100 > 15 ? '<span class="text-[9px] font-bold text-white">' + masbuq + '</span>' : ''}
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-slate-600 w-10 text-right">${Math.round(masbuq / Math.max(1, totalJadwal) * 100)}%</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] text-slate-500 w-20">Izin</span>
+                            <div class="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
+                                <div class="h-full rounded-full bg-blue-500 flex items-center pl-2" style="width: ${Math.max(izin / Math.max(1, totalJadwal) * 100, 2)}%">
+                                    ${izin / Math.max(1, totalJadwal) * 100 > 15 ? '<span class="text-[9px] font-bold text-white">' + izin + '</span>' : ''}
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-slate-600 w-10 text-right">${Math.round(izin / Math.max(1, totalJadwal) * 100)}%</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] text-slate-500 w-20">Alfa</span>
+                            <div class="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
+                                <div class="h-full rounded-full bg-slate-400 flex items-center pl-2" style="width: ${Math.max(alfa / Math.max(1, totalJadwal) * 100, 2)}%">
+                                    ${alfa / Math.max(1, totalJadwal) * 100 > 15 ? '<span class="text-[9px] font-bold text-white">' + alfa + '</span>' : ''}
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-slate-600 w-10 text-right">${Math.round(alfa / Math.max(1, totalJadwal) * 100)}%</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-[11px] text-slate-600 leading-relaxed">
+                        <span class="font-bold text-slate-800">Ringkasan:</span>
+                        Dari <span class="font-bold">${totalJadwal}</span> jadwal sholat, <span class="font-bold text-emerald-600">${hadir}</span> berjamaah,
+                        <span class="font-bold text-orange-500">${masbuq}</span> masbuq,
+                        <span class="font-bold text-blue-600">${izin}</span> izin, dan
+                        <span class="font-bold text-slate-500">${alfa}</span> alfa.
+                        Dari yang sudah diisi (${totalIsi} kali), tingkat kehadiran <span class="font-bold text-emerald-600">${pctIsi}%</span>.
+                    </div>
+                </div>
+            `;
+            openModal('Detail: ' + nama, content);
         }
     </script>
 
