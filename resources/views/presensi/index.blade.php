@@ -353,6 +353,13 @@
                             <line x1="{{ $trenLeft }}" y1="{{ $trenTop }}" x2="{{ $trenRight }}" y2="{{ $trenTop }}"/>
                         </g>
 
+                        <!-- Vertical grid lines -->
+                        <g stroke="#e2e8f0" stroke-width="0.5" opacity="0.5">
+                            @foreach ($trenPoints as $p)
+                                <line x1="{{ $p['x'] }}" y1="{{ $trenTop }}" x2="{{ $p['x'] }}" y2="{{ $trenBottom }}"/>
+                            @endforeach
+                        </g>
+
                         <!-- Y-axis labels -->
                         <g fill="#94a3b8" font-family="system-ui, sans-serif">
                             <text x="36" y="{{ $trenBottom + 4 }}" text-anchor="end">0%</text>
@@ -454,6 +461,7 @@
                             <line x1="54" y1="105" x2="600" y2="105"/>
                             <line x1="54" y1="78" x2="600" y2="78"/>
                             <line x1="54" y1="50" x2="600" y2="50"/>
+                            <line x1="54" y1="23" x2="600" y2="23"/>
                         </g>
 
                         <!-- Vertical grid lines -->
