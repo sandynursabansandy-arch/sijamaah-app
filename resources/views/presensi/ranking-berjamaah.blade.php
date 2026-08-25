@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ranking Berjamaah â€” SIJAMAAH</title>
-    <link rel="stylesheet" href="{{ asset('custom-assets/app.css') }}?v={{ filemtime(public_path('custom-assets/app.css')) }}">
+    <title>Ranking Berjamaah Ã¢â‚¬â€ SIJAMAAH</title>
+    @vite(['resources/css/app.css'])
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -62,7 +62,7 @@
 
         .hadir-bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, #10b981, #059669); transition: width 0.6s ease-out; }
 
-        /* ---- Podium Section — Stepped Heights (Real Podium) ---- */
+        /* ---- Podium Section â€” Stepped Heights (Real Podium) ---- */
         .podium-wrapper {
             display: flex; flex-direction: row; align-items: flex-end;
             justify-content: center; gap: 8px; max-width: 480px;
@@ -78,7 +78,7 @@
         }
         .podium-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
 
-        /* Fixed Heights — Stepped Podium */
+        /* Fixed Heights â€” Stepped Podium */
         .podium-1 { height: 250px; }
         .podium-2 { height: 215px; }
         .podium-3 { height: 180px; }

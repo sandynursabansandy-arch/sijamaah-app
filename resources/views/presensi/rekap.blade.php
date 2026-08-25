@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekap Presensi â€” SIJAMAAH</title>
-    <link rel="stylesheet" href="{{ asset('custom-assets/app.css') }}?v={{ filemtime(public_path('custom-assets/app.css')) }}">
+    <title>Rekap Presensi Ã¢â‚¬â€ SIJAMAAH</title>
+    @vite(['resources/css/app.css'])
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -339,7 +339,7 @@
         <!-- View-Only Banner -->
         <div id="viewOnlyBanner" class="view-only-banner no-print">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-            <span id="viewOnlyBannerText">Mode Lihat Saja â€” Klik gembok untuk mengubah presensi</span>
+            <span id="viewOnlyBannerText">Mode Lihat Saja Ã¢â‚¬â€ Klik gembok untuk mengubah presensi</span>
         </div>
 
         <!-- Santri Table -->
@@ -751,7 +751,7 @@
                     <div class="max-h-64 overflow-y-auto pr-1">${rows}</div>
                 </div>
             `;
-            openModal('Rincian ' + nama + ' â€” ' + waktu, content);
+            openModal('Rincian ' + nama + ' Ã¢â‚¬â€ ' + waktu, content);
         }
     </script>
 
@@ -911,7 +911,7 @@
         var tableWrap = document.querySelector('.presensi-scroll')?.closest('.bg-white');
         if (!canManageRekap) {
             if (document.getElementById('viewOnlyBannerText')) {
-                document.getElementById('viewOnlyBannerText').textContent = 'Mode Lihat Saja â€” hanya admin/musyrif yang dapat mengubah presensi';
+                document.getElementById('viewOnlyBannerText').textContent = 'Mode Lihat Saja Ã¢â‚¬â€ hanya admin/musyrif yang dapat mengubah presensi';
             }
             if (banner) banner.classList.add('show');
             if (tableWrap) tableWrap.classList.add('is-viewonly');

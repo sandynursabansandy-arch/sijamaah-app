@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Rekap Berjamaah â€” SIJAMAAH</title>
-    <link rel="stylesheet" href="{{ asset('custom-assets/app.css') }}?v={{ filemtime(public_path('custom-assets/app.css')) }}">
+    <title>Rekap Berjamaah Ã¢â‚¬â€ SIJAMAAH</title>
+    @vite(['resources/css/app.css'])
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -242,7 +242,7 @@
             </div>
             <div id="viewOnlyBannerBJ" class="view-only-banner show">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                <span id="viewOnlyBannerBJText">@if(auth()->user()?->canManagePresensi())Mode Lihat Saja â€” klik gembok untuk membuka pengubahan presensi@else Mode Lihat Saja â€” hanya admin/musyrif yang dapat mengubah presensi @endif</span>
+                <span id="viewOnlyBannerBJText">@if(auth()->user()?->canManagePresensi())Mode Lihat Saja Ã¢â‚¬â€ klik gembok untuk membuka pengubahan presensi@else Mode Lihat Saja Ã¢â‚¬â€ hanya admin/musyrif yang dapat mengubah presensi @endif</span>
             </div>
 
             <!-- Table -->
@@ -278,7 +278,7 @@
                                             <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-blue-400 flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">{{ substr($santri['nama'], 0, 1) }}</div>
                                             <div class="min-w-0">
                                                 <p class="font-semibold text-slate-900 truncate text-[12px]">{{ $santri['nama'] }}</p>
-                                                <p class="text-[10px] text-slate-400 truncate">{{ $santri['kamar'] }}{{ $santri['jabatan'] ? ' Â· ' . $santri['jabatan'] : '' }}</p>
+                                                <p class="text-[10px] text-slate-400 truncate">{{ $santri['kamar'] }}{{ $santri['jabatan'] ? ' Ã‚Â· ' . $santri['jabatan'] : '' }}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -436,7 +436,7 @@
         var pendingChangesFinal = [];
 
         var CHECK_SVG = '<svg class="w-[11px] h-[11px]" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
-        var STATUS_OPTIONS = [['Jamaah', 'âœ“ Berjamaah'], ['Masbuq', 'M Masbuq'], ['Izin', 'I Izin'], ['Alfa', 'A Alfa'], ['-', 'â€” Kosong']];
+        var STATUS_OPTIONS = [['Jamaah', 'Ã¢Å“â€œ Berjamaah'], ['Masbuq', 'M Masbuq'], ['Izin', 'I Izin'], ['Alfa', 'A Alfa'], ['-', 'Ã¢â‚¬â€ Kosong']];
         var STATUS_LABEL = { 'Jamaah': 'Berjamaah', 'Masbuq': 'Masbuq', 'Izin': 'Izin', 'Alfa': 'Alfa', '-': 'Kosong' };
 
         function badgeHtml(st) {

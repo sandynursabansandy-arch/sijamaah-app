@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Input Cepat Presensi</title>
-    <link rel="stylesheet" href="{{ asset('custom-assets/app.css') }}?v={{ filemtime(public_path('custom-assets/app.css')) }}">
+    @vite(['resources/css/app.css'])
     <style>
         .status-btn { transition: all .15s ease; }
         .status-btn:active { transform: scale(0.92); }
@@ -209,7 +209,7 @@
                 return;
             }
             document.getElementById('confirmDetail').textContent =
-                `${Object.keys(sel).length} santri • ${document.querySelector('[name=waktu_sholat]').value}, ${document.querySelector('[name=tanggal]').value}`;
+                `${Object.keys(sel).length} santri â€¢ ${document.querySelector('[name=waktu_sholat]').value}, ${document.querySelector('[name=tanggal]').value}`;
             const hidden = document.getElementById('hiddenStatuses');
             hidden.innerHTML = '';
             Object.entries(sel).forEach(([id, status]) => {

@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Presensi Sholat Santri</title>
-    <link rel="stylesheet" href="{{ asset('custom-assets/app.css') }}?v={{ filemtime(public_path('custom-assets/app.css')) }}">
+    @vite(['resources/css/app.css'])
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -396,7 +396,7 @@
                         @foreach ($trenPoints as $i => $p)
                             <circle cx="{{ $p['x'] }}" cy="{{ $p['y'] }}" r="3.5" fill="white" stroke="#2563eb" stroke-width="2"
                                     class="chart-clickable" onclick="showTrenDetail({{ $i }})">
-                                <title>{{ $p['label'] }}: {{ $p['pct'] }}% â€” klik untuk detail</title>
+                                <title>{{ $p['label'] }}: {{ $p['pct'] }}% Ã¢â‚¬â€ klik untuk detail</title>
                             </circle>
                             <!-- Value label -->
                             <text x="{{ $p['x'] }}" y="{{ $p['y'] - 11 }}" text-anchor="middle" fill="#2563eb" class="chart-val">{{ $p['pct'] }}%</text>
@@ -894,7 +894,7 @@
                 tglArr.sort((a, b) => a.y - b.y || a.m - b.m || a.d - b.d);
                 const dateStr = tglArr.map(t => t.d + ' ' + months[t.m - 1]).join(', ');
                 const yearStr = tglArr.length > 0 ? ' ' + tglArr[0].y : '';
-                return `<div class="text-[11px] py-0.5"><span class="font-medium">${nama}</span><span class="opacity-60 ml-1">Â· ${dateStr}${yearStr}</span></div>`;
+                return `<div class="text-[11px] py-0.5"><span class="font-medium">${nama}</span><span class="opacity-60 ml-1">Ã‚Â· ${dateStr}${yearStr}</span></div>`;
             }).join('');
         }
 
@@ -1156,7 +1156,7 @@
                     <div class="max-h-64 overflow-y-auto pr-1">${rows}</div>
                 </div>
             `;
-            openModal('Rincian ' + nama + ' â€” ' + waktu, content);
+            openModal('Rincian ' + nama + ' Ã¢â‚¬â€ ' + waktu, content);
         }
 
         function showSantriRating(nama, rating, period) {

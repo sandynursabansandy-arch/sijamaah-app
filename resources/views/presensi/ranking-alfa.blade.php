@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ranking Alfa â€” SIJAMAAH</title>
-    <link rel="stylesheet" href="{{ asset('custom-assets/app.css') }}?v={{ filemtime(public_path('custom-assets/app.css')) }}">
+    <title>Ranking Alfa Ã¢â‚¬â€ SIJAMAAH</title>
+    @vite(['resources/css/app.css'])
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -64,7 +64,7 @@
 
         .alfa-bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, #ef4444, #dc2626); transition: width 0.6s ease-out; }
 
-        /* ---- Podium Section — Stepped Heights (Real Podium) ---- */
+        /* ---- Podium Section â€” Stepped Heights (Real Podium) ---- */
         .podium-wrapper {
             display: flex; flex-direction: row; align-items: flex-end;
             justify-content: center; gap: 8px; max-width: 480px;
@@ -80,7 +80,7 @@
         }
         .podium-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
 
-        /* Fixed Heights — Stepped Podium */
+        /* Fixed Heights â€” Stepped Podium */
         .podium-1 { height: 250px; }
         .podium-2 { height: 215px; }
         .podium-3 { height: 180px; }
@@ -342,7 +342,7 @@
                                     <td class="px-3 py-3 text-center">
                                         @php
                                             $poinFlag = $item['poin'] >= 25;
-                                            $poinTitle = "Alfa {$item['alfa_count']}Ã—5 + Masbuq {$item['masbuq_count']}Ã—2 + Izin {$item['izin_count']}Ã—1 = {$item['poin']} poin";
+                                            $poinTitle = "Alfa {$item['alfa_count']}Ãƒâ€”5 + Masbuq {$item['masbuq_count']}Ãƒâ€”2 + Izin {$item['izin_count']}Ãƒâ€”1 = {$item['poin']} poin";
                                         @endphp
                                         <span title="{{ $poinTitle }}" class="inline-flex items-center gap-1 justify-center min-w-[44px] px-2 py-0.5 rounded-full text-sm font-extrabold {{ $poinFlag ? 'bg-red-600 text-white ring-2 ring-red-300' : ($item['poin'] > 0 ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-400') }}">
                                             {{ $item['poin'] }}
