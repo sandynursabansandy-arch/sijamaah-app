@@ -140,36 +140,51 @@
             @endphp
             <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-6 animate-slide-up items-end">
                 <!-- 2nd Place -->
-                <div class="podium-card podium-2" style="margin-top: 12px;">
-                    <div class="rank-medal rank-2 mx-auto mb-1.5" style="width:26px;height:26px;font-size:12px;">2</div>
-                    <div class="podium-avatar mx-auto" style="background: linear-gradient(135deg, #9ca3af, #6b7280); width:40px; height:40px; font-size:16px;">{{ substr($second['nama'], 0, 1) }}</div>
-                    <p class="font-bold text-slate-800 text-[11px] sm:text-sm truncate mt-1.5">{{ $second['nama'] }}</p>
-                    <p class="text-[8px] sm:text-[10px] text-slate-400 mb-1.5">{{ $second['kamar'] }}</p>
-                    <div class="bg-red-50 rounded-lg py-1 sm:py-1.5 px-1.5 sm:px-2 border border-red-200">
-                        <p class="text-base sm:text-lg font-extrabold text-red-600">{{ $second['alfa_count'] }}</p>
-                        <p class="text-[8px] sm:text-[9px] text-slate-500 uppercase font-semibold">Kali Alfa</p>
+                <div class="podium-card podium-2 relative overflow-hidden" style="margin-top: 12px;">
+                    <div class="p-2 sm:p-3">
+                        <div class="rank-medal rank-2 mx-auto mb-1.5" style="width:26px;height:26px;font-size:12px;">2</div>
+                        <div class="podium-avatar mx-auto" style="background: linear-gradient(135deg, #9ca3af, #6b7280); width:40px; height:40px; font-size:16px;">{{ substr($second['nama'], 0, 1) }}</div>
+                        <p class="font-bold text-slate-800 text-[11px] sm:text-sm truncate mt-1.5 text-center">{{ $second['nama'] }}</p>
+                        <p class="text-[8px] sm:text-[10px] text-slate-400 mb-1.5 text-center">{{ $second['kamar'] }}</p>
+                        <div class="bg-red-50 rounded-lg py-1 sm:py-1.5 px-1.5 sm:px-2 border border-red-200">
+                            <p class="text-base sm:text-lg font-extrabold text-red-600 text-center">{{ $second['alfa_count'] }}</p>
+                            <p class="text-[8px] sm:text-[9px] text-slate-500 uppercase font-semibold text-center">Kali Alfa</p>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-t from-slate-400 to-slate-300 py-1.5 text-center">
+                        <span class="text-white font-extrabold text-sm sm:text-base">2</span>
                     </div>
                 </div>
                 <!-- 1st Place -->
-                <div class="podium-card podium-1">
-                    <div class="rank-medal rank-1 mx-auto mb-1.5" style="width:30px;height:30px;font-size:14px;">1</div>
-                    <div class="podium-avatar mx-auto" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); width:48px; height:48px; font-size:20px;">{{ substr($first['nama'], 0, 1) }}</div>
-                    <p class="font-bold text-slate-800 text-[11px] sm:text-sm truncate mt-1.5">{{ $first['nama'] }}</p>
-                    <p class="text-[8px] sm:text-[10px] text-slate-400 mb-1.5">{{ $first['kamar'] }}</p>
-                    <div class="bg-red-50 rounded-lg py-1 sm:py-1.5 px-1.5 sm:px-2 border border-red-300">
-                        <p class="text-lg sm:text-xl font-extrabold text-red-600">{{ $first['alfa_count'] }}</p>
-                        <p class="text-[8px] sm:text-[9px] text-slate-500 uppercase font-semibold">Kali Alfa</p>
+                <div class="podium-card podium-1 relative overflow-hidden">
+                    <div class="p-2 sm:p-3">
+                        <div class="rank-medal rank-1 mx-auto mb-1.5" style="width:30px;height:30px;font-size:14px;">1</div>
+                        <div class="podium-avatar mx-auto" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); width:48px; height:48px; font-size:20px;">{{ substr($first['nama'], 0, 1) }}</div>
+                        <p class="font-bold text-slate-800 text-[11px] sm:text-sm truncate mt-1.5 text-center">{{ $first['nama'] }}</p>
+                        <p class="text-[8px] sm:text-[10px] text-slate-400 mb-1.5 text-center">{{ $first['kamar'] }}</p>
+                        <div class="bg-red-50 rounded-lg py-1 sm:py-1.5 px-1.5 sm:px-2 border border-red-300">
+                            <p class="text-lg sm:text-xl font-extrabold text-red-600 text-center">{{ $first['alfa_count'] }}</p>
+                            <p class="text-[8px] sm:text-[9px] text-slate-500 uppercase font-semibold text-center">Kali Alfa</p>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-t from-red-500 to-red-400 py-2 text-center">
+                        <span class="text-white font-extrabold text-lg sm:text-xl">1</span>
                     </div>
                 </div>
                 <!-- 3rd Place -->
-                <div class="podium-card podium-3" style="margin-top: 18px;">
-                    <div class="rank-medal rank-3 mx-auto mb-1.5" style="width:26px;height:26px;font-size:12px;">3</div>
-                    <div class="podium-avatar mx-auto" style="background: linear-gradient(135deg, #f59e0b, #d97706); width:40px; height:40px; font-size:16px;">{{ substr($third['nama'], 0, 1) }}</div>
-                    <p class="font-bold text-slate-800 text-[11px] sm:text-sm truncate mt-1.5">{{ $third['nama'] }}</p>
-                    <p class="text-[8px] sm:text-[10px] text-slate-400 mb-1.5">{{ $third['kamar'] }}</p>
-                    <div class="bg-red-50 rounded-lg py-1 sm:py-1.5 px-1.5 sm:px-2 border border-orange-200">
-                        <p class="text-base sm:text-lg font-extrabold text-red-600">{{ $third['alfa_count'] }}</p>
-                        <p class="text-[8px] sm:text-[9px] text-slate-500 uppercase font-semibold">Kali Alfa</p>
+                <div class="podium-card podium-3 relative overflow-hidden" style="margin-top: 18px;">
+                    <div class="p-2 sm:p-3">
+                        <div class="rank-medal rank-3 mx-auto mb-1.5" style="width:26px;height:26px;font-size:12px;">3</div>
+                        <div class="podium-avatar mx-auto" style="background: linear-gradient(135deg, #f59e0b, #d97706); width:40px; height:40px; font-size:16px;">{{ substr($third['nama'], 0, 1) }}</div>
+                        <p class="font-bold text-slate-800 text-[11px] sm:text-sm truncate mt-1.5 text-center">{{ $third['nama'] }}</p>
+                        <p class="text-[8px] sm:text-[10px] text-slate-400 mb-1.5 text-center">{{ $third['kamar'] }}</p>
+                        <div class="bg-red-50 rounded-lg py-1 sm:py-1.5 px-1.5 sm:px-2 border border-orange-200">
+                            <p class="text-base sm:text-lg font-extrabold text-red-600 text-center">{{ $third['alfa_count'] }}</p>
+                            <p class="text-[8px] sm:text-[9px] text-slate-500 uppercase font-semibold text-center">Kali Alfa</p>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-t from-orange-400 to-orange-300 py-1 text-center">
+                        <span class="text-white font-extrabold text-sm">3</span>
                     </div>
                 </div>
             </div>
