@@ -16,7 +16,6 @@
 }
 .line-chart .chart-val,
 .tren-chart .chart-val {
-    font-size: 11px;
     font-weight: 700;
 }
 @media (max-width: 1023px) {
@@ -26,12 +25,10 @@
     }
 }
 @media (max-width: 639px) {
-    /* Persentase disamakan dengan ukuran keterangan tanggal/bulan */
     .line-chart text,
     .tren-chart text {
         font-size: 14px;
     }
-    /* Di HP, tampilkan nilai hanya di setiap titik ke-3 agar tidak bertumpuk */
     #lineChart .chart-pt:not(:nth-child(3n)) .chart-val {
         display: none;
     }
