@@ -399,7 +399,7 @@
                                 <title>{{ $p['label'] }}: {{ $p['pct'] }}% â€” klik untuk detail</title>
                             </circle>
                             <!-- Value label -->
-                            <text x="{{ $p['x'] }}" y="{{ $p['y'] - 12 }}" text-anchor="middle" fill="#2563eb" font-size="13" font-weight="700" class="chart-val">{{ $p['pct'] }}%</text>
+                            <text x="{{ $p['x'] }}" y="{{ $p['y'] - 12 }}" text-anchor="middle" fill="#2563eb" font-size="11" font-weight="700" class="chart-val">{{ $p['pct'] }}%</text>
                         @endforeach
 
                         <!-- X-axis labels -->
@@ -515,7 +515,7 @@
                                     <title>{{ $chartDetailLabels[$index] ?? $chartLabels[$index] }}: {{ $chartValues[$index] }}%</title>
                                 </circle>
                                 <!-- Value label -->
-                                <text x="{{ $point['x'] }}" y="{{ max($point['y'] - 12, 24) }}" text-anchor="middle" fill="#059669" font-size="13" font-weight="700" class="chart-val"
+                                <text x="{{ $point['x'] }}" y="{{ max($point['y'] - 12, 24) }}" text-anchor="middle" fill="#059669" font-size="11" font-weight="700" class="chart-val"
                                       style="animation: countUp 0.4s ease-out {{ $index * 0.08 + 0.1 }}s both;">{{ $chartValues[$index] }}%</text>
                             </g>
                         @endforeach
