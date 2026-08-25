@@ -209,19 +209,19 @@
             @endphp
 
             <!-- Grafik Dashboard -->
-            <div class="mt-8 space-y-4 animate-slide-up">
+            <div class="mt-8 space-y-3 animate-slide-up">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <!-- Rating Tertinggi -->
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3">
                         <div class="flex items-center gap-2 mb-2">
-                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md">
-                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md">
+                                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="text-[14px] font-bold text-slate-800">Rating Tertinggi</h3>
-                                <p class="text-[11px] text-slate-400">dari tanggal {{ $ratingStartDate }}-{{ $ratingEndDate }} {{ $ratingEndMonth }} &middot; {{ $santris->count() }} santri</p>
+                                <h3 class="text-[13px] font-bold text-slate-800">Rating Tertinggi</h3>
+                                <p class="text-[10px] text-slate-400">dari tanggal {{ $ratingStartDate }}-{{ $ratingEndDate }} {{ $ratingEndMonth }} &middot; {{ $santris->count() }} santri</p>
                             </div>
                         </div>
 
@@ -251,15 +251,15 @@
                     <!-- Status Kehadiran Donut -->
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3">
                         <div class="flex items-center gap-2 mb-1">
-                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-md">
-                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-md">
+                                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/>
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="text-[14px] font-bold text-slate-800">Status Kehadiran</h3>
-                                <p class="text-[11px] text-slate-400">{{ $waktu }} &middot; {{ \Carbon\Carbon::parse($tanggal)->translatedFormat('d M Y') }}</p>
+                                <h3 class="text-[13px] font-bold text-slate-800">Status Kehadiran</h3>
+                                <p class="text-[10px] text-slate-400">{{ $waktu }} &middot; {{ \Carbon\Carbon::parse($tanggal)->translatedFormat('d M Y') }}</p>
                             </div>
                         </div>
 
@@ -330,7 +330,7 @@
                 </div>
 
                 <!-- Tren Kehadiran 6 Bulan -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
                     <div class="flex items-center gap-3 mb-3">
                         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center shadow-md">
                             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
@@ -343,7 +343,7 @@
                     @php
                         $trenVals = collect($trenBulanan)->pluck('pct')->all();
                         $trenMax = max(100, max($trenVals ?: [100]));
-                        $trenLeft = 54; $trenRight = 600; $trenTop = 30; $trenBottom = 132;
+                        $trenLeft = 54; $trenRight = 600; $trenTop = 34; $trenBottom = 132;
                         $trenStep = count($trenBulanan) > 1 ? ($trenRight - $trenLeft) / (count($trenBulanan) - 1) : 0;
                         $trenPoints = [];
                         foreach ($trenBulanan as $i => $t) {
@@ -372,7 +372,7 @@
                         </g>
 
                         <!-- Y-axis labels -->
-                        <g fill="#94a3b8" font-family="'Instrument Sans', ui-sans-serif, system-ui, sans-serif" font-size="12">
+                        <g fill="#94a3b8" font-family="system-ui, sans-serif">
                             <text x="36" y="{{ $trenBottom + 4 }}" text-anchor="end">0%</text>
                             <text x="36" y="{{ round($trenBottom - (25 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">25%</text>
                             <text x="36" y="{{ round($trenBottom - (50 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">50%</text>
@@ -394,16 +394,16 @@
 
                         <!-- Data points -->
                         @foreach ($trenPoints as $i => $p)
-                            <circle cx="{{ $p['x'] }}" cy="{{ $p['y'] }}" r="5" fill="white" stroke="#2563eb" stroke-width="2.5"
+                            <circle cx="{{ $p['x'] }}" cy="{{ $p['y'] }}" r="3.5" fill="white" stroke="#2563eb" stroke-width="2"
                                     class="chart-clickable" onclick="showTrenDetail({{ $i }})">
                                 <title>{{ $p['label'] }}: {{ $p['pct'] }}% â€” klik untuk detail</title>
                             </circle>
                             <!-- Value label -->
-                            <text x="{{ $p['x'] }}" y="{{ $p['y'] - 12 }}" text-anchor="middle" fill="#2563eb" font-size="11" font-weight="700" class="chart-val">{{ $p['pct'] }}%</text>
+                            <text x="{{ $p['x'] }}" y="{{ $p['y'] - 11 }}" text-anchor="middle" fill="#2563eb" class="chart-val">{{ $p['pct'] }}%</text>
                         @endforeach
 
                         <!-- X-axis labels -->
-                        <g fill="#64748b" font-family="'Instrument Sans', ui-sans-serif, system-ui, sans-serif" font-size="12">
+                        <g fill="#64748b" font-family="system-ui, sans-serif">
                             @foreach ($trenPoints as $p)
                                 <text x="{{ $p['x'] }}" y="160" text-anchor="middle">{{ $p['label'] }}</text>
                             @endforeach
@@ -412,7 +412,7 @@
                 </div>
 
                 <!-- Kehadiran Chart + Filter Tabs -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
                     <div class="mb-3">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
@@ -448,7 +448,7 @@
                     @php
                         $chartWidth = 546;
                         $chartLeft = 54;
-                        $chartTop = 20;
+                        $chartTop = 23;
                         $chartBottom = 132;
                         $chartHeight = $chartBottom - $chartTop;
                         $step = $numLabels > 1 ? $chartWidth / ($numLabels - 1) : 0;
@@ -472,7 +472,7 @@
                             <line x1="54" y1="105" x2="600" y2="105"/>
                             <line x1="54" y1="78" x2="600" y2="78"/>
                             <line x1="54" y1="50" x2="600" y2="50"/>
-                            <line x1="54" y1="20" x2="600" y2="20"/>
+                            <line x1="54" y1="23" x2="600" y2="23"/>
                         </g>
 
                         <!-- Vertical grid lines -->
@@ -486,12 +486,12 @@
                         </g>
 
                         <!-- Y-axis labels -->
-                        <g fill="#94a3b8" font-family="'Instrument Sans', ui-sans-serif, system-ui, sans-serif" font-size="12">
+                        <g fill="#94a3b8" font-family="system-ui, sans-serif">
                             <text x="36" y="135" text-anchor="end">0%</text>
                             <text x="36" y="108" text-anchor="end">25%</text>
                             <text x="36" y="81" text-anchor="end">50%</text>
                             <text x="36" y="53" text-anchor="end">75%</text>
-                            <text x="36" y="23" text-anchor="end">100%</text>
+                            <text x="36" y="26" text-anchor="end">100%</text>
                         </g>
 
                         <!-- Area fill -->
@@ -509,19 +509,19 @@
                         <!-- Data points -->
                         @foreach ($areaPoints as $index => $point)
                             <g class="chart-pt">
-                                <circle cx="{{ $point['x'] }}" cy="{{ $point['y'] }}" r="5" fill="white" stroke="#10b981" stroke-width="2.5"
+                                <circle cx="{{ $point['x'] }}" cy="{{ $point['y'] }}" r="3.5" fill="white" stroke="#10b981" stroke-width="2"
                                         class="chart-clickable" onclick="showLineChartDetail({{ $index }})"
                                         style="animation: countUp 0.4s ease-out {{ $index * 0.08 }}s both;">
                                     <title>{{ $chartDetailLabels[$index] ?? $chartLabels[$index] }}: {{ $chartValues[$index] }}%</title>
                                 </circle>
                                 <!-- Value label -->
-                                <text x="{{ $point['x'] }}" y="{{ max($point['y'] - 12, 24) }}" text-anchor="middle" fill="#059669" font-size="11" font-weight="700" class="chart-val"
+                                <text x="{{ $point['x'] }}" y="{{ max($point['y'] - 10, 17) }}" text-anchor="middle" fill="#059669" class="chart-val"
                                       style="animation: countUp 0.4s ease-out {{ $index * 0.08 + 0.1 }}s both;">{{ $chartValues[$index] }}%</text>
                             </g>
                         @endforeach
 
                         <!-- X-axis labels -->
-                        <g fill="#64748b" font-family="'Instrument Sans', ui-sans-serif, system-ui, sans-serif" font-size="12">
+                        <g fill="#64748b" font-family="system-ui, sans-serif">
                             @foreach ($chartLabels as $index => $label)
                                 @if($index % $labelStep === 0 || $index === $numLabels - 1)
                                     <text x="{{ $chartLeft + ($index * $step) }}" y="158" text-anchor="middle">{{ $label }}</text>
@@ -532,7 +532,7 @@
                 </div>
 
                 <!-- Hadir per Sholat -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
                     <div class="flex items-center gap-2.5 mb-3">
                         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-md">
                             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
