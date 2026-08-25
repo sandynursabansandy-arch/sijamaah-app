@@ -561,6 +561,108 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Diagram Per Orang: Stacked Bar -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mt-3">
+                <div class="flex items-center gap-2.5 mb-3">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-md">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-[14px] font-bold text-slate-800">Diagram Per Orang</h3>
+                        <p class="text-[11px] text-slate-400">{{ $perOrangData['periodeLabel'] }} &middot; Klik bar untuk detail</p>
+                    </div>
+                </div>
+
+                <!-- Filter: Tab Periode + Waktu Sholat -->
+                <div class="mb-3 pt-2.5 border-t border-slate-100">
+                    <div class="flex flex-wrap items-center gap-2">
+                        @php $poFilters = ['minggu' => 'Per Minggu', 'bulan' => 'Per Bulan', 'tanggal' => 'Per Tanggal']; @endphp
+                        @foreach($poFilters as $key => $label)
+                            <button type="button" class="filter-tab perorang-filter-tab {{ $perOrangPeriode === $key ? 'active' : '' }}" onclick="switchPerOrangFilter('{{ $key }}', event)">{{ $label }}</button>
+                        @endforeach
+                        <select id="perOrangWaktu" onchange="applyPerOrangFilter()" class="ml-2 border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-rose-400 focus:outline-none">
+                            <option value="all" {{ $perOrangWaktu === 'all' ? 'selected' : '' }}>Semua Waktu</option>
+                            @foreach(['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'] as $w)
+                                <option value="{{ $w }}" {{ $perOrangWaktu === $w ? 'selected' : '' }}>{{ $w }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <!-- Date Range Picker -->
+                    <div id="perOrangMingguRange" class="hidden flex-wrap items-center gap-1.5 w-full mt-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
+                        <input type="date" id="perOrangStartDate" value="{{ $perOrangStart ?? now()->startOfWeek(Carbon::MONDAY)->format('Y-m-d') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-rose-400 focus:outline-none">
+                        <span class="text-[10px] text-slate-400 shrink-0">s/d</span>
+                        <input type="date" id="perOrangEndDate" value="{{ $perOrangEnd ?? now()->endOfWeek(Carbon::SUNDAY)->format('Y-m-d') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-rose-400 focus:outline-none">
+                        <button type="button" onclick="applyPerOrangFilter()" class="shrink-0 bg-rose-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-rose-600 transition">Terapkan</button>
+                    </div>
+                    <div id="perOrangBulanRange" class="hidden flex-wrap items-center gap-1.5 w-full mt-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
+                        <input type="month" id="perOrangStartMonth" value="{{ $perOrangStart ?? now()->format('Y-m') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-rose-400 focus:outline-none">
+                        <span class="text-[10px] text-slate-400 shrink-0">s/d</span>
+                        <input type="month" id="perOrangEndMonth" value="{{ $perOrangEnd ?? now()->format('Y-m') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-rose-400 focus:outline-none">
+                        <button type="button" onclick="applyPerOrangFilter()" class="shrink-0 bg-rose-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-rose-600 transition">Terapkan</button>
+                    </div>
+                    <div id="perOrangTanggalRange" class="hidden flex-wrap items-center gap-1.5 w-full mt-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
+                        <input type="date" id="perOrangTglStart" value="{{ $perOrangStart ?? now()->format('Y-m-d') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-rose-400 focus:outline-none">
+                        <span class="text-[10px] text-slate-400 shrink-0">s/d</span>
+                        <input type="date" id="perOrangTglEnd" value="{{ $perOrangEnd ?? now()->format('Y-m-d') }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-rose-400 focus:outline-none">
+                        <button type="button" onclick="applyPerOrangFilter()" class="shrink-0 bg-rose-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-rose-600 transition">Terapkan</button>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="flex flex-wrap items-center gap-3 mb-3 text-[11px]">
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-emerald-500"></span> Jamaah</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-orange-400"></span> Masbuq</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-blue-500"></span> Izin</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-slate-400"></span> Alfa</span>
+                    <span class="ml-auto text-slate-400">Total jadwal: {{ $perOrangData['totalJadwal'] }}</span>
+                </div>
+
+                <!-- Stacked Bars -->
+                @php $poData = $perOrangData['data']; @endphp
+                @if(count($poData) > 0)
+                    <div class="space-y-2" id="perOrangBars">
+                        @foreach($poData as $po)
+                            @php
+                                $totalJ = max(1, $po['total']);
+                                $pHadir = $po['hadir'] / max(1, $perOrangData['totalJadwal']) * 100;
+                                $pMasbuq = $po['masbuq'] / max(1, $perOrangData['totalJadwal']) * 100;
+                                $pIzin = $po['izin'] / max(1, $perOrangData['totalJadwal']) * 100;
+                                $pAlfa = $po['alfa'] / max(1, $perOrangData['totalJadwal']) * 100;
+                                $barTotal = $pHadir + $pMasbuq + $pIzin + $pAlfa;
+                            @endphp
+                            <div class="flex items-center gap-2 group cursor-pointer hover:bg-slate-50 p-1 rounded-lg transition-smooth"
+                                 onclick="showPerOrangDetail('{{ addslashes($po['nama']) }}', {{ $po['hadir'] }}, {{ $po['masbuq'] }}, {{ $po['izin'] }}, {{ $po['alfa'] }}, {{ $perOrangData['totalJadwal'] }}, '{{ addslashes($po['kamar']) }}')">
+                                <div class="w-28 sm:w-36 shrink-0 text-right">
+                                    <p class="text-[11px] font-semibold text-slate-800 truncate group-hover:text-rose-600 transition-colors">{{ $po['nama'] }}</p>
+                                    <p class="text-[9px] text-slate-400">{{ $po['kamar'] }}</p>
+                                </div>
+                                <div class="flex-1 h-5 bg-slate-100 rounded-full overflow-hidden flex" title="J:{{ $po['hadir'] }} M:{{ $po['masbuq'] }} I:{{ $po['izin'] }} A:{{ $po['alfa'] }}">
+                                    @if($po['hadir'] > 0)
+                                        <div class="h-full bg-emerald-500 transition-all duration-500" style="width: {{ $pHadir }}%"></div>
+                                    @endif
+                                    @if($po['masbuq'] > 0)
+                                        <div class="h-full bg-orange-400 transition-all duration-500" style="width: {{ $pMasbuq }}%"></div>
+                                    @endif
+                                    @if($po['izin'] > 0)
+                                        <div class="h-full bg-blue-500 transition-all duration-500" style="width: {{ $pIzin }}%"></div>
+                                    @endif
+                                    @if($po['alfa'] > 0)
+                                        <div class="h-full bg-slate-400 transition-all duration-500" style="width: {{ $pAlfa }}%"></div>
+                                    @endif
+                                </div>
+                                <span class="w-10 text-right text-[11px] font-bold text-slate-700 shrink-0">{{ $po['persentase'] }}%</span>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-8 text-slate-400 text-sm">
+                        <p>Belum ada data presensi untuk periode ini.</p>
+                    </div>
+                @endif
+            </div>
         @else
             <div class="bg-white rounded-xl shadow-lg p-8 text-center animate-slide-up">
                 <h3 class="text-xl font-bold text-slate-800 mb-1">Tidak ada santri</h3>
