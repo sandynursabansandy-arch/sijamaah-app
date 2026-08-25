@@ -10,11 +10,16 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInFast { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes countUp { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
 
         .animate-slide-in { animation: slideIn 0.5s ease-out; }
         .animate-fade-in { animation: fadeIn 0.6s ease-in; }
-        .animate-slide-up { animation: slideUp 0.6s ease-out both; }
+        .animate-slide-up { animation: slideUp 0.6s ease-out; }
+        .animate-fade-in-fast { animation: fadeInFast 0.15s ease-out both; }
         .transition-smooth { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15); }
+        .filter-gradient { background: #ffffff; border: 1px solid #e2e8f0; }
         .alert-animate { animation: slideDown 0.4s ease-out; }
 
         .izin-card { animation: slideUp 0.5s ease-out both; }

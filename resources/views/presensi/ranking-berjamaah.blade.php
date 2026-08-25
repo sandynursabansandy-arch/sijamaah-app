@@ -62,26 +62,26 @@
 
         .hadir-bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, #10b981, #059669); transition: width 0.6s ease-out; }
 
-        /* ---- Podium Section (Mobile-first, Horizontal) ---- */
+        /* ---- Podium Section — Stepped Heights (Real Podium) ---- */
         .podium-wrapper {
-            display: flex; flex-direction: row; align-items: flex-start;
-            justify-content: center; gap: 6px; max-width: 480px;
-            margin: 0 auto 24px; padding: 36px 0 0;
+            display: flex; flex-direction: row; align-items: flex-end;
+            justify-content: center; gap: 8px; max-width: 480px;
+            margin: 0 auto 24px; padding: 20px 0 0;
         }
         .podium-card {
-            flex: 1; min-width: 0; max-width: 140px; min-height: 200px;
+            flex: 1; min-width: 0; max-width: 140px;
             background: #fff; border-radius: 14px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             overflow: visible; position: relative; text-align: center;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            display: flex; flex-direction: column; justify-content: flex-end;
+            display: flex; flex-direction: column; justify-content: space-between;
         }
         .podium-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
 
-        /* Staggered Top Podium */
-        .podium-1 { margin-top: 0; }
-        .podium-2 { margin-top: 20px; }
-        .podium-3 { margin-top: 40px; }
+        /* Fixed Heights — Stepped Podium */
+        .podium-1 { height: 250px; }
+        .podium-2 { height: 215px; }
+        .podium-3 { height: 180px; }
 
         /* Badge Peringkat */
         .podium-badge {
@@ -104,9 +104,8 @@
 
         /* Isi Kartu */
         .podium-body {
-            flex: 1; padding: 28px 6px 8px;
-            display: flex; flex-direction: column; justify-content: flex-start;
-            align-items: center;
+            padding: 28px 6px 8px;
+            display: flex; flex-direction: column; align-items: center;
         }
 
         /* Avatar */
@@ -164,8 +163,11 @@
 
         /* Responsive: Tablet & Desktop */
         @media (min-width: 640px) {
-            .podium-wrapper { gap: 16px; max-width: 560px; padding-top: 44px; }
-            .podium-card { max-width: 170px; border-radius: 18px; min-height: 240px; }
+            .podium-wrapper { gap: 16px; max-width: 560px; }
+            .podium-card { max-width: 170px; border-radius: 18px; }
+            .podium-1 { height: 310px; }
+            .podium-2 { height: 270px; }
+            .podium-3 { height: 230px; }
             .podium-body { padding: 32px 12px 10px; }
             .podium-name { font-size: 14px; }
             .podium-detail { font-size: 11px; }
@@ -173,9 +175,6 @@
             .podium-1 .podium-avatar { width: 60px; height: 60px; font-size: 24px; }
             .podium-badge { width: 36px; height: 36px; font-size: 15px; top: -18px; }
             .podium-1 .podium-badge { width: 42px; height: 42px; font-size: 18px; top: -20px; }
-            .podium-1 { margin-top: 0; }
-            .podium-2 { margin-top: 28px; }
-            .podium-3 { margin-top: 56px; }
         }
     </style>
 </head>
