@@ -349,7 +349,7 @@
                     @php
                         $trenVals = collect($trenBulanan)->pluck('pct')->all();
                         $trenMax = max(100, max($trenVals ?: [100]));
-                        $trenLeft = 40; $trenRight = 600; $trenTop = 34; $trenBottom = 132;
+                        $trenLeft = 54; $trenRight = 600; $trenTop = 34; $trenBottom = 132;
                         $trenStep = count($trenBulanan) > 1 ? ($trenRight - $trenLeft) / (count($trenBulanan) - 1) : 0;
                         $trenPoints = [];
                         foreach ($trenBulanan as $i => $t) {
@@ -372,11 +372,11 @@
 
                         <!-- Y-axis labels -->
                         <g fill="#94a3b8" font-family="system-ui, sans-serif">
-                            <text x="22" y="{{ $trenBottom + 4 }}" text-anchor="end">0%</text>
-                            <text x="22" y="{{ round($trenBottom - (25 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">25%</text>
-                            <text x="22" y="{{ round($trenBottom - (50 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">50%</text>
-                            <text x="22" y="{{ round($trenBottom - (75 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">75%</text>
-                            <text x="22" y="{{ $trenTop + 4 }}" text-anchor="end">100%</text>
+                            <text x="36" y="{{ $trenBottom + 4 }}" text-anchor="end">0%</text>
+                            <text x="36" y="{{ round($trenBottom - (25 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">25%</text>
+                            <text x="36" y="{{ round($trenBottom - (50 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">50%</text>
+                            <text x="36" y="{{ round($trenBottom - (75 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">75%</text>
+                            <text x="36" y="{{ $trenTop + 4 }}" text-anchor="end">100%</text>
                         </g>
 
                         <!-- Area fill -->
@@ -447,24 +447,24 @@
                     <svg viewBox="0 0 620 175" class="w-full h-auto line-chart" id="lineChart">
                         <!-- Grid lines -->
                         <g stroke="#e2e8f0" stroke-width="0.5">
-                            <line x1="40" y1="132" x2="600" y2="132"/>
-                            <line x1="40" y1="105" x2="600" y2="105"/>
-                            <line x1="40" y1="78" x2="600" y2="78"/>
-                            <line x1="40" y1="50" x2="600" y2="50"/>
+                            <line x1="54" y1="132" x2="600" y2="132"/>
+                            <line x1="54" y1="105" x2="600" y2="105"/>
+                            <line x1="54" y1="78" x2="600" y2="78"/>
+                            <line x1="54" y1="50" x2="600" y2="50"/>
                         </g>
 
                         <!-- Y-axis labels -->
                         <g fill="#94a3b8" font-family="system-ui, sans-serif">
-                            <text x="22" y="135" text-anchor="end">0%</text>
-                            <text x="22" y="108" text-anchor="end">25%</text>
-                            <text x="22" y="81" text-anchor="end">50%</text>
-                            <text x="22" y="53" text-anchor="end">75%</text>
-                            <text x="22" y="26" text-anchor="end">100%</text>
+                            <text x="36" y="135" text-anchor="end">0%</text>
+                            <text x="36" y="108" text-anchor="end">25%</text>
+                            <text x="36" y="81" text-anchor="end">50%</text>
+                            <text x="36" y="53" text-anchor="end">75%</text>
+                            <text x="36" y="26" text-anchor="end">100%</text>
                         </g>
 
                         @php
-                            $chartWidth = 560;
-                            $chartLeft = 40;
+                            $chartWidth = 546;
+                            $chartLeft = 54;
                             $chartTop = 23;
                             $chartBottom = 132;
                             $chartHeight = $chartBottom - $chartTop;

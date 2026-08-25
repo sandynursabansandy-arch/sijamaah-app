@@ -13,15 +13,15 @@ body {
     padding-top: 4.25rem;
 }
 
-/* ===== Font diagram garis (tren & harian): lebih besar & mudah dibaca ===== */
+/* ===== Font diagram garis (tren & harian): besar di layar kecil, semula di desktop ===== */
 .line-chart text,
 .tren-chart text {
-    font-size: 8px;
+    font-size: 6px;
     font-family: system-ui, sans-serif;
 }
 .line-chart .chart-val,
 .tren-chart .chart-val {
-    font-size: 9px;
+    font-size: 6px;
     font-weight: 700;
 }
 @media (max-width: 1023px) {
@@ -35,13 +35,14 @@ body {
     }
 }
 @media (max-width: 639px) {
+    /* Persentase disamakan dengan ukuran keterangan tanggal/bulan */
     .line-chart text,
     .tren-chart text {
         font-size: 14px;
     }
     .line-chart .chart-val,
     .tren-chart .chart-val {
-        font-size: 19px;
+        font-size: 14px;
     }
     /* Di HP, tampilkan nilai hanya di setiap titik ke-3 agar tidak bertumpuk */
     #lineChart .chart-pt:not(:nth-child(3n)) .chart-val {
