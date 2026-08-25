@@ -34,38 +34,19 @@
 .izin-card:nth-child(5) { animation-delay: 0.25s; }
 .izin-card:nth-child(n+6) { animation-delay: 0.3s; }
 
-/* ===== Font diagram garis (tren & harian): besar di layar kecil, semula di desktop ===== */
+/* ===== Font diagram garis (tren & harian): samakan 11px seperti label diagram batang ===== */
 .line-chart text,
 .tren-chart text {
-    font-size: 6px;
+    font-size: 11px;
     font-family: system-ui, sans-serif;
 }
 .line-chart .chart-val,
 .tren-chart .chart-val {
-    font-size: 6px;
+    font-size: 11px;
     font-weight: 700;
 }
-@media (max-width: 1023px) {
-    .line-chart text,
-    .tren-chart text {
-        font-size: 12px;
-    }
-    .line-chart .chart-val,
-    .tren-chart .chart-val {
-        font-size: 15px;
-    }
-}
 @media (max-width: 639px) {
-    /* Persentase disamakan dengan ukuran keterangan tanggal/bulan */
-    .line-chart text,
-    .tren-chart text {
-        font-size: 14px;
-    }
-    .line-chart .chart-val,
-    .tren-chart .chart-val {
-        font-size: 14px;
-    }
-    /* Di HP, tampilkan nilai hanya di setiap titik ke-3 agar tidak bertumpuk */
+    /* Di HP, sembunyikan sebagian label agar tidak bertumpuk */
     #lineChart .chart-pt:not(:nth-child(3n)) .chart-val {
         display: none;
     }

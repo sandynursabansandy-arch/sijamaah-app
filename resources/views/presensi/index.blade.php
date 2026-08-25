@@ -209,7 +209,7 @@
             @endphp
 
             <!-- Grafik Dashboard -->
-            <div class="mt-8 space-y-3 animate-slide-up">
+            <div class="mt-8 space-y-4 animate-slide-up">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <!-- Rating Tertinggi -->
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3">
@@ -330,7 +330,7 @@
                 </div>
 
                 <!-- Tren Kehadiran 6 Bulan -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
                     <div class="flex items-center gap-3 mb-3">
                         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center shadow-md">
                             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
@@ -412,7 +412,7 @@
                 </div>
 
                 <!-- Kehadiran Chart + Filter Tabs -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
                     <div class="mb-3">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
@@ -532,7 +532,7 @@
                 </div>
 
                 <!-- Hadir per Sholat -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
                     <div class="flex items-center gap-2.5 mb-3">
                         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-md">
                             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
