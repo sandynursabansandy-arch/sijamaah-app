@@ -131,10 +131,10 @@
         @keyframes toastOut { from { opacity:1; transform:translateY(0) scale(1); } to { opacity:0; transform:translateY(-20px) scale(0.95); } }
     </style>
 </head>
-<body class="bg-gradient-to-b from-slate-100 via-white to-emerald-50 text-slate-800 min-h-screen py-8">                @include('partials.app-header')
+<body class="bg-gradient-to-b from-slate-100 via-white to-emerald-50 text-slate-800 min-h-screen pb-8">                @include('partials.app-header')
 
     <div id="toast-container"></div>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-5">
         <!-- Success Message (toast) -->
         @if(session('success'))
             <script>

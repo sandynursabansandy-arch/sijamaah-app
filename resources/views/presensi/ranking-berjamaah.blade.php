@@ -80,9 +80,9 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-b from-slate-100 via-white to-emerald-50 text-slate-800 min-h-screen py-8">
+<body class="bg-gradient-to-b from-slate-100 via-white to-emerald-50 text-slate-800 min-h-screen pb-8">
                 @include('partials.app-header')
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-5">
         <!-- Filter Section -->
         <form method="GET" action="{{ route('presensi.rankingBerjamaah') }}" class="filter-gradient rounded-xl p-3 mb-5 animate-fade-in shadow-sm">
             <div class="flex flex-wrap items-end gap-2.5">
