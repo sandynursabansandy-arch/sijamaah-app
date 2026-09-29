@@ -7,6 +7,7 @@ use App\Models\Kamar;
 use App\Models\Santri;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class PesanFlowTest extends TestCase
@@ -84,7 +85,7 @@ class PesanFlowTest extends TestCase
         $this->assertDatabaseCount('admin_messages', 1);
     }
 
-    public function test_user_can_delete_own_message_copy_and_mark_read(): void
+    public function test_user_can_hide_own_message_copy_and_mark_read(): void
     {
         ['santri' => $santri, 'admin' => $admin, 'pengasuh' => $pengasuh] = $this->makeData();
 
@@ -103,23 +104,33 @@ class PesanFlowTest extends TestCase
             ->assertSee('Sudah dibaca')
             ->assertSee('Hapus');
 
-        // User 1 hapus pesannya sendiri -> hanya salinannya yang hilang, punya user 2 utuh
+        // User 1 menyembunyikan salinannya sendiri -> baris tetap ada di DB
+        // (hanya user_hidden_at terisi), punya user 2 tidak tersentuh
         $mine = AdminMessage::where('santri_id', $santri->id)->first();
         $this->delete("/pesan-user/{$mine->id}")->assertOk();
-        $this->assertDatabaseMissing('admin_messages', ['id' => $mine->id]);
-        $this->assertDatabaseCount('admin_messages', 1);
-        $this->assertDatabaseHas('admin_messages', ['santri_id' => $santri2->id]);
+        $this->assertDatabaseHas('admin_messages', ['id' => $mine->id]);
+        $this->assertNotNull(AdminMessage::find($mine->id)->user_hidden_at);
+        $this->assertDatabaseCount('admin_messages', 2);
+        $this->assertDatabaseHas('admin_messages', ['santri_id' => $santri2->id, 'user_hidden_at' => null]);
 
-        // User 1 tidak bisa hapus pesan milik user 2
+        // Salinan yang disembunyikan hilang dari daftar & badge user 1
+        $this->getJson('/pesan-user/daftar')->assertOk()->assertJsonCount(0, 'items');
+        $this->getJson('/pesan-user/jumlah')->assertOk()->assertJson(['count' => 0]);
+        // Tapi user 2 tetap punya salinannya
+        $this->actingAs($pengasuh2);
+        $this->getJson('/pesan-user/daftar')->assertOk()->assertJsonCount(1, 'items');
+
+        // User 1 tidak bisa menyembunyikan pesan milik user 2
+        $this->actingAs($pengasuh);
         $others = AdminMessage::where('santri_id', $santri2->id)->first();
         $this->delete("/pesan-user/{$others->id}")->assertOk();
-        $this->assertDatabaseHas('admin_messages', ['id' => $others->id]);
+        $this->assertNull(AdminMessage::find($others->id)->user_hidden_at);
 
-        // Timpa ulang pesan untuk user 1, lalu tandai satu dibaca
+        // Kirim pesan baru, tandai satu dibaca
         $this->actingAs($admin);
         $this->from('/pesan')->post('/pesan', ['pesan' => 'Pesan dua', 'mode' => 'all']);
         $this->actingAs($pengasuh);
-        $unread = AdminMessage::where('santri_id', $santri->id)->where('is_read', false)->first();
+        $unread = AdminMessage::where('santri_id', $santri->id)->whereNull('user_hidden_at')->where('is_read', false)->first();
         $this->post("/pesan-user/{$unread->id}/baca")->assertOk();
         $this->assertDatabaseHas('admin_messages', ['id' => $unread->id, 'is_read' => true]);
 
@@ -128,6 +139,86 @@ class PesanFlowTest extends TestCase
         $this->get('/pesan')->assertOk()->assertSee('Dibaca oleh 1 santri');
         $html = $this->get('/pesan')->getContent();
         $this->assertStringNotContainsString('Dibaca oleh 2 santri', $html);
+    }
+
+    public function test_user_hiding_message_does_not_shrink_admin_stats(): void
+    {
+        ['santri' => $santri, 'admin' => $admin, 'pengasuh' => $pengasuh] = $this->makeData();
+
+        $kamar2 = Kamar::create(['nama_kamar' => 'Kamar B']);
+        $santri2 = Santri::create(['nis' => '009', 'nama' => 'Santri Lain', 'kamar_id' => $kamar2->id, 'kelas' => 'Kelas', 'status' => 'Aktif']);
+
+        $this->actingAs($admin);
+        $this->from('/pesan')->post('/pesan', ['pesan' => 'Penting', 'mode' => 'all']);
+        $this->assertDatabaseCount('admin_messages', 2);
+
+        // Kedua penerima membaca, lalu yang satu menyembunyikan salinannya
+        foreach ([$santri, $santri2] as $s) {
+            AdminMessage::where('santri_id', $s->id)->update(['is_read' => true, 'read_at' => now()]);
+        }
+
+        $this->actingAs($pengasuh);
+        $mine = AdminMessage::where('santri_id', $santri->id)->first();
+        $this->delete("/pesan-user/{$mine->id}")->assertOk();
+
+        // Statistik admin tetap utuh: 2 penerima, 2 terbaca, nama keduanya tampil
+        $this->actingAs($admin);
+        $html = $this->get('/pesan')->assertOk()->getContent();
+        $this->assertStringContainsString('Semua dibaca', $html);
+        $this->assertStringContainsString('ke 2 santri', $html);
+        $this->assertStringContainsString('Santri Pengasuh', $html);
+        $this->assertStringContainsString('Santri Lain', $html);
+        $this->assertDatabaseCount('admin_messages', 2);
+    }
+
+    public function test_user_hiding_unread_message_still_counts_as_unread_for_admin(): void
+    {
+        ['santri' => $santri, 'admin' => $admin, 'pengasuh' => $pengasuh] = $this->makeData();
+
+        $this->actingAs($admin);
+        $this->from('/pesan')->post('/pesan', ['pesan' => 'Belum dibaca', 'mode' => 'all']);
+
+        // Disembunyikan tanpa dibaca -> admin tetap melihat 0/1 terbaca
+        $this->actingAs($pengasuh);
+        $mine = AdminMessage::where('santri_id', $santri->id)->first();
+        $this->delete("/pesan-user/{$mine->id}")->assertOk();
+
+        $this->actingAs($admin);
+        $html = $this->get('/pesan')->assertOk()->getContent();
+        $this->assertStringContainsString('0/1 dibaca', $html);
+    }
+
+    public function test_admin_history_shows_only_latest_50_batches(): void
+    {
+        ['santri' => $santri, 'admin' => $admin] = $this->makeData();
+
+        // created_at harus bertingkat. Kalau semua seri, urutan 50 batch
+        // terakhir jadi tidak deterministik dan test ini flaky.
+        $base = now()->subDays(100);
+        $rows = [];
+        for ($i = 0; $i < 55; $i++) {
+            $at = $base->copy()->addSeconds($i);
+            $rows[] = [
+                'batch_id' => 'batch-'.$i,
+                'santri_id' => $santri->id,
+                'sent_by' => $admin->id,
+                'pesan' => 'Pesan '.$i,
+                'is_read' => true,
+                'read_at' => $at,
+                'created_at' => $at,
+                'updated_at' => $at,
+            ];
+        }
+        DB::table('admin_messages')->insert($rows);
+
+        $this->actingAs($admin);
+        $html = $this->get('/pesan')->assertOk()->getContent();
+
+        // Tepat 50 batch dirender, bukan 55
+        $this->assertSame(50, substr_count($html, 'Dibaca oleh 1 santri'));
+        // Batch terbaru ikut tampil, batch tertua (0-4) terpotong
+        $this->assertStringContainsString('Pesan 54<', $html);
+        $this->assertStringNotContainsString('Pesan 0<', $html);
     }
 
     public function test_kamar_mode_delivers_only_to_kamar_members(): void

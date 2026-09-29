@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AdminMessage extends Model
 {
-    protected $fillable = ['batch_id', 'santri_id', 'sent_by', 'pesan', 'is_read', 'read_at'];
+    protected $fillable = ['batch_id', 'santri_id', 'sent_by', 'pesan', 'is_read', 'read_at', 'user_hidden_at'];
 
     protected $casts = [
         'is_read' => 'boolean',
         'read_at' => 'datetime',
+        'user_hidden_at' => 'datetime',
     ];
 
     public function santri(): BelongsTo

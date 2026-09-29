@@ -11,6 +11,9 @@ use Illuminate\Support\Str;
 
 class PesanController extends Controller
 {
+    /** Jumlah batch terakhir yang ditampilkan di riwayat. */
+    private const RIWAYAT_BATCH = 50;
+
     protected function userSantriId(): ?int
     {
         $user = auth()->user();
@@ -31,26 +34,44 @@ class PesanController extends Controller
         $kamars = Kamar::all();
 
         $list = [];
-        AdminMessage::with(['sender', 'santri'])->orderByDesc('created_at')->get()
-            ->groupBy('batch_id')
-            ->each(function ($rows, $batchId) use (&$list) {
-                $first = $rows->first();
-                $readRows = $rows->where('is_read', true);
-                $list[] = [
-                    'batch_id' => $batchId,
-                    'pesan' => $first->pesan,
-                    'created_at' => $first->created_at,
-                    'sent_by' => $first->sender?->name ?? 'Admin',
-                    'total' => $rows->count(),
-                    'read' => $readRows->count(),
-                    'read_by' => $readRows->pluck('santri.nama')
-                        ->filter(fn ($n) => !empty($n))
-                        ->values()
-                        ->all(),
-                ];
-            });
 
-        $list = array_slice(array_values($list), 0, 50);
+        // Batas 50 batch ditegakkan di query, bukan di slicing setelah load:
+        // tiap batch menyimpan satu baris per penerima, jadi memuat seluruh
+        // tabel membuat halaman ini berat (induknya 502 di shared hosting).
+        $batchIds = AdminMessage::query()
+            ->select('batch_id')
+            ->selectRaw('MAX(created_at) as last_at, MAX(id) as last_id')
+            ->groupBy('batch_id')
+            ->orderByDesc('last_at')
+            // Beberapa batch bisa dibuat dalam detik yang sama, jadi last_at
+            // saja tidak cukup untuk menentukan mana yang benar-benar terbaru
+            ->orderByDesc('last_id')
+            ->limit(self::RIWAYAT_BATCH)
+            ->pluck('batch_id');
+
+        if ($batchIds->isNotEmpty()) {
+            AdminMessage::with(['sender', 'santri'])
+                ->whereIn('batch_id', $batchIds)
+                ->orderByDesc('created_at')
+                ->get()
+                ->groupBy('batch_id')
+                ->each(function ($rows, $batchId) use (&$list) {
+                    $first = $rows->first();
+                    $readRows = $rows->where('is_read', true);
+                    $list[] = [
+                        'batch_id' => $batchId,
+                        'pesan' => $first->pesan,
+                        'created_at' => $first->created_at,
+                        'sent_by' => $first->sender?->name ?? 'Admin',
+                        'total' => $rows->count(),
+                        'read' => $readRows->count(),
+                        'read_by' => $readRows->pluck('santri.nama')
+                            ->filter(fn ($n) => !empty($n))
+                            ->values()
+                            ->all(),
+                    ];
+                });
+        }
 
         return view('pesan.index', compact('santris', 'kamars', 'list'));
     }
@@ -104,7 +125,8 @@ class PesanController extends Controller
     {
         AdminPesan::ensureTable();
         $santriId = $this->userSantriId();
-        $count = $santriId ? AdminMessage::where('santri_id', $santriId)->where('is_read', false)->count() : 0;
+        $count = $santriId ? AdminMessage::where('santri_id', $santriId)
+            ->whereNull('user_hidden_at')->where('is_read', false)->count() : 0;
 
         return response()->json(['count' => $count]);
     }
@@ -116,7 +138,9 @@ class PesanController extends Controller
         $santriId = $this->userSantriId();
 
         if ($santriId) {
-            $messages = AdminMessage::where('santri_id', $santriId)->orderByDesc('created_at')->orderByDesc('id')->limit(20)->get();
+            $messages = AdminMessage::where('santri_id', $santriId)
+                ->whereNull('user_hidden_at')
+                ->orderByDesc('created_at')->orderByDesc('id')->limit(20)->get();
             foreach ($messages as $m) {
                 $items[] = [
                     'id' => $m->id,
@@ -139,7 +163,9 @@ class PesanController extends Controller
         $santriId = $this->userSantriId();
 
         if ($santriId) {
-            AdminMessage::where('santri_id', $santriId)->where('is_read', false)
+            AdminMessage::where('santri_id', $santriId)
+                ->whereNull('user_hidden_at')
+                ->where('is_read', false)
                 ->update(['is_read' => true, 'read_at' => now()]);
         }
 
@@ -153,6 +179,7 @@ class PesanController extends Controller
 
         if ($santriId) {
             AdminMessage::where('id', $id)->where('santri_id', $santriId)
+                ->whereNull('user_hidden_at')
                 ->update(['is_read' => true, 'read_at' => now()]);
         }
 
@@ -165,8 +192,12 @@ class PesanController extends Controller
         $santriId = $this->userSantriId();
 
         if ($santriId) {
+            // Disembunyikan, bukan dihapus: baris tetap ada sebagai bukti
+            // pengiriman agar angka "dibaca" di halaman admin tidak bisa
+            // dikurangi sendiri oleh penerima pesan.
             AdminMessage::where('id', $id)->where('santri_id', $santriId)
-                ->limit(1)->delete();
+                ->whereNull('user_hidden_at')
+                ->update(['user_hidden_at' => now()]);
         }
 
         return response()->json(['ok' => true]);
