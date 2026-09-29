@@ -17,7 +17,14 @@ class IzinRequestController extends Controller
     {
         $status = $request->get('status', '');
 
+        $user = Auth::user();
+
+        if ($user->isAdmin()) {
+            \App\Support\AdminNotif::markTypeRead('izin');
+        }
+
         $izinRequests = IzinRequest::with(['santri.kamar', 'user', 'approver'])
+            ->when($user->role === 'pengasuh', fn ($q) => $q->whereHas('santri', fn ($sq) => $sq->where('nama', $user->name)))
             ->when($status !== '', fn ($q) => $q->where('status', $status))
             ->latest()
             ->paginate(20)
@@ -28,7 +35,12 @@ class IzinRequestController extends Controller
 
     public function create()
     {
-        $daftarSantri = Santri::orderBy('nama')->get();
+        $user = Auth::user();
+        if ($user->role === 'pengasuh') {
+            $daftarSantri = Santri::where('nama', $user->name)->orderBy('nama')->get();
+        } else {
+            $daftarSantri = Santri::orderBy('nama')->get();
+        }
         return view('izin.create', compact('daftarSantri'));
     }
 
@@ -44,8 +56,53 @@ class IzinRequestController extends Controller
 
         IzinRequest::create($validated + ['user_id' => Auth::id()]);
 
+        \App\Support\AdminNotif::push('izin', 'Pengajuan izin baru dari ' . Auth::user()->name, route('izin.index'));
+
         return redirect()->route('izin.index')
             ->with('success', 'Pengajuan izin berhasil dibuat dan menunggu persetujuan.');
+    }
+
+    public function edit(IzinRequest $izin)
+    {
+        if ($izin->status !== 'Menunggu') {
+            return back()->with('error', 'Hanya pengajuan dengan status Menunggu yang bisa diedit.');
+        }
+
+        $user = Auth::user();
+        if ($user->role === 'pengasuh') {
+            if ($izin->user_id !== $user->id) {
+                abort(403);
+            }
+            $daftarSantri = Santri::where('nama', $user->name)->orderBy('nama')->get();
+        } else {
+            $daftarSantri = Santri::orderBy('nama')->get();
+        }
+
+        return view('izin.edit', compact('izin', 'daftarSantri'));
+    }
+
+    public function update(Request $request, IzinRequest $izin)
+    {
+        if ($izin->status !== 'Menunggu') {
+            return back()->with('error', 'Hanya pengajuan dengan status Menunggu yang bisa diedit.');
+        }
+
+        $user = Auth::user();
+        if ($user->role === 'pengasuh' && $izin->user_id !== $user->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'tanggal_mulai' => 'required|date',
+            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+            'waktu_sholat' => 'required|in:all,' . implode(',', self::WAKTU),
+            'alasan' => 'required|string|max:500',
+        ]);
+
+        $izin->update($validated);
+
+        return redirect()->route('izin.index')
+            ->with('success', 'Pengajuan izin berhasil diperbarui.');
     }
 
     public function setujui(IzinRequest $izin)

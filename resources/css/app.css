@@ -8,6 +8,13 @@
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+/* ===== Pengaturan ukuran font pengguna =====
+   Nilai root font-size di-set inline dari header (partials/app-header).
+   Tailwind v4 memakai rem, sehingga seluruh teks rem ikut menyesuaikan. */
+:root {
+    font-size: 16px;
+}
+
 /* ===== Font diagram garis (tren & harian): besar di layar kecil, semula di desktop ===== */
 .line-chart text,
 .tren-chart text {

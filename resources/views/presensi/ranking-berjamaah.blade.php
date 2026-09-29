@@ -1,9 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
+    @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ranking Berjamaah Ã¢â‚¬â€ SIJAMAAH</title>
+    <title>Ranking Berjamaah — SIJAMAAH</title>
     @vite(['resources/css/app.css'])
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -40,6 +41,15 @@
             background: #10b981; color: #ffffff;
             box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
         }
+        .ranking-scroll thead th:first-child {
+            position: sticky; left: 0; z-index: 11;
+        }
+        .ranking-scroll tbody td:first-child {
+            position: sticky; left: 0; z-index: 5; background: #fff;
+        }
+        .ranking-scroll tbody tr:nth-child(odd) td:first-child { background: #f9fafb; }
+        .ranking-scroll tbody tr:nth-child(even) td:first-child { background: #fff; }
+        .ranking-scroll tbody tr:hover td:first-child { background: #f1f5f9 !important; }
         .ranking-scroll thead tr { background: transparent; }
 
         .th-badge {
@@ -62,7 +72,7 @@
 
         .hadir-bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, #10b981, #059669); transition: width 0.6s ease-out; }
 
-        /* ---- Podium Section â€” Stepped Heights (Real Podium) ---- */
+        /* ---- Podium Section — Stepped Heights (Real Podium) ---- */
         .podium-wrapper {
             display: flex; flex-direction: row; align-items: flex-end;
             justify-content: center; gap: 8px; max-width: 480px;
@@ -78,10 +88,11 @@
         }
         .podium-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
 
-        /* Fixed Heights â€” Stepped Podium */
-        .podium-1 { height: 250px; }
-        .podium-2 { height: 215px; }
-        .podium-3 { height: 180px; }
+        /* Stepped Podium — tinggi kartu mengikuti isi (tidak pernah overflow),
+           siluet berjenjang dibentuk lewat .podium-step di bawah isi. */
+        .podium-1 .podium-step { height: 60px; }
+        .podium-2 .podium-step { height: 30px; }
+        .podium-3 .podium-step { height: 0; }
 
         /* Badge Peringkat */
         .podium-badge {
@@ -130,8 +141,10 @@
         .podium-name {
             font-weight: 700; font-size: 12px; color: #1e293b;
             line-height: 1.3; margin-bottom: 2px;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            padding: 0 4px;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            overflow: hidden; text-overflow: ellipsis;
+            min-height: 2.6em; word-break: break-word;
+            padding: 0 6px; box-sizing: border-box;
         }
         .podium-detail {
             font-size: 10px; color: #94a3b8; line-height: 1.4;
@@ -146,7 +159,7 @@
             margin-top: auto;
         }
         .podium-1 .podium-bar {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
             font-size: 18px; padding: 10px 0;
         }
         .podium-2 .podium-bar {
@@ -165,9 +178,8 @@
         @media (min-width: 640px) {
             .podium-wrapper { gap: 16px; max-width: 560px; }
             .podium-card { max-width: 170px; border-radius: 18px; }
-            .podium-1 { height: 310px; }
-            .podium-2 { height: 270px; }
-            .podium-3 { height: 230px; }
+            .podium-1 .podium-step { height: 80px; }
+            .podium-2 .podium-step { height: 40px; }
             .podium-body { padding: 32px 12px 10px; }
             .podium-name { font-size: 14px; }
             .podium-detail { font-size: 11px; }
@@ -242,6 +254,7 @@
                         <div class="podium-name">{{ $second['nama'] }}</div>
                         <div class="podium-detail">{{ $second['kamar'] }} &middot; <strong>Kali Hadir: {{ $second['hadir'] }}</strong></div>
                     </div>
+                    <div class="podium-step"></div>
                     <div class="podium-bar">{{ $second['hadir'] }}</div>
                 </div>
                 <!-- 1st Place (Tengah) -->
@@ -252,6 +265,7 @@
                         <div class="podium-name">{{ $first['nama'] }}</div>
                         <div class="podium-detail">{{ $first['kamar'] }} &middot; <strong>Kali Hadir: {{ $first['hadir'] }}</strong></div>
                     </div>
+                    <div class="podium-step"></div>
                     <div class="podium-bar">{{ $first['hadir'] }}</div>
                 </div>
                 <!-- 3rd Place (Kanan) -->
@@ -262,6 +276,7 @@
                         <div class="podium-name">{{ $third['nama'] }}</div>
                         <div class="podium-detail">{{ $third['kamar'] }} &middot; <strong>Kali Hadir: {{ $third['hadir'] }}</strong></div>
                     </div>
+                    <div class="podium-step"></div>
                     <div class="podium-bar">{{ $third['hadir'] }}</div>
                 </div>
             </div>
@@ -314,7 +329,10 @@
                                 @endphp
                                 <tr class="hover:bg-slate-50 transition-smooth {{ $rank <= 3 ? 'bg-emerald-50/30' : '' }}">
                                     <td class="px-3 py-3 text-center">
-                                        <div class="rank-medal {{ $rankClass }}">{{ $rank }}</div>
+                                        <div class="flex flex-col items-center gap-1">
+                                            <div class="rank-medal {{ $rankClass }}">{{ $rank }}</div>
+                                            <span class="text-[9px] font-semibold text-slate-400 uppercase">Rank</span>
+                                        </div>
                                     </td>
                                     <td class="px-3 py-3">
                                         <div class="flex items-center gap-2.5">
@@ -384,7 +402,7 @@
     </div>
 
     <!-- Logout Modal -->
-    <div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[100]">
+    <div id="logoutModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[1010]">
         <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 animate-slide-up">
             <div class="p-6 text-center">
                 <div class="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">

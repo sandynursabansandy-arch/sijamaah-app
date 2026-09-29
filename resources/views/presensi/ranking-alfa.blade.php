@@ -1,9 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
+    @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ranking Alfa Ã¢â‚¬â€ SIJAMAAH</title>
+    <title>Ranking Alfa — SIJAMAAH</title>
     @vite(['resources/css/app.css'])
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -42,6 +43,15 @@
             background: #ef4444; color: #ffffff;
             box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
         }
+        .ranking-scroll thead th:first-child {
+            position: sticky; left: 0; z-index: 11;
+        }
+        .ranking-scroll tbody td:first-child {
+            position: sticky; left: 0; z-index: 5; background: #fff;
+        }
+        .ranking-scroll tbody tr:nth-child(odd) td:first-child { background: #f9fafb; }
+        .ranking-scroll tbody tr:nth-child(even) td:first-child { background: #fff; }
+        .ranking-scroll tbody tr:hover td:first-child { background: #f1f5f9 !important; }
         .ranking-scroll thead tr { background: transparent; }
 
         .th-badge {
@@ -64,7 +74,7 @@
 
         .alfa-bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, #ef4444, #dc2626); transition: width 0.6s ease-out; }
 
-        /* ---- Podium Section â€” Stepped Heights (Real Podium) ---- */
+        /* ---- Podium Section — Stepped Heights (Real Podium) ---- */
         .podium-wrapper {
             display: flex; flex-direction: row; align-items: flex-end;
             justify-content: center; gap: 8px; max-width: 480px;
@@ -80,10 +90,11 @@
         }
         .podium-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
 
-        /* Fixed Heights â€” Stepped Podium */
-        .podium-1 { height: 250px; }
-        .podium-2 { height: 215px; }
-        .podium-3 { height: 180px; }
+        /* Stepped Podium — tinggi kartu mengikuti isi (tidak pernah overflow),
+           siluet berjenjang dibentuk lewat .podium-step di bawah isi. */
+        .podium-1 .podium-step { height: 60px; }
+        .podium-2 .podium-step { height: 30px; }
+        .podium-3 .podium-step { height: 0; }
 
         /* Badge Peringkat */
         .podium-badge {
@@ -98,10 +109,10 @@
             border: 3px solid #fff; width: 38px; height: 38px; font-size: 16px; top: -18px;
         }
         .podium-2 .podium-badge {
-            background: linear-gradient(135deg, #9ca3af, #6b7280); border: 3px solid #fff;
+            background: linear-gradient(135deg, #f97316, #ea580c); border: 3px solid #fff;
         }
         .podium-3 .podium-badge {
-            background: linear-gradient(135deg, #fb923c, #f97316); border: 3px solid #fff;
+            background: linear-gradient(135deg, #f59e0b, #d97706); border: 3px solid #fff;
         }
 
         /* Isi Kartu */
@@ -122,18 +133,20 @@
             background: linear-gradient(135deg, #fbbf24, #f59e0b);
         }
         .podium-2 .podium-avatar {
-            background: linear-gradient(135deg, #9ca3af, #6b7280);
+            background: linear-gradient(135deg, #f97316, #ea580c);
         }
         .podium-3 .podium-avatar {
-            background: linear-gradient(135deg, #fb923c, #f97316);
+            background: linear-gradient(135deg, #f59e0b, #d97706);
         }
 
         /* Nama & Detail */
         .podium-name {
             font-weight: 700; font-size: 12px; color: #1e293b;
             line-height: 1.3; margin-bottom: 2px;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            padding: 0 4px;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            overflow: hidden; text-overflow: ellipsis;
+            min-height: 2.6em; word-break: break-word;
+            padding: 0 6px; box-sizing: border-box;
         }
         .podium-detail {
             font-size: 10px; color: #94a3b8; line-height: 1.4;
@@ -152,24 +165,23 @@
             font-size: 18px; padding: 10px 0;
         }
         .podium-2 .podium-bar {
-            background: linear-gradient(135deg, #9ca3af, #6b7280);
+            background: linear-gradient(135deg, #f97316, #ea580c);
         }
         .podium-3 .podium-bar {
-            background: linear-gradient(135deg, #fb923c, #f97316);
+            background: linear-gradient(135deg, #f59e0b, #d97706);
         }
 
         /* Border Podium */
-        .podium-1 { border: 2px solid #fbbf24; }
-        .podium-2 { border: 2px solid #d1d5db; }
-        .podium-3 { border: 2px solid #fdba74; }
+        .podium-1 { border: 2px solid #ef4444; }
+        .podium-2 { border: 2px solid #f97316; }
+        .podium-3 { border: 2px solid #f59e0b; }
 
         /* Responsive: Tablet & Desktop */
         @media (min-width: 640px) {
             .podium-wrapper { gap: 16px; max-width: 560px; }
             .podium-card { max-width: 170px; border-radius: 18px; }
-            .podium-1 { height: 310px; }
-            .podium-2 { height: 270px; }
-            .podium-3 { height: 230px; }
+            .podium-1 .podium-step { height: 80px; }
+            .podium-2 .podium-step { height: 40px; }
             .podium-body { padding: 32px 12px 10px; }
             .podium-name { font-size: 14px; }
             .podium-detail { font-size: 11px; }
@@ -245,6 +257,7 @@
                         <div class="podium-name">{{ $second['nama'] }}</div>
                         <div class="podium-detail">{{ $second['kamar'] }} &middot; <strong>Kali Alfa: {{ $second['alfa_count'] }}</strong></div>
                     </div>
+                    <div class="podium-step"></div>
                     <div class="podium-bar">{{ $second['alfa_count'] }}</div>
                 </div>
                 <!-- 1st Place (Tengah) -->
@@ -255,6 +268,7 @@
                         <div class="podium-name">{{ $first['nama'] }}</div>
                         <div class="podium-detail">{{ $first['kamar'] }} &middot; <strong>Kali Alfa: {{ $first['alfa_count'] }}</strong></div>
                     </div>
+                    <div class="podium-step"></div>
                     <div class="podium-bar">{{ $first['alfa_count'] }}</div>
                 </div>
                 <!-- 3rd Place (Kanan) -->
@@ -265,6 +279,7 @@
                         <div class="podium-name">{{ $third['nama'] }}</div>
                         <div class="podium-detail">{{ $third['kamar'] }} &middot; <strong>Kali Alfa: {{ $third['alfa_count'] }}</strong></div>
                     </div>
+                    <div class="podium-step"></div>
                     <div class="podium-bar">{{ $third['alfa_count'] }}</div>
                 </div>
             </div>
@@ -314,7 +329,10 @@
                                 @endphp
                                 <tr class="hover:bg-slate-50 transition-smooth {{ $rank <= 3 ? 'bg-red-50/30' : '' }}">
                                     <td class="px-3 py-3 text-center">
-                                        <div class="rank-medal {{ $rankClass }}">{{ $rank }}</div>
+                                        <div class="flex flex-col items-center gap-1">
+                                            <div class="rank-medal {{ $rankClass }}">{{ $rank }}</div>
+                                            <span class="text-[9px] font-semibold text-slate-400 uppercase">Rank</span>
+                                        </div>
                                     </td>
                                     <td class="px-3 py-3">
                                         <div class="flex items-center gap-2.5">
@@ -342,7 +360,7 @@
                                     <td class="px-3 py-3 text-center">
                                         @php
                                             $poinFlag = $item['poin'] >= 25;
-                                            $poinTitle = "Alfa {$item['alfa_count']}Ãƒâ€”5 + Masbuq {$item['masbuq_count']}Ãƒâ€”2 + Izin {$item['izin_count']}Ãƒâ€”1 = {$item['poin']} poin";
+                                            $poinTitle = "Alfa {$item['alfa_count']}×5 + Masbuq {$item['masbuq_count']}×2 + Izin {$item['izin_count']}×1 = {$item['poin']} poin";
                                         @endphp
                                         <span title="{{ $poinTitle }}" class="inline-flex items-center gap-1 justify-center min-w-[44px] px-2 py-0.5 rounded-full text-sm font-extrabold {{ $poinFlag ? 'bg-red-600 text-white ring-2 ring-red-300' : ($item['poin'] > 0 ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-400') }}">
                                             {{ $item['poin'] }}
@@ -383,7 +401,7 @@
     </div>
 
     <!-- Logout Modal -->
-    <div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[100]">
+    <div id="logoutModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[1010]">
         <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 animate-slide-up">
             <div class="p-6 text-center">
                 <div class="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">

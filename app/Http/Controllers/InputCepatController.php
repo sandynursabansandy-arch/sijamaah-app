@@ -12,7 +12,8 @@ class InputCepatController extends Controller
 {
     public function index(Request $request)
     {
-        $tanggal = $request->get('tanggal', date('Y-m-d'));
+        $defaultTanggal = PresensiSholat::max('tanggal') ?? date('Y-m-d');
+        $tanggal = $request->get('tanggal', $defaultTanggal);
         $waktu = $request->get('waktu_sholat', 'Subuh');
         $kamarId = $request->get('kamar_id', 'all');
 

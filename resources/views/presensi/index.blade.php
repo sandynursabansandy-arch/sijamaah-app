@@ -1,6 +1,7 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
+    @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Presensi Sholat Santri</title>
@@ -32,6 +33,8 @@
         .animate-fade-in-fast { animation: fadeInFast 0.15s ease-out both; }
         @keyframes fadeInFast { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .alert-animate { animation: slideDown 0.4s ease-out; }
+        /* Popup terbuka: kunci scroll tanpa mengubah lebar konten (scrollbar-gutter menyimpan ruang) */
+        html.modal-open { overflow: hidden; scrollbar-gutter: stable; }
 
         tbody tr { animation: slideUp 0.5s ease-out; }
         tbody tr:nth-child(1) { animation-delay: 0s; }
@@ -53,12 +56,12 @@
         }
         .status-btn.hadir { background-color: #dcfce7; color: #166534; border-color: #86efac; }
         .status-btn.hadir:hover { background-color: #86efac; transform: scale(1.05); }
-        .status-btn.masbuq { background-color: #fff7ed; color: #c2410c; border-color: #fb923c; }
-        .status-btn.masbuq:hover { background-color: #fb923c; transform: scale(1.05); }
+        .status-btn.masbuq { background-color: #fff7ed; color: #c2410c; border-color: #f97316; }
+        .status-btn.masbuq:hover { background-color: #f97316; transform: scale(1.05); }
         .status-btn.izin { background-color: #dbeafe; color: #0c4a6e; border-color: #7dd3fc; }
         .status-btn.izin:hover { background-color: #7dd3fc; transform: scale(1.05); }
-        .status-btn.alfa { background-color: #e5e7eb; color: #374151; border-color: #d1d5db; }
-        .status-btn.alfa:hover { background-color: #d1d5db; transform: scale(1.05); }
+        .status-btn.alfa { background-color: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+        .status-btn.alfa:hover { background-color: #fca5a5; transform: scale(1.05); }
         .status-btn.active { border-color: currentColor; box-shadow: inset 0 0 0 2px currentColor; font-weight: bold; }
 
         .presensi-scroll {
@@ -94,6 +97,9 @@
             transform-origin: left;
             animation: barGrowH 0.8s ease-out forwards;
         }
+        .chart-val { font-size: 12px; font-weight: 700; font-family: system-ui, sans-serif; }
+        .chart-axis-label { font-size: 12px; font-weight: 600; font-family: system-ui, sans-serif; }
+        .chart-x-label { font-size: 12px; font-weight: 500; font-family: system-ui, sans-serif; }
         .scrollbar-thin { scrollbar-width: thin; scrollbar-color: #d1d5db transparent; }
         .scrollbar-thin::-webkit-scrollbar { width: 5px; }
         .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
@@ -122,63 +128,49 @@
             </div>
         @endif
 
-        @if(!empty($alfaBeruntun))
-            <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg animate-fade-in">
-                <div class="flex items-start gap-2.5">
-                    <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        @if(!empty($notifData) && count($notifData) > 0)
+            <div class="mb-4 space-y-2 animate-fade-in">
+                @foreach($notifData as $notif)
+                    @php
+                        $colors = match($notif['type']) {
+                            'success' => ['bg' => 'bg-emerald-50', 'border' => 'border-emerald-200', 'iconBg' => 'bg-emerald-100', 'iconColor' => 'text-emerald-600', 'title' => 'text-emerald-700', 'text' => 'text-emerald-600'],
+                            'warning' => ['bg' => 'bg-amber-50', 'border' => 'border-amber-200', 'iconBg' => 'bg-amber-100', 'iconColor' => 'text-amber-600', 'title' => 'text-amber-700', 'text' => 'text-amber-600'],
+                            'danger' => ['bg' => 'bg-red-50', 'border' => 'border-red-200', 'iconBg' => 'bg-red-100', 'iconColor' => 'text-red-600', 'title' => 'text-red-700', 'text' => 'text-red-600'],
+                            default => ['bg' => 'bg-blue-50', 'border' => 'border-blue-200', 'iconBg' => 'bg-blue-100', 'iconColor' => 'text-blue-600', 'title' => 'text-blue-700', 'text' => 'text-blue-600'],
+                        };
+                    @endphp
+                    <div class="{{ $colors['bg'] }} border {{ $colors['border'] }} rounded-xl p-4 flex items-start gap-4 shadow-sm">
+                        <div class="w-11 h-11 rounded-full {{ $colors['iconBg'] }} flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg class="w-5 h-5 {{ $colors['iconColor'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $notif['icon'] }}"/></svg>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[13px] font-bold {{ $colors['title'] }} mb-1">{{ $notif['title'] }}</p>
+                            <p class="text-[12px] {{ $colors['text'] }} leading-relaxed">{!! $notif['text'] !!}</p>
+                        </div>
                     </div>
-                    <div class="min-w-0">
-                        <p class="text-sm font-bold text-red-700">Perhatian: {{ count($alfaBeruntun) }} santri alfa beruntun</p>
-                        <p class="text-xs text-red-600 mt-0.5 leading-relaxed">
-                            @foreach(array_slice($alfaBeruntun, 0, 5) as $s)
-                                @if(! $loop->first)<span class="text-red-300">; </span>@endif
-                                <span class="font-semibold">{{ $s['nama'] }}</span> ({{ $s['kamar'] }}) &mdash; {{ $s['streak'] }} hari
-                            @endforeach
-                            @if(count($alfaBeruntun) > 5)<span class="text-red-300">; ...</span>@endif
-                        </p>
-                    </div>
-                </div>
+                @endforeach
             </div>
         @endif
 
-        <!-- Filter Section -->
-        <form method="GET" action="{{ route('presensi.index') }}" class="filter-gradient rounded-xl p-3 mb-5 animate-fade-in shadow-sm">
-            <div class="flex flex-wrap items-end gap-2.5">
-                <div class="animate-slide-in">
-                    <label class="block text-[10px] font-bold uppercase tracking-wide mb-1 text-slate-600 pl-0.5">Tanggal</label>
-                    <input type="date" name="tanggal" value="{{ $tanggal }}" class="border-0 py-1.5 px-2.5 rounded-md focus:ring-2 focus:ring-emerald-300 text-slate-800 transition-smooth focus:outline-none text-[13px] bg-slate-50 h-[34px] box-border">
-                </div>
-                <div class="animate-slide-in" style="animation-delay: 0.05s">
-                    <label class="block text-[10px] font-bold uppercase tracking-wide mb-1 text-slate-600 pl-0.5">Waktu Sholat</label>
-                    <select name="waktu_sholat" class="border-0 py-1.5 px-2.5 rounded-md focus:ring-2 focus:ring-emerald-300 text-slate-800 transition-smooth focus:outline-none text-[13px] bg-slate-50 h-[34px] box-border">
-                        @foreach(['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'] as $w)
-                            <option value="{{ $w }}" {{ $waktu == $w ? 'selected' : '' }}>{{ $w }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="animate-slide-in" style="animation-delay: 0.1s">
-                    <label class="block text-[10px] font-bold uppercase tracking-wide mb-1 text-slate-600 pl-0.5">Asrama / Rayon</label>
-                    <select name="kamar_id" class="border-0 py-1.5 px-2.5 rounded-md focus:ring-2 focus:ring-emerald-300 text-slate-800 transition-smooth focus:outline-none text-[13px] bg-slate-50 h-[34px] box-border">
-                        <option value="all" {{ $kamarId == 'all' ? 'selected' : '' }}>Semua Rayon</option>
-                        @foreach($daftarKamar as $kamar)
-                            <option value="{{ $kamar->id }}" {{ $kamarId == $kamar->id ? 'selected' : '' }}>{{ $kamar->nama_kamar }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="ml-auto animate-slide-in" style="animation-delay: 0.15s">
-                    <button type="submit" class="bg-emerald-500 text-white py-1.5 px-5 rounded-md font-semibold hover:bg-emerald-600 shadow transition-smooth text-[13px] h-[34px] box-border">Tampilkan</button>
+        @if($isPersonalMode && !$personalSantri)
+            <!-- Mode Pribadi tanpa data santri -->
+            <div class="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm animate-slide-up">
+                <div class="flex items-start gap-2.5">
+                    <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                    <div>
+                        <p class="font-semibold">Data kehadiran belum tersedia</p>
+                        <p class="mt-0.5 text-[12px] text-amber-700">Akun <strong>{{ auth()->user()->name }}</strong> tidak cocok dengan nama santri manapun. Hubungi admin untuk menghubungkan data kehadiran Anda.</p>
+                    </div>
                 </div>
             </div>
-        </form>
-
-        @if(count($santris) > 0)
+        @elseif(count($santris) > 0)
             @php
                 $chartLabels = $chartData['presensiBulanan']['labels'];
                 $chartValues = $chartData['presensiBulanan']['values'];
                 $chartMax = max(100, max($chartValues ?: [100]));
-                $chartTitle = $chartData['presensiBulanan']['title'] ?? 'Kehadiran';
-                $chartSubtitle = $chartData['presensiBulanan']['subtitle'] ?? '';
+                $chartTitle = $isPersonalMode ? 'Tren Kehadiran Saya' : ($chartData['presensiBulanan']['title'] ?? 'Kehadiran');
+                $chartSubtitle = ($chartData['presensiBulanan']['subtitle'] ?? '')
+                    . ($isPersonalMode ? ' · % berjamaah (Berjamaah/total)' : '');
                 $chartDetailLabels = $chartData['presensiBulanan']['detailLabels'] ?? $chartLabels;
                 $chartDetailData = $chartData['presensiBulanan']['detailData'] ?? [];
 
@@ -187,13 +179,22 @@
                 $presensiWaktuSubtitle = $chartData['presensiPerWaktu']['subtitle'] ?? '30 hari terakhir';
                 $waktuBreakdownDetail = $chartData['waktuBreakdownDetail'] ?? [];
 
+                // Panel "Hadir per Sholat" memakai navigasi bulan miliknya sendiri (admin/musyrif)
+                $pwOffset = (int) request()->get('pw', 0);
+                if (!$isPersonalMode && isset($perWaktuData)) {
+                    $presensiWaktuLabels = $perWaktuData['labels'];
+                    $presensiWaktuValues = $perWaktuData['values'];
+                    $presensiWaktuSubtitle = $perWaktuData['subtitle'] ?? ($pwMonth->translatedFormat('F Y') ?? '');
+                    $waktuBreakdownDetail = $perWaktuBreakdown ?? [];
+                }
+
                 $statusKehadiran = $chartData['statusKehadiran'];
                 $statusOrder = ['Hadir', 'Masbuq', 'Izin', 'Alfa'];
                 $statusColors = [
                     'Hadir' => '#22c55e',
                     'Masbuq' => '#f97316',
                     'Izin' => '#3b82f6',
-                    'Alfa' => '#94a3b8',
+                    'Alfa' => '#ef4444',
                 ];
 
                 $numLabels = count($chartLabels);
@@ -202,6 +203,7 @@
                 $chartEndDate = $chartEnd ?? ($chartData['dateRange']['end'] ?? date('Y-m-d'));
                 $chartStartMonth = substr($chartStartDate, 0, 7);
                 $chartEndMonth = substr($chartEndDate, 0, 7);
+                $chartDayDate = $chartStart ?? date('Y-m-d');
 
                 $ratingStartDate = \Carbon\Carbon::parse($tanggal)->subDays($periodRating - 1)->format('d');
                 $ratingEndDate = \Carbon\Carbon::parse($tanggal)->format('d');
@@ -209,46 +211,93 @@
             @endphp
 
             <!-- Grafik Dashboard -->
-            <div class="mt-8 space-y-3 animate-slide-up">
+            <div class="mt-3 space-y-3 animate-slide-up">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <!-- Rating Tertinggi -->
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3">
-                        <div class="flex items-center gap-2 mb-2">
-                            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md">
-                                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                                </svg>
+                    @if($isPersonalMode)
+                        <!-- Rating Saya (Mode Pribadi) -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
+                                    <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-[13px] font-bold text-slate-800">Rating Saya</h3>
+                                    <p class="text-[10px] text-slate-400">dari tanggal {{ $ratingStartDate }}-{{ $ratingEndDate }} {{ $ratingEndMonth }} &middot; {{ $personalSantri->nama }}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 class="text-[13px] font-bold text-slate-800">Rating Tertinggi</h3>
-                                <p class="text-[10px] text-slate-400">dari tanggal {{ $ratingStartDate }}-{{ $ratingEndDate }} {{ $ratingEndMonth }} &middot; {{ $santris->count() }} santri</p>
+
+                            <div class="text-center py-3">
+                                <div class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-600">{{ $personalRating }}%</div>
+                                @if($personalRank)
+                                    <div class="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-[11px] font-semibold">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                                        Peringkat #{{ $personalRank }} dari {{ $santriTotal }} santri
+                                    </div>
+                                @endif
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 mt-1">
+                                <div class="bg-slate-50 rounded-lg p-2.5 text-center">
+                                    <div class="text-[10px] text-slate-400 font-semibold uppercase tracking-wide">Jadwal dinilai</div>
+                                    <div class="text-lg font-bold text-slate-800">{{ $periodRating }} hari</div>
+                                </div>
+                                <div class="bg-slate-50 rounded-lg p-2.5 text-center">
+                                    <div class="text-[10px] text-slate-400 font-semibold uppercase tracking-wide">{{ $waktu }} terakhir</div>
+                                    <div class="text-lg font-bold text-slate-800">{{ $personalRatingByWaktu }}%</div>
+                                </div>
                             </div>
                         </div>
+                    @else
+                        <!-- Rating Tertinggi -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md">
+                                    <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-[13px] font-bold text-slate-800">Rating Tertinggi</h3>
+                                    <p class="text-[10px] text-slate-400">dari tanggal {{ $ratingStartDate }}-{{ $ratingEndDate }} {{ $ratingEndMonth }} &middot; {{ $santris->count() }} santri</p>
+                                </div>
+                            </div>
 
-                        <div class="max-h-[300px] overflow-y-auto pl-1 pr-3 pb-3 rating-scroll" style="scrollbar-width: thin; scrollbar-color: #f59e0b #f1f5f9;">
-                            <div class="space-y-1.5">
-                            @foreach ($topRating->take(5) as $idx => $santri)
-                                @php
-                                    $rating = (int) $santri->rating;
-                                @endphp
-                                <div class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded transition-smooth" onclick="showSantriRating('{{ addslashes($santri->nama) }}', {{ $rating }}, 'dari tanggal {{ $ratingStartDate }}-{{ $ratingEndDate }} {{ $ratingEndMonth }}')">
-                                    <span class="w-5 text-center text-[11px] font-bold" style="color: {{ $idx < 3 ? ['#FFD700','#C0C0C0','#CD7F32'][$idx] : '#94a3b8' }}">{{ $idx + 1 }}</span>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center justify-between mb-0.5">
-                                            <span class="text-[11px] font-semibold text-slate-800 truncate">{{ $santri->nama }}</span>
-                                            <span class="text-[11px] font-bold text-slate-700 ml-1">{{ $rating }}%</span>
-                                        </div>
-                                        <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                            <div class="h-full rounded-full bg-gradient-to-r {{ $idx < 3 ? ['from-amber-400 to-yellow-500', 'from-slate-400 to-slate-500', 'from-[#e2a04f] to-[#cd7f32]'][$idx] : 'from-slate-300 to-slate-400' }} transition-all duration-700" style="width: {{ $rating }}%"></div>
+                            <div class="max-h-[300px] overflow-y-auto pl-1 pr-3 pb-3 rating-scroll" style="scrollbar-width: thin; scrollbar-color: #f59e0b #f1f5f9;">
+                                <div class="space-y-1.5">
+                                @foreach ($topRating->take(5) as $idx => $santri)
+                                    @php
+                                        $rating = (int) $santri->rating;
+                                    @endphp
+                                    <div class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded transition-smooth" onclick="showSantriRating('{{ addslashes($santri->nama) }}', {{ $rating }}, 'dari tanggal {{ $ratingStartDate }}-{{ $ratingEndDate }} {{ $ratingEndMonth }}')">
+                                        <span class="w-5 text-center text-[11px] font-bold" style="color: {{ $idx < 3 ? ['#FFD700','#C0C0C0','#CD7F32'][$idx] : '#94a3b8' }}">{{ $idx + 1 }}</span>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center justify-between mb-0.5">
+                                                <span class="text-[11px] font-semibold text-slate-800 truncate">{{ $santri->nama }}</span>
+                                                <span class="text-[11px] font-bold text-slate-700 ml-1">{{ $rating }}%</span>
+                                            </div>
+                                            <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                <div class="h-full rounded-full bg-gradient-to-r {{ $idx < 3 ? ['from-amber-400 to-yellow-500', 'from-slate-400 to-slate-500', 'from-[#e2a04f] to-[#cd7f32]'][$idx] : 'from-slate-300 to-slate-400' }} transition-all duration-700" style="width: {{ $rating }}%"></div>
+                                            </div>
                                         </div>
                                     </div>
+                                @endforeach
                                 </div>
-                            @endforeach
                             </div>
                         </div>
-                    </div>
+                    @endif
 
-                    <!-- Status Kehadiran Donut -->
+                    <!-- Status Kehadiran Donut (hanya utk admin/musyrif; utk pengasuh sudah di-cover Panel Saya) -->
+                    @if(!$isPersonalMode)
+                    @php
+                        $allWaktu = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'];
+                        $currentWaktuIdx = array_search($waktu, $allWaktu) ?? 0;
+                        $prevWaktuIdx = ($currentWaktuIdx - 1 + count($allWaktu)) % count($allWaktu);
+                        $nextWaktuIdx = ($currentWaktuIdx + 1) % count($allWaktu);
+                        $prevWaktuUrl = request()->fullUrlWithQuery(['waktu_sholat' => $allWaktu[$prevWaktuIdx]]);
+                        $nextWaktuUrl = request()->fullUrlWithQuery(['waktu_sholat' => $allWaktu[$nextWaktuIdx]]);
+                    @endphp
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3">
                         <div class="flex items-center gap-2 mb-1">
                             <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-md">
@@ -260,6 +309,18 @@
                             <div>
                                 <h3 class="text-[13px] font-bold text-slate-800">Status Kehadiran</h3>
                                 <p class="text-[10px] text-slate-400">{{ $waktu }} &middot; {{ \Carbon\Carbon::parse($tanggal)->translatedFormat('d M Y') }}</p>
+                            </div>
+                            <div class="ml-auto flex items-center gap-1 shrink-0">
+                                <button type="button" onclick="copyStatusChartToClipboard()" title="Salin daftar nama &rarr; paste di WhatsApp" class="w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-violet-600 transition-smooth">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" /></svg>
+                                </button>
+                                <a href="{{ $prevWaktuUrl }}" title="Waktu sebelumnya" class="w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-violet-600 transition-smooth">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                </a>
+                                <span class="text-[11px] font-bold text-violet-600 min-w-[48px] text-center">{{ $waktu }}</span>
+                                <a href="{{ $nextWaktuUrl }}" title="Waktu berikutnya" class="w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-violet-600 transition-smooth">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                </a>
                             </div>
                         </div>
 
@@ -275,7 +336,7 @@
 
                         <div class="flex flex-row justify-start items-center gap-4 mt-8">
                             <div class="relative w-32 h-32 flex-shrink-0 flex items-center justify-center">
-                                <svg viewBox="0 0 100 100" class="w-full h-full transform -rotate-90">
+                                <svg viewBox="0 0 100 100" class="w-full h-full transform -rotate-90" id="statusDonut">
                                     @if ($totalStatusCount > 0)
                                         @foreach ($statusOrder as $status)
                                             @php
@@ -326,10 +387,71 @@
                                 @endforeach
                             </div>
                         </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Hadir per Sholat (hanya utk admin/musyrif; utk pengasuh sudah di-cover Panel Saya) -->
+            @if(!$isPersonalMode)
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mt-3">
+                <div class="flex items-center gap-2.5 mb-3">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-md">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
                     </div>
+                    <div class="min-w-0">
+                        <h3 class="text-[14px] font-bold text-slate-800">Hadir per Sholat</h3>
+                        <p class="text-[11px] text-slate-400">{!! $presensiWaktuSubtitle !!} &middot; Klik untuk detail</p>
+                    </div>
+
+                    @if(!$isPersonalMode && isset($pwMonth))
+                        @php
+                            $prevUrl = request()->fullUrlWithQuery(['pw' => $pwOffset - 1]);
+                            $nextUrl = request()->fullUrlWithQuery(['pw' => $pwOffset + 1]);
+                            $isCurrentMonth = (\Illuminate\Support\Carbon::now()->format('Y-m') === $pwMonth->format('Y-m'));
+                        @endphp
+                        <div class="ml-auto flex items-center gap-1.5 shrink-0">
+                            <a href="{{ $prevUrl }}" title="Bulan sebelumnya" class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-emerald-600 transition-smooth">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                            </a>
+                            <span class="text-[11px] font-bold text-slate-700 min-w-[64px] text-center">{{ $pwMonth->translatedFormat('M Y') }}</span>
+                            <a href="{{ $nextUrl }}" title="Bulan berikutnya" class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-emerald-600 transition-smooth {{ $isCurrentMonth ? 'opacity-40 pointer-events-none' : '' }}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            </a>
+                        </div>
+                    @endif
                 </div>
 
-                <!-- Tren Kehadiran 6 Bulan -->
+                @if($pwHasData ?? true)
+                <div class="flex items-end gap-2 h-40">
+                    @foreach ($presensiWaktuValues as $index => $value)
+                        @php
+                            $barHeightPx = max(6, round($value * 1.8));
+                            $delay = $index * 0.1;
+                        @endphp
+                        <div class="flex-1 flex flex-col items-center justify-end cursor-pointer group" style="height: 100%;" onclick="showWaktuDetail('{{ $presensiWaktuLabels[$index] }}')">
+                            <span class="text-[12px] font-bold text-slate-700 mb-1">{{ $value }}%</span>
+                            <div class="w-full rounded-t-lg bg-gradient-to-t from-blue-600 to-blue-400 bar-animated group-hover:from-indigo-600 group-hover:to-indigo-400 transition-colors"
+                                 style="height: {{ $barHeightPx }}px; animation-delay: {{ $delay }}s;"></div>
+                            <span class="text-[12px] text-slate-500 font-medium mt-1">{{ $presensiWaktuLabels[$index] }}</span>
+                        </div>
+                    @endforeach
+                </div>
+                @else
+                <div class="flex flex-col items-center justify-center py-8 text-center">
+                    <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-2">
+                        <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <p class="text-sm font-semibold text-slate-600">Belum ada data</p>
+                    <p class="text-[11px] text-slate-400">Tidak ada presensi yang diinput pada bulan ini.</p>
+                </div>
+                @endif
+            </div>
+            @endif
+
+            @if(!$isPersonalMode)
+            <!-- Tren Kehadiran 6 Bulan -->
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
                     <div class="flex items-center gap-3 mb-3">
                         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center shadow-md">
@@ -343,7 +465,7 @@
                     @php
                         $trenVals = collect($trenBulanan)->pluck('pct')->all();
                         $trenMax = max(100, max($trenVals ?: [100]));
-                        $trenLeft = 54; $trenRight = 600; $trenTop = 34; $trenBottom = 132;
+                        $trenLeft = 54; $trenRight = 600; $trenTop = 30; $trenBottom = 140;
                         $trenStep = count($trenBulanan) > 1 ? ($trenRight - $trenLeft) / (count($trenBulanan) - 1) : 0;
                         $trenPoints = [];
                         foreach ($trenBulanan as $i => $t) {
@@ -354,7 +476,7 @@
                         $trenLinePath = implode(' ', array_map(fn ($p) => "{$p['x']},{$p['y']}", $trenPoints));
                         $trenAreaPath = $trenLinePath . " " . end($trenPoints)['x'] . ",$trenBottom $trenLeft,$trenBottom";
                     @endphp
-                    <svg viewBox="0 0 620 175" class="w-full h-auto tren-chart">
+                    <svg viewBox="0 0 620 185" class="w-full h-auto tren-chart">
                         <!-- Grid lines -->
                         <g stroke="#e2e8f0" stroke-width="0.5">
                             <line x1="{{ $trenLeft }}" y1="{{ $trenBottom }}" x2="{{ $trenRight }}" y2="{{ $trenBottom }}"/>
@@ -372,7 +494,7 @@
                         </g>
 
                         <!-- Y-axis labels -->
-                        <g fill="#94a3b8" font-family="system-ui, sans-serif">
+                        <g fill="#94a3b8" class="chart-axis-label">
                             <text x="36" y="{{ $trenBottom + 4 }}" text-anchor="end">0%</text>
                             <text x="36" y="{{ round($trenBottom - (25 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">25%</text>
                             <text x="36" y="{{ round($trenBottom - (50 / $trenMax) * ($trenBottom - $trenTop), 1) + 4 }}" text-anchor="end">50%</text>
@@ -396,20 +518,21 @@
                         @foreach ($trenPoints as $i => $p)
                             <circle cx="{{ $p['x'] }}" cy="{{ $p['y'] }}" r="3.5" fill="white" stroke="#2563eb" stroke-width="2"
                                     class="chart-clickable" onclick="showTrenDetail({{ $i }})">
-                                <title>{{ $p['label'] }}: {{ $p['pct'] }}% Ã¢â‚¬â€ klik untuk detail</title>
+                                <title>{{ $p['label'] }}: {{ $p['pct'] }}% &mdash; klik untuk detail</title>
                             </circle>
                             <!-- Value label -->
                             <text x="{{ $p['x'] }}" y="{{ $p['y'] - 11 }}" text-anchor="middle" fill="#2563eb" class="chart-val">{{ $p['pct'] }}%</text>
                         @endforeach
 
                         <!-- X-axis labels -->
-                        <g fill="#64748b" font-family="system-ui, sans-serif">
+                        <g fill="#64748b" class="chart-x-label">
                             @foreach ($trenPoints as $p)
-                                <text x="{{ $p['x'] }}" y="160" text-anchor="middle">{{ $p['label'] }}</text>
+                                <text x="{{ $p['x'] }}" y="170" text-anchor="middle">{{ $p['label'] }}</text>
                             @endforeach
                         </g>
                     </svg>
                 </div>
+            @endif
 
                 <!-- Kehadiran Chart + Filter Tabs -->
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
@@ -426,14 +549,20 @@
                             </div>
                         </div>
                         <div class="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap items-center gap-2">
-                            @php $filters = ['minggu' => 'Per Minggu', 'bulan' => 'Per Bulan', 'tahun' => 'Per Tahun']; @endphp
+                            @php $filters = ['hari' => 'Per Hari', 'minggu' => 'Per Minggu', 'bulan' => 'Per Bulan', 'tahun' => 'Per Tahun']; @endphp
                             @foreach($filters as $key => $label)
                                 <button type="button" class="filter-tab chart-filter-tab {{ $chartFilter === $key ? 'active' : '' }}" onclick="switchChartFilter('{{ $key }}', event)">{{ $label }}</button>
                             @endforeach
+                            <div id="hariRange" class="hidden flex-wrap items-center gap-1.5 w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg p-2">
+                                <span class="text-[11px] text-slate-500 shrink-0">Pilih minggu</span>
+                                <input type="date" id="chartDayDate" value="{{ $chartDayDate }}" class="flex-1 min-w-0 sm:max-w-[170px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
+                                <span class="text-[10px] text-slate-400 shrink-0">Sen &ndash; Minggu</span>
+                                <button type="button" onclick="applyChartFilter()" class="shrink-0 bg-emerald-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-emerald-600 transition">Terapkan</button>
+                            </div>
                             <div id="mingguRange" class="hidden flex-wrap items-center gap-1.5 w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg p-2">
-                                <input type="date" id="chartStartDate" value="{{ $chartStartDate }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
-                                <span class="text-[10px] text-slate-400 shrink-0">s/d</span>
-                                <input type="date" id="chartEndDate" value="{{ $chartEndDate }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
+                                <span class="text-[11px] text-slate-500 shrink-0">Pilih bulan</span>
+                                <input type="month" id="chartWeekMonth" value="{{ $chartEndMonth }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
+                                <span class="text-[10px] text-slate-400 shrink-0">per minggu</span>
                                 <button type="button" onclick="applyChartFilter()" class="shrink-0 bg-emerald-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-emerald-600 transition">Terapkan</button>
                             </div>
                             <div id="bulanRange" class="hidden flex-wrap items-center gap-1.5 w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg p-2">
@@ -442,14 +571,18 @@
                                 <input type="month" id="chartEndMonth" value="{{ $chartEndMonth }}" class="flex-1 min-w-0 sm:max-w-[150px] border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
                                 <button type="button" onclick="applyChartFilter()" class="shrink-0 bg-emerald-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-emerald-600 transition">Terapkan</button>
                             </div>
+                            <div id="tahunRange" class="hidden flex-wrap items-center gap-1.5 w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg p-2">
+                                <span class="text-[11px] text-slate-500">Menampilkan data tahun ini</span>
+                                <button type="button" onclick="applyChartFilter()" class="shrink-0 bg-emerald-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-emerald-600 transition">Terapkan</button>
+                            </div>
                         </div>
                     </div>
 
                     @php
                         $chartWidth = 546;
                         $chartLeft = 54;
-                        $chartTop = 23;
-                        $chartBottom = 132;
+                        $chartTop = 20;
+                        $chartBottom = 140;
                         $chartHeight = $chartBottom - $chartTop;
                         $step = $numLabels > 1 ? $chartWidth / ($numLabels - 1) : 0;
 
@@ -465,14 +598,14 @@
                         $areaPath = $linePath . " " . ($chartLeft + ($numLabels - 1) * $step) . ",$chartBottom $chartLeft,$chartBottom";
                     @endphp
 
-                    <svg viewBox="0 0 620 175" class="w-full h-auto line-chart" id="lineChart">
+                    <svg viewBox="0 0 620 185" class="w-full h-auto line-chart" id="lineChart">
                         <!-- Horizontal grid lines -->
                         <g stroke="#e2e8f0" stroke-width="0.5">
-                            <line x1="54" y1="132" x2="600" y2="132"/>
-                            <line x1="54" y1="105" x2="600" y2="105"/>
-                            <line x1="54" y1="78" x2="600" y2="78"/>
-                            <line x1="54" y1="50" x2="600" y2="50"/>
-                            <line x1="54" y1="23" x2="600" y2="23"/>
+                            <line x1="54" y1="140" x2="600" y2="140"/>
+                            <line x1="54" y1="111" x2="600" y2="111"/>
+                            <line x1="54" y1="82" x2="600" y2="82"/>
+                            <line x1="54" y1="53" x2="600" y2="53"/>
+                            <line x1="54" y1="20" x2="600" y2="20"/>
                         </g>
 
                         <!-- Vertical grid lines -->
@@ -486,12 +619,12 @@
                         </g>
 
                         <!-- Y-axis labels -->
-                        <g fill="#94a3b8" font-family="system-ui, sans-serif">
-                            <text x="36" y="135" text-anchor="end">0%</text>
-                            <text x="36" y="108" text-anchor="end">25%</text>
-                            <text x="36" y="81" text-anchor="end">50%</text>
-                            <text x="36" y="53" text-anchor="end">75%</text>
-                            <text x="36" y="26" text-anchor="end">100%</text>
+                        <g fill="#94a3b8" class="chart-axis-label">
+                            <text x="36" y="143" text-anchor="end">0%</text>
+                            <text x="36" y="114" text-anchor="end">25%</text>
+                            <text x="36" y="85" text-anchor="end">50%</text>
+                            <text x="36" y="56" text-anchor="end">75%</text>
+                            <text x="36" y="23" text-anchor="end">100%</text>
                         </g>
 
                         <!-- Area fill -->
@@ -509,60 +642,33 @@
                         <!-- Data points -->
                         @foreach ($areaPoints as $index => $point)
                             <g class="chart-pt">
-                                <circle cx="{{ $point['x'] }}" cy="{{ $point['y'] }}" r="3.5" fill="white" stroke="#10b981" stroke-width="2"
-                                        class="chart-clickable" onclick="showLineChartDetail({{ $index }})"
-                                        style="animation: countUp 0.4s ease-out {{ $index * 0.08 }}s both;">
-                                    <title>{{ $chartDetailLabels[$index] ?? $chartLabels[$index] }}: {{ $chartValues[$index] }}%</title>
+                                <circle cx="{{ $point['x'] }}" cy="{{ $point['y'] }}" r="12" fill="transparent"
+                                        class="chart-clickable" onclick="showLineChartDetail({{ $index }})">
+                                    <title>{{ $chartDetailLabels[$index] ?? $chartLabels[$index] }}: {{ $chartValues[$index] }}% &mdash; klik untuk detail</title>
                                 </circle>
+                                <circle cx="{{ $point['x'] }}" cy="{{ $point['y'] }}" r="4.5" fill="white" stroke="#10b981" stroke-width="2"
+                                        class="chart-clickable" onclick="showLineChartDetail({{ $index }})"
+                                        style="animation: countUp 0.4s ease-out {{ $index * 0.08 }}s both;"></circle>
                                 <!-- Value label -->
-                                <text x="{{ $point['x'] }}" y="{{ max($point['y'] - 10, 17) }}" text-anchor="middle" fill="#059669" class="chart-val"
+                                <text x="{{ $point['x'] }}" y="{{ max($point['y'] - 10, 14) }}" text-anchor="middle" fill="#059669" class="chart-val"
                                       style="animation: countUp 0.4s ease-out {{ $index * 0.08 + 0.1 }}s both;">{{ $chartValues[$index] }}%</text>
                             </g>
                         @endforeach
 
                         <!-- X-axis labels -->
-                        <g fill="#64748b" font-family="system-ui, sans-serif">
+                        <g fill="#64748b" class="chart-x-label">
                             @foreach ($chartLabels as $index => $label)
                                 @if($index % $labelStep === 0 || $index === $numLabels - 1)
-                                    <text x="{{ $chartLeft + ($index * $step) }}" y="158" text-anchor="middle">{{ $label }}</text>
+                                    <text x="{{ $chartLeft + ($index * $step) }}" y="168" text-anchor="middle">{{ $label }}</text>
                                 @endif
                             @endforeach
                         </g>
                     </svg>
                 </div>
-
-                <!-- Hadir per Sholat -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                    <div class="flex items-center gap-2.5 mb-3">
-                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-md">
-                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-[14px] font-bold text-slate-800">Hadir per Sholat</h3>
-                            <p class="text-[11px] text-slate-400">{!! $presensiWaktuSubtitle !!} &middot; Klik untuk detail</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-end gap-2 h-36">
-                        @foreach ($presensiWaktuValues as $index => $value)
-                            @php
-                                $barHeightPx = max(6, round($value * 1.6));
-                                $delay = $index * 0.1;
-                            @endphp
-                            <div class="flex-1 flex flex-col items-center justify-end cursor-pointer group" style="height: 100%;" onclick="showWaktuDetail('{{ $presensiWaktuLabels[$index] }}')">
-                                <span class="text-[11px] font-bold text-slate-700 mb-1">{{ $value }}%</span>
-                                <div class="w-full rounded-t-lg bg-gradient-to-t from-blue-600 to-blue-400 bar-animated group-hover:from-indigo-600 group-hover:to-indigo-400 transition-colors"
-                                     style="height: {{ $barHeightPx }}px; animation-delay: {{ $delay }}s;"></div>
-                                <span class="text-[11px] text-slate-500 font-medium mt-1">{{ $presensiWaktuLabels[$index] }}</span>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
             </div>
 
-            <!-- Diagram Per Orang: Stacked Bar -->
+            <!-- Diagram Per Orang: Stacked Bar (hanya utk admin/musyrif; utk pengasuh sudah di-cover Panel Saya) -->
+            @if(!$isPersonalMode)
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mt-3">
                 <div class="flex items-center gap-2.5 mb-3">
                     <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-red-400 to-red-500 flex items-center justify-center shadow-md">
@@ -583,12 +689,20 @@
                         @foreach($poFilters as $key => $label)
                             <button type="button" class="filter-tab perorang-filter-tab {{ $perOrangPeriode === $key ? 'active' : '' }}" onclick="switchPerOrangFilter('{{ $key }}', event)">{{ $label }}</button>
                         @endforeach
-                        <select id="perOrangWaktu" onchange="applyPerOrangFilter()" class="ml-2 border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
+                        <select id="perOrangWaktu" class="ml-2 border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
                             <option value="all" {{ $perOrangWaktu === 'all' ? 'selected' : '' }}>Semua Waktu</option>
                             @foreach(['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'] as $w)
                                 <option value="{{ $w }}" {{ $perOrangWaktu === $w ? 'selected' : '' }}>{{ $w }}</option>
                             @endforeach
                         </select>
+                        <select id="perOrangKeterangan" class="ml-2 border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
+                            <option value="all" {{ ($perOrangKeterangan ?? 'all') === 'all' ? 'selected' : '' }}>Semua Keterangan</option>
+                            <option value="Jamaah" {{ ($perOrangKeterangan ?? '') === 'Jamaah' ? 'selected' : '' }}>Berjamaah</option>
+                            <option value="Masbuq" {{ ($perOrangKeterangan ?? '') === 'Masbuq' ? 'selected' : '' }}>Masbuq</option>
+                            <option value="Izin" {{ ($perOrangKeterangan ?? '') === 'Izin' ? 'selected' : '' }}>Izin</option>
+                            <option value="Alfa" {{ ($perOrangKeterangan ?? '') === 'Alfa' ? 'selected' : '' }}>Alfa</option>
+                        </select>
+                        <button type="button" onclick="applyPerOrangFilter()" class="ml-1 bg-emerald-500 text-white px-3 py-1 rounded text-[11px] font-semibold hover:bg-emerald-600 transition">Terapkan</button>
                     </div>
                     <!-- Date Range Picker -->
                     <div id="perOrangMingguRange" class="hidden flex-wrap items-center gap-1.5 w-full mt-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
@@ -612,11 +726,20 @@
                 </div>
 
                 <!-- Legend -->
+                @php $pk = $perOrangKeterangan ?? 'all'; @endphp
                 <div class="flex flex-wrap items-center gap-3 mb-3 text-[11px]">
-                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-emerald-500"></span> Jamaah</span>
-                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-orange-400"></span> Masbuq</span>
+                    @if($pk === 'all' || $pk === 'Jamaah')
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-emerald-500"></span> Berjamaah</span>
+                    @endif
+                    @if($pk === 'all' || $pk === 'Masbuq')
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-orange-500"></span> Masbuq</span>
+                    @endif
+                    @if($pk === 'all' || $pk === 'Izin')
                     <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-blue-500"></span> Izin</span>
-                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-slate-400"></span> Alfa</span>
+                    @endif
+                    @if($pk === 'all' || $pk === 'Alfa')
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm" style="background-color:#ef4444"></span> Alfa</span>
+                    @endif
                     <span class="ml-auto text-slate-400">Total jadwal: {{ $perOrangData['totalJadwal'] }}</span>
                 </div>
 
@@ -641,16 +764,16 @@
                                 </div>
                                 <div class="flex-1 h-5 bg-slate-100 rounded-full overflow-hidden flex" title="J:{{ $po['hadir'] }} M:{{ $po['masbuq'] }} I:{{ $po['izin'] }} A:{{ $po['alfa'] }}">
                                     @if($po['hadir'] > 0)
-                                        <div class="h-full bg-emerald-500 transition-all duration-500" style="width: {{ $pHadir }}%"></div>
+                                        <div class="h-full bg-emerald-500 transition-all duration-500 @if(($perOrangKeterangan ?? 'all') !== 'all' && ($perOrangKeterangan ?? '') !== 'Jamaah') hidden @endif" style="width: {{ $pHadir }}%"></div>
                                     @endif
                                     @if($po['masbuq'] > 0)
-                                        <div class="h-full transition-all duration-500" style="background-color: #fb923c; width: {{ $pMasbuq }}%"></div>
+                                        <div class="h-full transition-all duration-500 @if(($perOrangKeterangan ?? 'all') !== 'all' && ($perOrangKeterangan ?? '') !== 'Masbuq') hidden @endif" style="background-color: #f97316; width: {{ $pMasbuq }}%"></div>
                                     @endif
                                     @if($po['izin'] > 0)
-                                        <div class="h-full bg-blue-500 transition-all duration-500" style="width: {{ $pIzin }}%"></div>
+                                        <div class="h-full bg-blue-500 transition-all duration-500 @if(($perOrangKeterangan ?? 'all') !== 'all' && ($perOrangKeterangan ?? '') !== 'Izin') hidden @endif" style="width: {{ $pIzin }}%"></div>
                                     @endif
                                     @if($po['alfa'] > 0)
-                                        <div class="h-full transition-all duration-500" style="background-color: #94a3b8; width: {{ $pAlfa }}%"></div>
+                                        <div class="h-full transition-all duration-500 @if(($perOrangKeterangan ?? 'all') !== 'all' && ($perOrangKeterangan ?? '') !== 'Alfa') hidden @endif" style="background-color: #ef4444; width: {{ $pAlfa }}%"></div>
                                     @endif
                                 </div>
                                 <span class="w-10 text-right text-[11px] font-bold text-slate-700 shrink-0">{{ $po['persentase'] }}%</span>
@@ -661,8 +784,9 @@
                     <div class="text-center py-8 text-slate-400 text-sm">
                         <p>Belum ada data presensi untuk periode ini.</p>
                     </div>
-                @endif
+            @endif
             </div>
+            @endif
         @else
             <div class="bg-white rounded-xl shadow-lg p-8 text-center animate-slide-up">
                 <h3 class="text-xl font-bold text-slate-800 mb-1">Tidak ada santri</h3>
@@ -674,7 +798,7 @@
         @endif
 
         <!-- Universal Modal -->
-        <div id="universalModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 animate-fade-in">
+        <div id="universalModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[1000] animate-fade-in">
             <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto animate-slide-up">
                 <div class="sticky top-0 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
                     <h2 class="text-lg font-bold" id="modalTitle">Detail</h2>
@@ -709,7 +833,7 @@
         </script>
     </div>
 
-    <div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[100]">
+    <div id="logoutModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[1010]">
         <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 animate-slide-up">
             <div class="p-6 text-center">
                 <div class="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
@@ -744,6 +868,7 @@
 
         const tanggal = "{{ $tanggal }}";
         const waktuSholat = "{{ $waktu }}";
+        const IS_PERSONAL_MODE = @json($isPersonalMode);
 
         function updateStatus(santriId, status, button) {
             const container = button.closest('[data-santri-id]');
@@ -854,13 +979,10 @@
 
         // === MODAL FUNCTIONS ===
         function lockBodyScroll() {
-            var sw = window.innerWidth - document.documentElement.clientWidth;
-            document.body.style.overflow = 'hidden';
-            if (sw > 0) document.body.style.paddingRight = sw + 'px';
+            document.documentElement.classList.add('modal-open');
         }
         function unlockBodyScroll() {
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
+            document.documentElement.classList.remove('modal-open');
         }
 
         function openModal(title, content) {
@@ -878,24 +1000,82 @@
         }
 
         function getStatusColor(status) {
-            const colors = { 'Hadir': '#22c55e', 'Masbuq': '#f97316', 'Izin': '#3b82f6', 'Alfa': '#94a3b8' };
+            const colors = { 'Hadir': '#22c55e', 'Masbuq': '#f97316', 'Izin': '#3b82f6', 'Alfa': '#ef4444' };
             return colors[status] || '#64748b';
         }
 
-        function groupNamesWithDates(names) {
+        // Format data dari /presensi/detail: { label: { nama: [tanggal, ...] } }
+        function groupNamesWithDates(grouped) {
             const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-            const grouped = {};
-            names.forEach(n => {
-                if (!grouped[n.nama]) grouped[n.nama] = [];
-                const parts = n.tanggal.split('-');
-                grouped[n.nama].push({ y: parseInt(parts[0]), m: parseInt(parts[1]), d: parseInt(parts[2]) });
-            });
-            return Object.entries(grouped).map(([nama, tglArr]) => {
-                tglArr.sort((a, b) => a.y - b.y || a.m - b.m || a.d - b.d);
-                const dateStr = tglArr.map(t => t.d + ' ' + months[t.m - 1]).join(', ');
-                const yearStr = tglArr.length > 0 ? ' ' + tglArr[0].y : '';
-                return `<div class="text-[11px] py-0.5"><span class="font-medium">${nama}</span><span class="opacity-60 ml-1">Ã‚Â· ${dateStr}${yearStr}</span></div>`;
+            return Object.entries(grouped || {}).map(([nama, tanggalList]) => {
+                const tglArr = (tanggalList || []).map(t => {
+                    const p = String(t).split('-');
+                    return { y: parseInt(p[0]), m: parseInt(p[1]), d: parseInt(p[2]) };
+                }).sort((a, b) => a.y - b.y || a.m - b.m || a.d - b.d);
+                const chips = tglArr.map(t =>
+                    `<span style="background:#f1f5f9;color:#475569;border-radius:6px;padding:1px 6px;font-size:10px;white-space:nowrap">${t.d}&nbsp;${months[t.m - 1]}</span>`
+                ).join('');
+                return `<div style="padding:3px 0;line-height:1.6"><div style="font-weight:500;color:#0f172a;font-size:12px">${nama}</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">${chips}</div></div>`;
             }).join('');
+        }
+
+        const STATUS_BOX = {
+            'Hadir':   { text: '#065f46', countBg: '#d1fae5', countText: '#059669' },
+            'Masbuq':  { text: '#92400e', countBg: '#fde68a', countText: '#d97706' },
+            'Izin':    { text: '#1e40af', countBg: '#bfdbfe', countText: '#2563eb' },
+            'Alfa':    { text: '#991b1b', countBg: '#fee2e2', countText: '#dc2626' },
+        };
+
+        // Ambil daftar nama + tanggal dari server saat modal dibuka.
+        // Halaman utama tidak lagi membawa data ini (Hundreds of thousands of rows).
+        async function fetchDetailNames(start, end, waktu) {
+            const params = new URLSearchParams({ start: start, end: end });
+            if (waktu) params.set('waktu', waktu);
+            const res = await fetch('{{ route('presensi.detail') }}?' + params.toString(), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            if (!res.ok) throw new Error('Gagal memuat data');
+            const json = await res.json();
+            return json.names || {};
+        }
+
+        function breakdownCardsHtml(names, unit) {
+            let html = '';
+            Object.keys(STATUS_BOX).forEach(label => {
+                const box = STATUS_BOX[label];
+                const list = names[label] || {};
+                const jmlNama = Object.keys(list).length;
+                const listHtml = jmlNama > 0
+                    ? groupNamesWithDates(list)
+                    : `<span class="text-slate-400 text-[11px] italic">Tidak ada</span>`;
+                html += `
+                    <div class="border border-slate-200 rounded-xl p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-semibold text-sm" style="color:${box.text}">${label}</span>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-full" style="background:${box.countBg};color:${box.countText}">${jmlNama} ${unit}</span>
+                        </div>
+                        <div class="space-y-0.5">${listHtml}</div>
+                    </div>
+                `;
+            });
+            return html;
+        }
+
+        function breakdownLoadingHtml(unit) {
+            let html = '';
+            Object.keys(STATUS_BOX).forEach(label => {
+                const box = STATUS_BOX[label];
+                html += `
+                    <div class="border border-slate-200 rounded-xl p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-semibold text-sm" style="color:${box.text}">${label}</span>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-full" style="background:${box.countBg};color:${box.countText}">- ${unit}</span>
+                        </div>
+                        <div class="text-slate-400 text-[11px] italic">Memuat...</div>
+                    </div>
+                `;
+            });
+            return html;
         }
 
         // Status detail
@@ -931,49 +1111,32 @@
             openModal('Detail: ' + status, content);
         }
 
-        // Waktu detail
+        // Waktu detail (lazy-load daftar nama)
         function showWaktuDetail(waktu) {
             const data = JSON.parse(document.getElementById('waktuBreakdownData').textContent);
             const detail = data[waktu];
             if (!detail) return;
 
-            const statusColors = { 'Jamaah': '#22c55e', 'Masbuq': '#f97316', 'Izin': '#3b82f6', 'Alfa': '#94a3b8' };
+            const statusColors = { 'Jamaah': '#22c55e', 'Masbuq': '#f97316', 'Izin': '#3b82f6', 'Alfa': '#ef4444' };
             const statusConfig = [
                 { key: 'Jamaah', bg: '#ecfdf5', text: '#065f46', countBg: '#d1fae5', countText: '#059669' },
                 { key: 'Masbuq', bg: '#fffbeb', text: '#92400e', countBg: '#fde68a', countText: '#d97706' },
                 { key: 'Izin', bg: '#eff6ff', text: '#1e40af', countBg: '#bfdbfe', countText: '#2563eb' },
-                { key: 'Alfa', bg: '#f8fafc', text: '#475569', countBg: '#e2e8f0', countText: '#64748b' },
+                { key: 'Alfa', bg: '#fef2f2', text: '#991b1b', countBg: '#fee2e2', countText: '#dc2626' },
             ];
             const total = detail.total || 0;
-            const names = detail.names || {};
 
             let barsHtml = '';
-            let breakdownHtml = '';
             statusConfig.forEach((s, idx) => {
                 const count = detail[s.key.toLowerCase()] || 0;
                 const pct = total > 0 ? Math.round((count / total) * 100) : 0;
                 barsHtml += `
-                    <div class="flex items-center gap-3">
-                        <span class="w-20 text-xs font-medium text-slate-600 text-right">${s.key}</span>
-                        <div class="flex-1 bg-slate-100 rounded-full h-6 overflow-hidden">
-                            <div class="h-full rounded-full flex items-center pl-2 bar-animated-h" style="width: ${Math.max(pct, 2)}%; background-color: ${statusColors[s.key]}; animation-delay: ${idx * 0.15}s;">
-                                ${pct > 10 ? `<span class="text-[10px] font-bold text-white">${count} (${pct}%)</span>` : ''}
-                            </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="text-xs font-medium text-slate-600 text-right" style="width:52px;flex-shrink:0">${s.key}</span>
+                        <div class="bg-slate-100 rounded-full" style="flex:1;height:24px;overflow:hidden;min-width:0;">
+                            <div class="h-full rounded-full bar-animated-h" style="width: ${Math.max(pct, 2)}%; background-color: ${statusColors[s.key]}; animation-delay: ${idx * 0.15}s;"></div>
                         </div>
-                        ${pct <= 10 ? `<span class="text-[10px] font-bold text-slate-500 w-16">${count} (${pct}%)</span>` : ''}
-                    </div>
-                `;
-                const statusNames = names[s.key] || [];
-                const listHtml = statusNames.length > 0
-                    ? groupNamesWithDates(statusNames)
-                    : `<span class="text-slate-400 text-[11px] italic">Tidak ada</span>`;
-                breakdownHtml += `
-                    <div class="border border-slate-200 rounded-xl p-3">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="font-semibold text-sm" style="color:${s.text}">${s.key}</span>
-                            <span class="text-xs font-bold px-2 py-0.5 rounded-full" style="background:${s.countBg};color:${s.countText}">${statusNames.length} orang</span>
-                        </div>
-                        <div class="space-y-0.5">${listHtml}</div>
+                        <span class="text-[10px] font-bold text-slate-600" style="width:62px;text-align:right;flex-shrink:0;white-space:nowrap">${count} (${pct}%)</span>
                     </div>
                 `;
             });
@@ -989,14 +1152,24 @@
                     </div>
                     <div class="space-y-2">
                         <h4 class="font-bold text-slate-800 text-sm">Rincian Kehadiran</h4>
-                        ${breakdownHtml}
+                        <div class="space-y-2" id="waktuBreakdownBox">${breakdownLoadingHtml('orang')}</div>
                     </div>
                 </div>
             `;
             openModal('Detail: Sholat ' + waktu, content);
+
+            fetchDetailNames(detail.start, detail.end, waktu)
+                .then(names => {
+                    const box = document.getElementById('waktuBreakdownBox');
+                    if (box) box.innerHTML = breakdownCardsHtml(names, 'orang');
+                })
+                .catch(() => {
+                    const box = document.getElementById('waktuBreakdownBox');
+                    if (box) box.innerHTML = '<p class="text-rose-500 text-[11px] italic">Gagal memuat daftar nama.</p>';
+                });
         }
 
-        // Line chart detail
+        // Line chart detail (lazy-load daftar nama)
         function showLineChartDetail(index) {
             const data = JSON.parse(document.getElementById('lineChartData').textContent);
             const labels = JSON.parse(document.getElementById('lineChartLabels').textContent);
@@ -1004,88 +1177,193 @@
             if (!item) return;
 
             const pct = item.total > 0 ? Math.round((item.hadir / item.total) * 100) : 0;
-            const bk = item.breakdown || {};
-            const statusConfig = [
-                { key: 'Hadir', bg: '#ecfdf5', text: '#065f46', countBg: '#d1fae5', countText: '#059669' },
-                { key: 'Masbuq', bg: '#fffbeb', text: '#92400e', countBg: '#fde68a', countText: '#d97706' },
-                { key: 'Izin', bg: '#eff6ff', text: '#1e40af', countBg: '#bfdbfe', countText: '#2563eb' },
-                { key: 'Alfa', bg: '#f8fafc', text: '#475569', countBg: '#e2e8f0', countText: '#64748b' },
-            ];
-
-            let breakdownHtml = '';
-            statusConfig.forEach(s => {
-                const names = bk[s.key] || [];
-                const listHtml = names.length > 0
-                    ? groupNamesWithDates(names)
-                    : `<span class="text-slate-400 text-[11px] italic">Tidak ada</span>`;
-                breakdownHtml += `
-                    <div class="border border-slate-200 rounded-xl p-3">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="font-semibold text-sm" style="color:${s.text}">${s.key}</span>
-                            <span class="text-xs font-bold px-2 py-0.5 rounded-full" style="background:${s.countBg};color:${s.countText}">${names.length} orang</span>
-                        </div>
-                        <div class="space-y-0.5">${listHtml}</div>
-                    </div>
-                `;
-            });
+            const unit = IS_PERSONAL_MODE ? 'kali' : 'orang';
 
             const content = `
                 <div class="space-y-4">
                     <div class="text-center p-4 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl">
                         <p class="text-sm text-slate-600 mb-1">${item.label || labels[index]}</p>
                         <p class="text-3xl font-bold text-emerald-600">${pct}%</p>
-                        <p class="text-xs text-slate-500 mt-1">Tingkat kehadiran</p>
+                        <p class="text-xs text-slate-500 mt-1">Tingkat kehadiran berjamaah (${IS_PERSONAL_MODE ? 'Berjamaah' : 'Jamaah'}/total)</p>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-emerald-50 p-3 rounded-xl text-center">
                             <p class="text-2xl font-bold text-emerald-600">${item.hadir}</p>
-                            <p class="text-xs text-slate-600">Hadir (Jamaah)</p>
+                            <p class="text-xs text-slate-600">Hadir (${IS_PERSONAL_MODE ? 'Berjamaah' : 'Jamaah'})</p>
                         </div>
                         <div class="bg-slate-50 p-3 rounded-xl text-center">
                             <p class="text-2xl font-bold text-slate-600">${item.total}</p>
                             <p class="text-xs text-slate-600">Total Record</p>
                         </div>
                     </div>
+                    <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3">
+                        <p class="text-[12px] text-slate-600 leading-relaxed"><span class="font-bold text-emerald-700">Penjelasan:</span> Dari total <span class="font-bold">${item.total}</span> record presensi pada <span class="font-bold">${item.label || labels[index]}</span>, sebanyak <span class="font-bold text-emerald-600">${item.hadir}</span> tercatat hadir berjamaah (status ${IS_PERSONAL_MODE ? 'Berjamaah' : 'Jamaah'}). Jadi tingkat kehadiran = ${item.hadir} &divide; ${item.total} &times; 100 = <span class="font-bold text-emerald-700">${pct}%</span>.</p>
+                    </div>
                     <div class="space-y-2">
                         <h4 class="font-bold text-slate-800 text-sm">Rincian Kehadiran</h4>
-                        ${breakdownHtml}
+                        <div class="space-y-2" id="lineBreakdownBox">${breakdownLoadingHtml(unit)}</div>
                     </div>
                 </div>
             `;
-            openModal('Detail Kehadiran', content);
+            openModal('Detail: ' + (item.label || labels[index]), content);
+
+            fetchDetailNames(item.start, item.end, null)
+                .then(names => {
+                    const box = document.getElementById('lineBreakdownBox');
+                    if (box) box.innerHTML = breakdownCardsHtml(names, unit);
+                })
+                .catch(() => {
+                    const box = document.getElementById('lineBreakdownBox');
+                    if (box) box.innerHTML = '<p class="text-rose-500 text-[11px] italic">Gagal memuat daftar nama.</p>';
+                });
         }
 
-        // Tren 6 bulan detail
+        // Toast kecil utk feedback tombol salin
+        function chartCopyToast(msg, type) {
+            let c = document.getElementById('chart-copy-toast');
+            if (!c) {
+                c = document.createElement('div');
+                c.id = 'chart-copy-toast';
+                Object.assign(c.style, { position: 'fixed', top: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: '100002', padding: '10px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: '600', color: '#fff', boxShadow: '0 8px 20px rgba(0,0,0,.18)', transition: 'opacity .3s', pointerEvents: 'none', whiteSpace: 'nowrap' });
+                document.body.appendChild(c);
+            }
+            c.style.background = type === 'error' ? '#dc2626' : '#059669';
+            c.textContent = msg;
+            c.style.opacity = '1';
+            clearTimeout(c._t);
+            c._t = setTimeout(function () { c.style.opacity = '0'; }, 2800);
+        }
+
+        // Buang gelar di depan/di belakang nama (mis. "K.H. Ahmad" -> "Ahmad", "Fauzi, S.Pd." -> "Fauzi")
+        function stripGelar(raw) {
+            let s = String(raw || '').trim().replace(/\s+/g, ' ');
+            if (!s) return s;
+            // Gelar belakang setelah koma: ulangi sampai habis
+            s = s.replace(/(?:,\s*(?:cum laude|[A-Za-zÀ-ž]+(?:\.\s?)?(?:\s?[A-Za-zÀ-ž]*\.?)*))+$/g, '');
+            // Gelar depan: ulangi sampai habis
+            s = s.replace(/^(?:(?:K\.?\s?H\.?|H\.?|Hj\.?|Haji|Hajjah|Ustadz|Ustadzah|Ustaz|Ustazah|Ust\.?|Ustdz\.?|Dr\.?|Drs\.?|Dra\.?|Prof\.?|Ir\.?|Lc\.?|Nyai)(?=\s|$)\s*)+/i, '');
+            return s.trim();
+        }
+
+        // Copy teks via metode klasik (sinkron, tanpa permission) lalu fallback Clipboard API
+        function copyTextVia(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;top:0;left:0;width:2em;height:2em;padding:0;border:0;opacity:0.01;font-size:14px;z-index:-1000;';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            ta.setSelectionRange(0, text.length);
+            let ok = false;
+            try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+            document.body.removeChild(ta);
+            return ok;
+        }
+
+        // Modal cadangan: tampilkan teks siap salin manual (Ctrl+C / tahan-tahan)
+        function showCopyManualModal(text) {
+            const bg = document.createElement('div');
+            bg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;';
+            const box = document.createElement('div');
+            box.style.cssText = 'background:#fff;border-radius:14px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;';
+            const head = document.createElement('div');
+            head.style.cssText = 'background:#7c3aed;color:#fff;padding:14px 18px;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center;';
+            head.innerHTML = 'Salin manual (Ctrl+C) <span style="cursor:pointer;font-size:20px;line-height:1;">&times;</span>';
+            head.lastChild.onclick = function () { document.body.removeChild(bg); };
+            const body = document.createElement('div');
+            body.style.cssText = 'padding:16px;';
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.readOnly = false;
+            ta.style.cssText = 'width:100%;height:280px;border:1px solid #e2e8f0;border-radius:10px;padding:10px;font-size:13px;box-sizing:border-box;outline:none;';
+            body.appendChild(ta);
+            box.appendChild(head);
+            box.appendChild(body);
+            bg.appendChild(box);
+            document.body.appendChild(bg);
+            ta.focus();
+            ta.select();
+            ta.setSelectionRange(0, text.length);
+        }
+
+        // Salin daftar nama (Status Kehadiran) sebagai TEKS ke clipboard utk paste di WhatsApp
+        async function copyStatusChartToClipboard() {
+            try {
+                const donut = document.getElementById('statusDonut');
+                const card = donut ? donut.closest('.bg-white') : null;
+                let waktu = String(typeof waktuSholat !== 'undefined' ? waktuSholat : '').trim();
+                let tgl = String(typeof tanggal !== 'undefined' ? tanggal : '').trim();
+
+                // Ambil "Subuh · 24 Sep 2026" dari keterangan kiri kartu
+                if (card) {
+                    const sub = card.querySelector('p[class*="text-[10px]"]');
+                    if (sub) {
+                        const parts = sub.textContent.split('·');
+                        if (parts[0] && parts[0].trim()) waktu = parts[0].trim();
+                        if (parts[1] && parts[1].trim()) tgl = parts[1].trim();
+                    }
+                }
+
+                let data = [];
+                const jsonEl = document.getElementById('statusBreakdownData');
+                if (jsonEl) {
+                    try { data = JSON.parse(jsonEl.textContent); } catch (e) { data = []; }
+                }
+                if (!Array.isArray(data) || data.length === 0) {
+                    chartCopyToast('Belum ada data presensi untuk disalin.', 'error');
+                    return;
+                }
+
+                // Urutan sama dgn keterangan di samping kiri kartu
+                const order = ['Hadir', 'Masbuq', 'Izin', 'Alfa'];
+                const lines = [];
+                lines.push('Presensi Sholat ' + waktu.toUpperCase());
+                if (tgl) lines.push(tgl);
+                lines.push('');
+                data.forEach(function (s) {
+                    if (order.indexOf(s.status) === -1) return;
+                    const santris = (s && s.santris) || [];
+                    if (santris.length === 0) return;
+                    lines.push('\u2022 ' + s.status + ' (' + santris.length + ' orang):');
+                    santris.forEach(function (p, i) {
+                        let nm = stripGelar(p.nama || '');
+                        if (!nm) nm = '?';
+                        lines.push((i + 1) + '. ' + nm);
+                    });
+                    lines.push('');
+                });
+
+                const text = lines.join('\n');
+
+                // 1) copy sinkron (paling andal)
+                let done = copyTextVia(text);
+                // 2) kalau gagal, tunggu Clipboard API (async) sampai benar2 selesai
+                if (!done && navigator.clipboard && navigator.clipboard.writeText) {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        done = true;
+                    } catch (e) { done = false; }
+                }
+
+                if (done) {
+                    chartCopyToast('Daftar nama disalin! Paste di WhatsApp (Ctrl+V).');
+                } else {
+                    showCopyManualModal(text);
+                    chartCopyToast('Tekan Ctrl+C di kotak yang muncul untuk menyalin.', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                chartCopyToast('Gagal menyalin teks: ' + (e && e.message ? e.message : e), 'error');
+            }
+        }
+
+        // Tren 6 bulan detail (lazy-load daftar nama)
         function showTrenDetail(index) {
             const allData = JSON.parse(document.getElementById('trenDetailData').textContent);
             const item = allData[index];
             if (!item) return;
 
             const pct = item.total > 0 ? Math.round((item.hadir / item.total) * 100) : 0;
-            const bk = item.breakdown || {};
-            const statusConfig = [
-                { key: 'Hadir', bg: '#ecfdf5', text: '#065f46', countBg: '#d1fae5', countText: '#059669' },
-                { key: 'Masbuq', bg: '#fffbeb', text: '#92400e', countBg: '#fde68a', countText: '#d97706' },
-                { key: 'Izin', bg: '#eff6ff', text: '#1e40af', countBg: '#bfdbfe', countText: '#2563eb' },
-                { key: 'Alfa', bg: '#fef2f2', text: '#991b1b', countBg: '#fee2e2', countText: '#dc2626' },
-            ];
-
-            let breakdownHtml = '';
-            statusConfig.forEach(s => {
-                const names = bk[s.key] || [];
-                const listHtml = names.length > 0
-                    ? groupNamesWithDates(names)
-                    : `<span class="text-slate-400 text-[11px] italic">Tidak ada</span>`;
-                breakdownHtml += `
-                    <div class="border border-slate-200 rounded-xl p-3">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="font-semibold text-sm" style="color:${s.text}">${s.key}</span>
-                            <span class="text-xs font-bold px-2 py-0.5 rounded-full" style="background:${s.countBg};color:${s.countText}">${names.length} orang</span>
-                        </div>
-                        <div class="space-y-0.5">${listHtml}</div>
-                    </div>
-                `;
-            });
 
             const content = `
                 <div class="space-y-4">
@@ -1109,11 +1387,21 @@
                     </div>
                     <div class="space-y-2">
                         <h4 class="font-bold text-slate-800 text-sm">Rincian Kehadiran</h4>
-                        ${breakdownHtml}
+                        <div class="space-y-2" id="trenBreakdownBox">${breakdownLoadingHtml('orang')}</div>
                     </div>
                 </div>
             `;
             openModal('Detail Tren: ' + item.label, content);
+
+            fetchDetailNames(item.start, item.end, null)
+                .then(names => {
+                    const box = document.getElementById('trenBreakdownBox');
+                    if (box) box.innerHTML = breakdownCardsHtml(names, 'orang');
+                })
+                .catch(() => {
+                    const box = document.getElementById('trenBreakdownBox');
+                    if (box) box.innerHTML = '<p class="text-rose-500 text-[11px] italic">Gagal memuat daftar nama.</p>';
+                });
         }
 
         // Rating detail per hari
@@ -1156,7 +1444,7 @@
                     <div class="max-h-64 overflow-y-auto pr-1">${rows}</div>
                 </div>
             `;
-            openModal('Rincian ' + nama + ' Ã¢â‚¬â€ ' + waktu, content);
+            openModal('Rincian ' + nama + ' — ' + waktu, content);
         }
 
         function showSantriRating(nama, rating, period) {
@@ -1191,31 +1479,29 @@
             currentChartFilter = filter;
             document.querySelectorAll('.chart-filter-tab').forEach(t => t.classList.remove('active'));
             e.target.classList.add('active');
+            document.getElementById('hariRange').classList.toggle('hidden', filter !== 'hari');
+            document.getElementById('hariRange').classList.toggle('flex', filter === 'hari');
             document.getElementById('mingguRange').classList.toggle('hidden', filter !== 'minggu');
             document.getElementById('mingguRange').classList.toggle('flex', filter === 'minggu');
             document.getElementById('bulanRange').classList.toggle('hidden', filter !== 'bulan');
             document.getElementById('bulanRange').classList.toggle('flex', filter === 'bulan');
-
-            if (filter === 'minggu' || filter === 'bulan') {
-                applyChartFilter();
-            } else {
-                const params = new URLSearchParams(window.location.search);
-                params.set('chart_filter', filter);
-                params.delete('chart_start');
-                params.delete('chart_end');
-                window.location.href = '?' + params.toString();
-            }
+            document.getElementById('tahunRange').classList.toggle('hidden', filter !== 'tahun');
+            document.getElementById('tahunRange').classList.toggle('flex', filter === 'tahun');
         }
 
         function applyChartFilter() {
             const params = new URLSearchParams(window.location.search);
             params.set('chart_filter', currentChartFilter);
 
-            if (currentChartFilter === 'minggu') {
-                const s = document.getElementById('chartStartDate').value;
-                const e = document.getElementById('chartEndDate').value;
-                if (s) params.set('chart_start', s);
-                if (e) params.set('chart_end', e);
+            if (currentChartFilter === 'hari') {
+                const d = document.getElementById('chartDayDate').value;
+                params.delete('chart_start');
+                params.delete('chart_end');
+                if (d) params.set('chart_start', d);
+            } else if (currentChartFilter === 'minggu') {
+                const wm = document.getElementById('chartWeekMonth').value;
+                if (wm) params.set('chart_end', wm);
+                params.delete('chart_start');
             } else if (currentChartFilter === 'bulan') {
                 const s = document.getElementById('chartStartMonth').value;
                 const e = document.getElementById('chartEndMonth').value;
@@ -1229,13 +1515,19 @@
             window.location.href = '?' + params.toString();
         }
 
-        // Show initial date range if filter is minggu or bulan
-        if (currentChartFilter === 'minggu') {
+        // Show initial date range if filter is hari/minggu/bulan/tahun
+        if (currentChartFilter === 'hari') {
+            document.getElementById('hariRange').classList.remove('hidden');
+            document.getElementById('hariRange').classList.add('flex');
+        } else if (currentChartFilter === 'minggu') {
             document.getElementById('mingguRange').classList.remove('hidden');
             document.getElementById('mingguRange').classList.add('flex');
         } else if (currentChartFilter === 'bulan') {
             document.getElementById('bulanRange').classList.remove('hidden');
             document.getElementById('bulanRange').classList.add('flex');
+        } else if (currentChartFilter === 'tahun') {
+            document.getElementById('tahunRange').classList.remove('hidden');
+            document.getElementById('tahunRange').classList.add('flex');
         }
 
         // === PER ORANG FILTER ===
@@ -1260,6 +1552,10 @@
             const waktu = document.getElementById('perOrangWaktu').value;
             if (waktu && waktu !== 'all') params.set('per_orang_waktu', waktu);
             else params.delete('per_orang_waktu');
+
+            const keterangan = document.getElementById('perOrangKeterangan').value;
+            if (keterangan && keterangan !== 'all') params.set('per_orang_keterangan', keterangan);
+            else params.delete('per_orang_keterangan');
 
             if (currentPerOrangFilter === 'minggu') {
                 const s = document.getElementById('perOrangStartDate').value;
@@ -1309,7 +1605,7 @@
                     <div class="grid grid-cols-4 gap-2">
                         <div class="bg-emerald-50 p-3 rounded-xl text-center">
                             <p class="text-xl font-bold text-emerald-600">${hadir}</p>
-                            <p class="text-[10px] text-slate-500">Jamaah</p>
+                            <p class="text-[10px] text-slate-500">Berjamaah</p>
                         </div>
                         <div class="bg-orange-50 p-3 rounded-xl text-center">
                             <p class="text-xl font-bold text-orange-500">${masbuq}</p>
@@ -1319,15 +1615,15 @@
                             <p class="text-xl font-bold text-blue-600">${izin}</p>
                             <p class="text-[10px] text-slate-500">Izin</p>
                         </div>
-                        <div class="bg-slate-100 p-3 rounded-xl text-center">
-                            <p class="text-xl font-bold text-slate-500">${alfa}</p>
+                        <div class="bg-red-50 p-3 rounded-xl text-center">
+                            <p class="text-xl font-bold text-red-500">${alfa}</p>
                             <p class="text-[10px] text-slate-500">Alfa</p>
                         </div>
                     </div>
 
                     <div class="space-y-2">
                         <div class="flex items-center gap-2">
-                            <span class="text-[11px] text-slate-500 w-20">Jamaah</span>
+                            <span class="text-[11px] text-slate-500 w-20">Berjamaah</span>
                             <div class="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
                                 <div class="h-full rounded-full bg-emerald-500 flex items-center pl-2" style="width: ${Math.max(hadir / Math.max(1, totalJadwal) * 100, 2)}%">
                                     ${hadir / Math.max(1, totalJadwal) * 100 > 15 ? '<span class="text-[9px] font-bold text-white">' + hadir + '</span>' : ''}
@@ -1356,7 +1652,7 @@
                         <div class="flex items-center gap-2">
                             <span class="text-[11px] text-slate-500 w-20">Alfa</span>
                             <div class="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
-                                <div class="h-full rounded-full bg-slate-400 flex items-center pl-2" style="width: ${Math.max(alfa / Math.max(1, totalJadwal) * 100, 2)}%">
+                                <div class="h-full rounded-full bg-red-500 flex items-center pl-2" style="width: ${Math.max(alfa / Math.max(1, totalJadwal) * 100, 2)}%">
                                     ${alfa / Math.max(1, totalJadwal) * 100 > 15 ? '<span class="text-[9px] font-bold text-white">' + alfa + '</span>' : ''}
                                 </div>
                             </div>
@@ -1369,7 +1665,7 @@
                         Dari <span class="font-bold">${totalJadwal}</span> jadwal sholat, <span class="font-bold text-emerald-600">${hadir}</span> berjamaah,
                         <span class="font-bold text-orange-500">${masbuq}</span> masbuq,
                         <span class="font-bold text-blue-600">${izin}</span> izin, dan
-                        <span class="font-bold text-slate-500">${alfa}</span> alfa.
+                        <span class="font-bold text-red-500">${alfa}</span> alfa.
                         Dari yang sudah diisi (${totalIsi} kali), tingkat kehadiran <span class="font-bold text-emerald-600">${pctIsi}%</span>.
                     </div>
                 </div>

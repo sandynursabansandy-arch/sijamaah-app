@@ -1,6 +1,7 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
+    @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kelola Santri</title>
@@ -8,12 +9,7 @@
     <style>
         /* Cegah layout shift saat scrollbar muncul/hilang selama animasi masuk */
         html {
-            overflow-y: scroll;
             scrollbar-gutter: stable;
-        }
-
-        body {
-            overflow-x: hidden;
         }
 
         @keyframes slideIn {
@@ -83,6 +79,29 @@
             color: #7f1d1d;
         }
 
+        .santri-scroll {
+            max-height: 580px; overflow: auto; scrollbar-width: thin;
+            scrollbar-color: #10b981 #e2e8f0;
+        }
+        .santri-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+        .santri-scroll::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 9999px; }
+        .santri-scroll::-webkit-scrollbar-thumb { background: #10b981; border-radius: 9999px; }
+        .santri-scroll thead th {
+            position: sticky; top: 0; z-index: 10;
+            background: #10b981; color: #ffffff;
+            box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+        }
+        .santri-scroll thead th:first-child {
+            position: sticky; left: 0; z-index: 11;
+        }
+        .santri-scroll tbody td:first-child {
+            position: sticky; left: 0; z-index: 5; background: #fff;
+        }
+        .santri-scroll tbody tr:nth-child(odd) td:first-child { background: #f9fafb; }
+        .santri-scroll tbody tr:nth-child(even) td:first-child { background: #fff; }
+        .santri-scroll tbody tr:hover td:first-child { background: #f1f5f9 !important; }
+        .santri-scroll thead tr { background: transparent; }
+
         .alert-animate {
             animation: slideDown 0.4s ease-out;
         }
@@ -149,7 +168,7 @@
         <!-- Success Message (toast) -->
         @if(session('success'))
             <script>
-                document.addEventListener('DOMContentLoaded', function() {
+                window.__pageBoot('santriIndexInit', function() {
                     var container = document.getElementById('toast-container');
                     var toast = document.createElement('div');
                     toast.className = 'toast success';
@@ -208,7 +227,7 @@
 
         <!-- Santri Table -->
         <div class="bg-white rounded-xl shadow-sm overflow-hidden animate-fade-in border border-slate-100">
-            <div class="overflow-x-auto">
+            <div class="santri-scroll">
                     <table class="w-full min-w-[800px]">
                         <thead>
                             <tr class="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
@@ -288,25 +307,23 @@
         </div>
 
         <!-- Info Cards -->
-        <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 animate-fade-in max-w-lg mx-auto">
-            <div class="bg-white rounded-lg p-3 shadow-sm border border-slate-100 text-center">
+        <div class="mt-6 flex items-center gap-3 animate-fade-in max-w-lg mx-auto">
+            <div class="flex-1 bg-white rounded-lg p-3 shadow-sm border border-slate-100 text-center">
                 <p class="text-slate-500 text-[10px] font-semibold uppercase">Total Santri</p>
                 <p class="text-xl font-bold text-emerald-600">{{ $santris->total() }}</p>
             </div>
-
-            <div class="bg-white rounded-lg p-3 shadow-sm border border-slate-100 text-center">
+            <div class="flex-1 bg-white rounded-lg p-3 shadow-sm border border-slate-100 text-center">
                 <p class="text-slate-500 text-[10px] font-semibold uppercase">Total Kamar</p>
                 <p class="text-xl font-bold text-blue-600">{{ count($daftarKamar) }}</p>
             </div>
-
-            <div class="bg-white rounded-lg p-3 shadow-sm border border-slate-100 text-center">
+            <div class="flex-1 bg-white rounded-lg p-3 shadow-sm border border-slate-100 text-center">
                 <p class="text-slate-500 text-[10px] font-semibold uppercase">Halaman</p>
                 <p class="text-xl font-bold text-purple-600">{{ $santris->currentPage() }} / {{ $santris->lastPage() }}</p>
             </div>
         </div>
     </div>
 
-    <div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[100]">
+    <div id="logoutModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[1010]">
         <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 animate-slide-up">
             <div class="p-6 text-center">
                 <div class="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">

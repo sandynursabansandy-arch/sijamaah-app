@@ -1,9 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
+    @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Riwayat Perubahan Presensi â€” SIJAMAAH</title>
+    <title>Riwayat Perubahan Presensi � SIJAMAAH</title>
     @vite(['resources/css/app.css'])
     <style>
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -71,7 +72,7 @@
                                 <td class="px-4 py-2.5 text-[13px]">{{ $log->waktu_sholat }}</td>
                                 <td class="px-4 py-2.5 whitespace-nowrap">
                                     @php
-                                        $warna = ['Jamaah' => 'bg-emerald-100 text-emerald-700', 'Masbuq' => 'bg-amber-100 text-amber-700', 'Izin' => 'bg-blue-100 text-blue-700', 'Alfa' => 'bg-red-100 text-red-700'];
+                                        $warna = ['Jamaah' => 'bg-emerald-100 text-emerald-700', 'Masbuq' => 'bg-orange-100 text-orange-700', 'Izin' => 'bg-blue-100 text-blue-700', 'Alfa' => 'bg-red-100 text-red-700'];
                                     @endphp
                                     <span class="inline-flex items-center gap-1 text-[12px]">
                                         @if($log->status_lama)

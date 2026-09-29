@@ -1,9 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
+    @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pengajuan Izin â€” SIJAMAAH</title>
+    <title>Pengajuan Izin — SIJAMAAH</title>
     @vite(['resources/css/app.css'])
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -44,7 +45,7 @@
                 <h1 class="text-[15px] font-bold text-slate-800 leading-tight">Pengajuan Izin</h1>
                 <p class="text-[11px] text-slate-400">Ajukan izin santri; jika disetujui, presensi "Izin" dibuat otomatis</p>
             </div>
-            @if(auth()->user()?->canManagePresensi())
+            @if(auth()->check() && auth()->user()->role !== 'admin')
                 <a href="{{ route('izin.create') }}" class="shrink-0 inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-4 py-2 rounded-lg font-semibold text-xs shadow-lg hover:opacity-90 transition-smooth">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     Ajukan Izin
@@ -101,16 +102,21 @@
                                 @endif
                             </p>
                         </div>
-                        @if($izin->status === 'Menunggu' && auth()->user()?->canManagePresensi())
+                        @if($izin->status === 'Menunggu')
                             <div class="flex gap-2 shrink-0">
-                                <form method="POST" action="{{ route('izin.setujui', $izin->id) }}" onsubmit="return confirm('Setujui pengajuan ini? Presensi Izin akan dibuat otomatis.')">
-                                    @csrf
-                                    <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold text-xs shadow transition-smooth">Setujui</button>
-                                </form>
-                                <form method="POST" action="{{ route('izin.tolak', $izin->id) }}" onsubmit="return confirm('Tolak pengajuan ini?')">
-                                    @csrf
-                                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold text-xs shadow transition-smooth">Tolak</button>
-                                </form>
+                                @if(auth()->user()?->role === 'pengasuh')
+                                    <a href="{{ route('izin.edit', $izin->id) }}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold text-xs shadow transition-smooth">Edit</a>
+                                @endif
+                                @if(auth()->user()?->canManagePresensi())
+                                    <form method="POST" action="{{ route('izin.setujui', $izin->id) }}" onsubmit="return confirm('Setujui pengajuan ini? Presensi Izin akan dibuat otomatis.')">
+                                        @csrf
+                                        <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold text-xs shadow transition-smooth">Setujui</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('izin.tolak', $izin->id) }}" onsubmit="return confirm('Tolak pengajuan ini?')">
+                                        @csrf
+                                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold text-xs shadow transition-smooth">Tolak</button>
+                                    </form>
+                                @endif
                             </div>
                         @endif
                     </div>
@@ -130,7 +136,7 @@
     </div>
 
     <!-- Logout Modal -->
-    <div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[100]">
+    <div id="logoutModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[1010]">
         <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 animate-slide-up">
             <div class="p-6 text-center">
                 <div class="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">

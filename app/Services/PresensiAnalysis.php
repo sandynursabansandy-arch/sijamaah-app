@@ -2,57 +2,75 @@
 
 namespace App\Services;
 
-use App\Models\PresensiSholat;
-use App\Models\Santri;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class PresensiAnalysis
 {
     /**
      * Santri dengan alfa >= $minStreak hari beruntun (dihitung dari hari ini/kemarin).
+     *
+     * Satu query DISTINCT untuk daftar tanggal alfa + satu query untuk data Santri,
+     * lalu streak dihitung dengan lookup array (sebelumnya memakai Eloquent model
+     * dan `contains()` linear di dalam loop, yang mahal saat data sudah menumpuk).
+     *
+     * @return array<int, array{nama: string, kamar: string, streak: int}>
      */
     public static function alfaBeruntun(int $minStreak = 3): array
     {
-        $since = Carbon::now()->subDays(30)->format('Y-m-d');
+        $since = Carbon::today()->subDays(30)->format('Y-m-d');
 
-        $dates = PresensiSholat::where('status', 'Alfa')
-            ->where('tanggal', '>=', $since)
+        $datesBySantri = DB::table('presensi_sholats')
             ->select('santri_id', 'tanggal')
+            ->where('status', 'Alfa')
+            ->where('tanggal', '>=', $since)
             ->distinct()
+            ->orderBy('santri_id')
             ->get()
             ->groupBy('santri_id');
 
-        $result = [];
-        foreach ($dates as $santriId => $rows) {
-            $streak = 0;
-            $cursor = Carbon::today();
+        if ($datesBySantri->isEmpty()) {
+            return [];
+        }
 
-            $hasToday = $rows->contains(fn ($r) => $r->tanggal->isSameDay($cursor));
-            if (!$hasToday) {
+        $santriMap = DB::table('santris')
+            ->leftJoin('kamars', 'kamars.id', '=', 'santris.kamar_id')
+            ->whereIn('santris.id', $datesBySantri->keys()->all())
+            ->select('santris.id as id', 'santris.nama as nama', 'kamars.nama_kamar as kamar')
+            ->get()
+            ->keyBy('id');
+
+        $result = [];
+
+        foreach ($datesBySantri as $santriId => $rows) {
+            $dates = array_flip($rows->pluck('tanggal')->all());
+
+            $cursor = Carbon::today();
+            if (!isset($dates[$cursor->format('Y-m-d')])) {
                 $cursor->subDay();
-                if (!$rows->contains(fn ($r) => $r->tanggal->isSameDay($cursor))) {
+                if (!isset($dates[$cursor->format('Y-m-d')])) {
                     continue;
                 }
             }
 
-            while ($rows->contains(fn ($r) => $r->tanggal->isSameDay($cursor))) {
+            $streak = 0;
+            while (isset($dates[$cursor->format('Y-m-d')])) {
                 $streak++;
                 $cursor->subDay();
             }
 
-            if ($streak >= $minStreak) {
-                $santri = Santri::find($santriId);
-                if ($santri) {
-                    $result[] = [
-                        'nama' => $santri->nama,
-                        'kamar' => $santri->kamar?->nama_kamar ?? '-',
-                        'streak' => $streak,
-                    ];
-                }
+            $santri = $santriMap->get($santriId);
+            if ($streak >= $minStreak && $santri) {
+                $result[] = [
+                    'nama' => $santri->nama,
+                    'kamar' => $santri->kamar ?? '-',
+                    'streak' => $streak,
+                ];
             }
         }
 
         usort($result, fn ($a, $b) => $b['streak'] <=> $a['streak']);
+
         return $result;
     }
 }

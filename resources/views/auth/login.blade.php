@@ -1,9 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
+    @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login â€” SIJAMAAH</title>
+    <title>Login � SIJAMAAH</title>
     @vite(['resources/css/app.css'])
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
@@ -167,7 +168,7 @@
             opacity: 0.9;
         }
         .type-sub {
-            display: inline-block;
+            display: block;
             position: relative;
             white-space: nowrap;
         }
@@ -238,6 +239,27 @@
                             </div>
                         </div>
 
+                        <!-- Cari Akun: temukan email milik anda -->
+                        <div class="anim-fade-up" style="animation-delay:0.15s">
+                            <button type="button" id="btnCariAkun"
+                                class="flex items-center cursor-pointer text-xs font-semibold text-teal-600 transition"
+                                style="background:transparent;border:none;padding:0;gap:6px">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+                                <span>Lupa email? Cari akun Anda</span>
+                                <svg id="chevCari" class="w-4 h-4" style="transition:transform .2s" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+
+                            <div id="panelCariAkun" class="hidden mt-2 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                                <input type="text" id="cariNama" autocomplete="off" spellcheck="false"
+                                    class="input-glow w-full px-3 py-2 rounded-lg bg-white text-slate-800 text-sm focus:outline-none"
+                                    placeholder="Ketik sebagian nama Anda, contoh: tris sandi">
+                                <p id="cariCatatan" class="hidden mt-1 text-[10px] text-slate-400">Klik akun milik Anda untuk mengisi email di atas.</p>
+                                <div id="hasilCari" class="mt-1"></div>
+                                <p id="cariLoading" class="hidden mt-1 text-xs text-slate-400">Mencari akun...</p>
+                                <p id="cariKosong" class="hidden mt-1 text-xs text-slate-400">Tidak ada akun yang cocok.</p>
+                            </div>
+                        </div>
+
                         <!-- Password -->
                         <div class="anim-fade-up" style="animation-delay:0.2s">
                             <label class="block text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-1.5 pl-0.5">Password</label>
@@ -267,12 +289,15 @@
                     </form>
 
                     <!-- Footer -->
-                    <div class="mt-8 text-center anim-fade-up" style="animation-delay:0.4s">
+                    <div class="mt-6 text-center anim-fade-up" style="animation-delay:0.4s">
                         <p class="text-sm text-slate-500">
                             Belum punya akun?
                             <a href="{{ route('register') }}" class="font-bold text-emerald-600 hover:text-emerald-700 hover:underline">Daftar Akun</a>
                         </p>
+                    </div>
+                    <div class="mt-3 text-center anim-fade-up" style="animation-delay:0.45s">
                         <p class="text-[10px] text-slate-400 mt-2">&copy; {{ date('Y') }} SIJAMAAH &middot; Pesantren Digital</p>
+                        <a href="javascript:void(0)" id="btnInstallPwaD" class="hidden mt-2 inline-flex items-center justify-center gap-1 text-[11px] font-semibold text-emerald-600">Pasang Aplikasi</a>
                     </div>
                 </div>
             </div>
@@ -282,10 +307,13 @@
         <div class="lg:hidden w-full max-w-sm anim-slide-right">
             <div class="glass-card rounded-3xl p-8 text-center">
                 <!-- Logo -->
-                <div class="logo-pulse w-40 h-40 sm:w-60 sm:h-60 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 flex items-center justify-center mx-auto mb-6 shadow-xl p-4">
+                <div class="logo-pulse w-40 h-40 sm:w-60 sm:h-60 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 flex items-center justify-center mx-auto mb-4 shadow-xl p-4">
                     <img src="{{ asset('images/nw.png') }}" alt="Logo" class="w-full h-full object-contain drop-shadow-lg">
                 </div>
-                <h2 class="text-xl font-extrabold text-slate-800 mb-1">Selamat Datang</h2>
+                <div style="min-height: 55px;" class="mb-1">
+                    <h2 class="text-2xl font-extrabold tracking-tight type-title text-center"><span id="tTitleM" style="color: #059669;"></span><span class="typing-cursor" id="cursorTitleM" style="display:none;"></span></h2>
+                    <p class="text-xs font-semibold type-sub text-center"><span id="tSubM" style="color: #0d9488;"></span><span class="typing-cursor" id="cursorSubM" style="display:none;"></span></p>
+                </div>
                 <p class="text-slate-500 text-xs mb-6">Masuk ke akun Anda untuk melanjutkan</p>
 
                 <!-- Error Message -->
@@ -299,7 +327,7 @@
                 <form method="POST" action="{{ route('login') }}" id="loginFormMobile" class="space-y-4 text-left" autocomplete="off">
                     @csrf
 
-                    <div>
+                    <div class="anim-fade-up" style="animation-delay:0.2s">
                         <label class="block text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-1 pl-0.5">Email</label>
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -311,7 +339,27 @@
                         </div>
                     </div>
 
-                    <div>
+                    <div class="anim-fade-up" style="animation-delay:0.25s">
+                        <button type="button" id="btnCariAkunM"
+                            class="flex items-center cursor-pointer text-xs font-semibold text-teal-600 transition"
+                            style="background:transparent;border:none;padding:0;gap:6px">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+                            <span>Lupa email? Cari akun Anda</span>
+                            <svg id="chevCariM" class="w-4 h-4" style="transition:transform .2s" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+
+                        <div id="panelCariAkunM" class="hidden mt-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-left">
+                            <input type="text" id="cariNamaM" autocomplete="off" spellcheck="false"
+                                class="input-glow w-full px-3 py-2 rounded-lg bg-white text-slate-800 text-sm focus:outline-none"
+                                placeholder="Ketik sebagian nama Anda, contoh: tris sandi">
+                            <p id="cariCatatanM" class="hidden mt-1 text-[10px] text-slate-400">Klik akun milik Anda untuk mengisi email di atas.</p>
+                            <div id="hasilCariM" class="mt-1"></div>
+                            <p id="cariLoadingM" class="hidden mt-1 text-xs text-slate-400">Mencari akun...</p>
+                            <p id="cariKosongM" class="hidden mt-1 text-xs text-slate-400">Tidak ada akun yang cocok.</p>
+                        </div>
+                    </div>
+
+                    <div class="anim-fade-up" style="animation-delay:0.3s">
                         <label class="block text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-1 pl-0.5">Password</label>
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -328,7 +376,7 @@
                     </div>
 
                     <button type="submit" id="btnLoginMobile"
-                        class="btn-login ripple w-full py-3 rounded-xl text-white font-bold text-sm tracking-wide flex items-center justify-center gap-2 mt-2">
+                        class="btn-login ripple w-full py-3 rounded-xl text-white font-bold text-sm tracking-wide flex items-center justify-center gap-2 mt-2 anim-fade-up" style="animation-delay:0.4s">
                         <span id="btnTextM">Masuk</span>
                         <div id="btnSpinnerM" class="spinner"></div>
                         <svg id="btnArrowM" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
@@ -340,6 +388,7 @@
                     <a href="{{ route('register') }}" class="font-bold text-emerald-600 hover:text-emerald-700">Daftar Akun</a>
                 </p>
                 <p class="mt-2 text-[10px] text-slate-400">&copy; {{ date('Y') }} SIJAMAAH</p>
+                <a href="javascript:void(0)" id="btnInstallPwaM" class="hidden mt-2 inline-flex items-center justify-center gap-1 text-[11px] font-semibold text-emerald-600">Pasang Aplikasi</a>
             </div>
         </div>
     </div>
@@ -358,21 +407,24 @@
         // === Typing Animation ===
         (function() {
             var t = "SIJAMAAH", s = "Sistem Informasi Berjamaah";
-            var te = document.getElementById('tTitle');
-            var se = document.getElementById('tSub');
-            var cur = document.getElementById('cursorSub');
-            if (!te || !se) return;
-            cur.style.display = 'none';
-            var i = 0;
-            function typeT() {
-                if (i < t.length) { te.textContent += t.charAt(i); i++; setTimeout(typeT, 120); }
-                else { i = 0; setTimeout(typeS, 400); }
-            }
-            function typeS() {
-                if (i < s.length) { se.textContent += s.charAt(i); i++; setTimeout(typeS, 45); }
-                else { cur.style.display = 'inline'; }
-            }
-            setTimeout(typeT, 600);
+            var targets = [
+                { te: document.getElementById('tTitle'), se: document.getElementById('tSub'), cur: document.getElementById('cursorSub'), startDelay: 600 },
+                { te: document.getElementById('tTitleM'), se: document.getElementById('tSubM'), cur: document.getElementById('cursorSubM'), startDelay: 800 }
+            ];
+            targets.forEach(function(target) {
+                if (!target.te || !target.se) return;
+                target.cur.style.display = 'none';
+                var i = 0;
+                function typeT() {
+                    if (i < t.length) { target.te.textContent += t.charAt(i); i++; setTimeout(typeT, 120); }
+                    else { i = 0; setTimeout(typeS, 400); }
+                }
+                function typeS() {
+                    if (i < s.length) { target.se.textContent += s.charAt(i); i++; setTimeout(typeS, 45); }
+                    else { target.cur.style.display = 'inline'; }
+                }
+                setTimeout(typeT, target.startDelay);
+            });
         })();
 
         // === Particles ===
@@ -424,6 +476,97 @@
             }
         }
 
+        // === Cari Akun (bantuan login) ===
+        function initCariAkun(prefix, formId) {
+            const btn = document.getElementById(prefix + 'btnCariAkun');
+            const panel = document.getElementById(prefix + 'panelCariAkun');
+            const input = document.getElementById(prefix + 'cariNama');
+            const hasil = document.getElementById(prefix + 'hasilCari');
+            const kosong = document.getElementById(prefix + 'cariKosong');
+            const loading = document.getElementById(prefix + 'cariLoading');
+            const catatan = document.getElementById(prefix + 'cariCatatan');
+            const chev = document.getElementById(prefix + 'chevCari');
+            const form = document.getElementById(formId);
+            if (!btn || !panel || !input || !form) return;
+            const mailField = form.querySelector('input[name=email]');
+            const pwField = form.querySelector('input[name=password]');
+            let opened = false, timer = null;
+
+            function setMsg(el, msg) {
+                if (msg) { el.textContent = msg; el.classList.remove('hidden'); } else { el.classList.add('hidden'); }
+            }
+            function showPanel(open) {
+                opened = open;
+                panel.classList.toggle('hidden', !open);
+                catatan.classList.toggle('hidden', !open);
+                if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+                if (open) {
+                    setTimeout(function () { input.focus(); }, 50);
+                    if (input.value.trim().length >= 2) runCari();
+                }
+            }
+            function runCari() {
+                const q = input.value.trim();
+                if (q.length < 2) { loading.classList.add('hidden'); setMsg(kosong, null); return; }
+                loading.classList.remove('hidden');
+                setMsg(kosong, null);
+                fetch('/akun/cari?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        loading.classList.add('hidden');
+                        hasil.innerHTML = '';
+                        const accounts = (data && data.accounts) || [];
+                        if (!accounts.length) { setMsg(kosong, 'Tidak ada akun yang cocok dengan "' + q + '".'); return; }
+                        accounts.forEach(function (a) {
+                            const ini = (a.name || '?').split(/\s+/).filter(Boolean).slice(0, 2)
+                                .map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
+                            const nm = document.createElement('p');
+                            nm.className = 'text-sm font-semibold text-slate-800 truncate';
+                            nm.textContent = a.name;
+                            const ml = document.createElement('p');
+                            ml.className = 'text-[10px] text-slate-400 truncate';
+                            ml.textContent = a.email;
+                            const em = document.createElement('div');
+                            em.className = 'flex-1 min-w-0';
+                            em.appendChild(nm); em.appendChild(ml);
+                            const av = document.createElement('span');
+                            av.className = 'w-8 h-8 rounded-full bg-teal-100 text-teal-600 text-xs font-bold flex items-center justify-center flex-shrink-0';
+                            av.textContent = ini || '?';
+                            const bd = document.createElement('span');
+                            bd.className = 'text-[10px] font-semibold rounded-full px-2 py-1 flex-shrink-0 ' +
+                                (a.role === 'admin' ? 'bg-teal-100 text-teal-600' :
+                                    a.role === 'musyrif' ? 'bg-amber-50 text-amber-600' :
+                                        'bg-emerald-50 text-slate-600');
+                            bd.textContent = a.roleLabel;
+                            const row = document.createElement('div');
+                            row.className = 'flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-100 cursor-pointer transition mb-1';
+                            row.title = 'Klik untuk memakai email ini';
+                            [av, em, bd].forEach(function (n) { row.appendChild(n); });
+                            row.addEventListener('click', function () {
+                                mailField.value = a.email;
+                                mailField.style.borderColor = '#10b981';
+                                mailField.style.boxShadow = '0 0 0 4px rgba(16,185,129,0.12)';
+                                setTimeout(function () { mailField.style.borderColor = ''; mailField.style.boxShadow = ''; }, 2500);
+                                showPanel(false);
+                                hasil.innerHTML = '';
+                                input.value = '';
+                                if (pwField) pwField.focus();
+                            });
+                            hasil.appendChild(row);
+                        });
+                    })
+                    .catch(function () { loading.classList.add('hidden'); setMsg(kosong, 'Terjadi kesalahan. Coba lagi.'); });
+            }
+            btn.addEventListener('click', function () { showPanel(!opened); });
+            input.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(runCari, 350); });
+            input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); runCari(); } });
+            document.addEventListener('click', function (e) {
+                if (opened && !panel.contains(e.target) && !btn.contains(e.target)) showPanel(false);
+            });
+        }
+        initCariAkun('', 'loginForm');
+        initCariAkun('M', 'loginFormMobile');
+
         // === Loading Spinner ===
         ['loginForm', 'loginFormMobile'].forEach(function(id) {
             const form = document.getElementById(id);
@@ -441,6 +584,99 @@
                 btn.style.opacity = '0.7';
             });
         });
+    </script>
+
+    <div id="pwaDlg" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:200;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,0.55)" onclick="if(event.target===this)PwaDlgClose()">
+        <div style="background:#ffffff;border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,0.3);width:100%;max-width:360px;padding:20px">
+            <p style="font-size:14px;font-weight:bold;color:#1e293b;margin-bottom:4px">Pasang Aplikasi SIJAMAAH</p>
+            <p style="font-size:11px;color:#64748b;margin-bottom:12px">Buka lewat Chrome/Edge/Safari terbaru dengan <b>https://sijamaah.rf.gd</b></p>
+            <div id="pwaDlgIos" style="display:none">
+                <ol style="font-size:12px;color:#475569;line-height:1.7;padding-left:18px">
+                    <li>Buka ikon <b>Bagikan</b> (kotak panah) di Safari</li>
+                    <li>Pilih <b>Tambahkan ke Layar Utama</b></li>
+                    <li>Ketuk <b>Tambah</b></li>
+                </ol>
+            </div>
+            <div id="pwaDlgWeb">
+                <ol style="font-size:12px;color:#475569;line-height:1.7;padding-left:18px">
+                    <li>Klik ikon <b>Install / Pasang</b> di address bar (atau menu <b>&#8942;</b> / <b>&#8230;</b>)</li>
+                    <li>Pilih <b>Install</b> pada konfirmasi</li>
+                </ol>
+            </div>
+            <div id="pwaDlgAndroid" style="display:none">
+                <ol style="font-size:12px;color:#475569;line-height:1.7;padding-left:18px">
+                    <li>Buka menu <b>&#8942;</b> di pojok kanan atas Chrome</li>
+                    <li>Pilih <b>Install app</b> / <b>Tambahkan aplikasi ke layar utama</b></li>
+                    <li>Ketuk <b>Install</b></li>
+                </ol>
+            </div>
+            <button onclick="PwaDlgClose()" style="margin-top:16px;width:100%;padding:10px 0;border-radius:10px;background:#047857;color:#ffffff;font-size:14px;font-weight:bold;border:none;cursor:pointer">Tutup</button>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var KEY = 'sijamaah_pwa_installed';
+            function PwaShowBtn(show) {
+                var b1 = document.getElementById('btnInstallPwaD');
+                var b2 = document.getElementById('btnInstallPwaM');
+                if (b1) b1.classList.toggle('hidden', !show);
+                if (b2) b2.classList.toggle('hidden', !show);
+            }
+            function isInstalledMode() {
+                if (navigator.standalone) return true;
+                if (window.matchMedia) {
+                    var modes = ['standalone', 'fullscreen', 'minimal-ui'];
+                    for (var i = 0; i < modes.length; i++) {
+                        if (window.matchMedia('(display-mode: ' + modes[i] + ')').matches) return true;
+                    }
+                }
+                if (/^(android-app|moz-extension|chrome-extension):\/\//i.test(document.referrer || '')) return true;
+                try {
+                    if (window.localStorage.getItem(KEY) === '1') return true;
+                } catch (e) {}
+                return false;
+            }
+            function markInstalled() {
+                try { window.localStorage.setItem(KEY, '1'); } catch (e) {}
+                PwaShowBtn(false);
+            }
+            var deferred = null;
+            PwaShowBtn(false);
+            if (isInstalledMode()) {
+                markInstalled();
+            }
+            window.addEventListener('beforeinstallprompt', function (e) {
+                e.preventDefault();
+                deferred = e;
+                if (!isInstalledMode()) PwaShowBtn(true);
+            });
+            window.addEventListener('appinstalled', function () { deferred = null; markInstalled(); });
+            function tapInstall() {
+                if (deferred) {
+                    deferred.prompt();
+                    if (deferred.userChoice) deferred.userChoice.then(function (choice) {
+                        if (choice && choice.outcome === 'accepted') { deferred = null; markInstalled(); return; }
+                        deferred = null; PwaShowBtn(false);
+                    });
+                    return;
+                }
+                PwaDlgOpen();
+            }
+            var b1 = document.getElementById('btnInstallPwaD');
+            var b2 = document.getElementById('btnInstallPwaM');
+            if (b1) b1.addEventListener('click', function (e) { e.preventDefault(); tapInstall(); });
+            if (b2) b2.addEventListener('click', function (e) { e.preventDefault(); tapInstall(); });
+            var ua = navigator.userAgent || '';
+            var isIos = /iPhone|iPad|iPod/i.test(ua);
+            var isAndroid = /Android/i.test(ua);
+            var which = isIos ? 'pwaDlgIos' : (isAndroid ? 'pwaDlgAndroid' : 'pwaDlgWeb');
+            ['pwaDlgIos', 'pwaDlgWeb', 'pwaDlgAndroid'].forEach(function (id) {
+                document.getElementById(id).style.display = (id === which) ? 'block' : 'none';
+            });
+        })();
+        function PwaDlgOpen() { var d = document.getElementById('pwaDlg'); if (d) { d.style.display = 'flex'; } }
+        function PwaDlgClose() { var d = document.getElementById('pwaDlg'); if (d) { d.style.display = 'none'; } }
     </script>
 </body>
 </html>

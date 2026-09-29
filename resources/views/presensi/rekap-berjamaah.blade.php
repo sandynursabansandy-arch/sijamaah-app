@@ -1,31 +1,26 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
+    @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Rekap Berjamaah Ã¢â‚¬â€ SIJAMAAH</title>
+    <title>Rekap Berjamaah — SIJAMAAH</title>
     @vite(['resources/css/app.css'])
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-slide-in { animation: slideIn 0.5s ease-out; }
-        .animate-fade-in { animation: fadeIn 0.6s ease-in; }
-        .animate-slide-up { animation: slideUp 0.6s ease-out; }
+        .animate-slide-in { animation: slideIn 0.5s ease-out both; }
+        .animate-fade-in { animation: fadeIn 0.6s ease-in both; }
+        .animate-slide-up { animation: slideUp 0.6s ease-out both; }
         .transition-smooth { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15); }
         .filter-gradient { background: #ffffff; border: 1px solid #e2e8f0; }
         .animate-fade-in-fast { animation: fadeInFast 0.15s ease-out both; }
         @keyframes fadeInFast { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
-        tbody tr { animation: slideUp 0.5s ease-out; }
-        tbody tr:nth-child(1) { animation-delay: 0s; }
-        tbody tr:nth-child(2) { animation-delay: 0.03s; }
-        tbody tr:nth-child(3) { animation-delay: 0.06s; }
-        tbody tr:nth-child(4) { animation-delay: 0.09s; }
-        tbody tr:nth-child(5) { animation-delay: 0.12s; }
-        tbody tr:nth-child(n+6) { animation-delay: 0.15s; }
+        tbody tr { animation: slideUp 0.4s ease-out both; }
 
         .rekap-scroll { max-height: 600px; overflow: auto; scrollbar-width: thin; scrollbar-color: #10b981 #e2e8f0; }
         .rekap-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -66,6 +61,17 @@
             background: #ffffff; box-shadow: -3px 0 6px rgba(0,0,0,0.06);
         }
 
+        /* Mobile: disable only RIGHT-side sticky columns to allow horizontal scroll for day columns */
+        @media (max-width: 640px) {
+            .rekap-scroll tbody td.stickyright,
+            .rekap-scroll tbody td.sticky-corner-right {
+                position: static !important;
+                box-shadow: none !important;
+            }
+            .rekap-scroll thead th { min-width: unset !important; }
+            .rekap-scroll tbody td { min-width: unset !important; }
+        }
+
         .th-badge { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 700; white-space: nowrap; color: #ffffff; }
 
         .status-jamaah { background: #dcfce7; color: #166534; font-weight: 700; font-size: 11px; padding: 3px 7px; border-radius: 5px; }
@@ -94,6 +100,54 @@
         .lock-toggle.locked { background: #fef2f2; color: #991b1b; border-color: #fca5a5; }
         .lock-toggle.locked:hover { background: #fee2e2; box-shadow: 0 0 0 2px rgba(239,68,68,0.15); }
         .lock-toggle svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+        /* Dropdown multi-waktu */
+        .wdp-bj { position: relative; z-index: 70; }
+        .wdp-trigger-bj {
+            width: 100%; height: 34px; box-sizing: border-box;
+            display: flex; align-items: center; justify-content: space-between; gap: 8px;
+            background: #f8fafc; border: 0; border-radius: 6px;
+            padding: 0 10px; font-size: 13px; font-weight: 600; color: #1e293b;
+            cursor: pointer; transition: box-shadow 0.2s;
+        }
+        .wdp-trigger-bj:hover { background: #f1f5f9; }
+        .wdp-trigger-bj:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(16,185,129,0.4); }
+        .wdp-trigger-bj svg { width: 13px; height: 13px; color: #64748b; flex-shrink: 0; transition: transform 0.2s; }
+        .wdp-bj.open .wdp-trigger-bj svg { transform: rotate(180deg); }
+        .wdp-menu-bj {
+            position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; white-space: nowrap;
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(15,23,42,0.12); padding: 5px; z-index: 60;
+            display: none;
+        }
+        .wdp-menu-bj.wdp-open { display: block; }
+        .wdp-opt {
+            display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+            font-size: 12px; font-weight: 600; color: #334155; border-radius: 7px;
+            cursor: pointer; transition: background 0.12s;
+        }
+        .wdp-opt:hover { background: #f1f5f9; }
+        .wdp-opt input { margin: 0; width: 13px; height: 13px; accent-color: #10b981; cursor: pointer; }
+        .wdp-opt.all-opt { color: #059669; font-weight: 700; }
+
+        /* Di HP: kartu dropdown dipindah ke <body> jadi panel tengah layar,
+           dijamin selalu DI ATAS tombol/menu Cetak Rekap, Excel/CSV, dan Tampilkan. */
+        .wdp-menu-bj.wdp-mobile {
+            position: fixed !important;
+            left: 50% !important; top: 50% !important;
+            right: auto !important; bottom: auto !important;
+            margin: 0 !important;
+            transform: translate(-50%, -50%) !important;
+            min-width: 16rem; width: 16rem; max-width: calc(100vw - 1.5rem);
+            border-radius: 14px;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.28);
+            padding: 6px;
+            z-index: 1002;
+        }
+        #wdpBackdrop {
+            position: fixed; inset: 0; z-index: 1001;
+            background: rgba(15,23,42,0.22);
+        }
 
         .view-only-banner {
             display: none; align-items: center; justify-content: center; gap: 8px;
@@ -134,6 +188,19 @@
         .toast.fade-out { animation: toastOutBJ 0.3s ease-in forwards; }
         @keyframes toastInBJ { from { opacity:0; transform:translateY(-20px) scale(0.95); } to { opacity:1; transform:translateY(0) scale(1); } }
         @keyframes toastOutBJ { from { opacity:1; transform:translateY(0) scale(1); } to { opacity:0; transform:translateY(-20px) scale(0.95); } }
+
+        /* Cetak menu di HP: dropdown terkunci di tengah layar */
+        #cetakMenu.cetak-mobile {
+            position: fixed !important;
+            left: 50% !important; top: 50% !important;
+            right: auto !important; margin: 0 !important;
+            transform: translate(-50%, -50%);
+            width: 16rem !important; max-width: calc(100vw - 1.5rem) !important;
+            z-index: 1000; border-radius: 16px;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.28);
+            animation: none !important;
+        }
+        #cetakBackdrop { position: fixed; inset: 0; z-index: 999; background: rgba(15,23,42,0.45); }
     </style>
 </head>
 <body class="bg-gradient-to-b from-slate-100 via-white to-emerald-50 text-slate-800 min-h-screen pb-8">
@@ -151,33 +218,89 @@
         </div>
 
         <!-- Filter -->
-        <form method="GET" action="{{ route('presensi.rekapBerjamaah') }}" class="filter-gradient rounded-xl p-3 mb-5 animate-fade-in shadow-sm">
+        <form method="GET" action="{{ route('presensi.rekapBerjamaah') }}" class="filter-gradient rounded-xl p-3 mb-5 animate-fade-in shadow-sm" style="position:relative;z-index:20">
             <div class="flex flex-wrap items-end gap-2.5">
-                <div class="animate-slide-in">
+                <div class="animate-fade-in">
                     <label class="block text-[10px] font-bold uppercase tracking-wide mb-1 text-slate-600 pl-0.5">Bulan</label>
                     <input type="month" name="bulan" value="{{ $bulan }}" class="border-0 py-1.5 px-2.5 rounded-md focus:ring-2 focus:ring-emerald-300 text-slate-800 transition-smooth focus:outline-none text-[13px] bg-slate-50 h-[34px] box-border">
                 </div>
-                <div class="animate-slide-in" style="animation-delay: 0.05s">
+                <div class="animate-fade-in">
+                    @php
+                        $rkIds   = $kamarId === 'all' ? [] : array_map('trim', explode(',', $kamarId));
+                        $rkNames = array_values(array_filter(array_map(
+                            fn($id) => $daftarKamar->firstWhere('id', (int)$id)?->nama_kamar ?? null,
+                            $rkIds
+                        )));
+                    @endphp
                     <label class="block text-[10px] font-bold uppercase tracking-wide mb-1 text-slate-600 pl-0.5">Asrama / Rayon</label>
-                    <select name="kamar_id" class="border-0 py-1.5 px-2.5 rounded-md focus:ring-2 focus:ring-emerald-300 text-slate-800 transition-smooth focus:outline-none text-[13px] bg-slate-50 h-[34px] box-border">
-                        <option value="all" {{ $kamarId == 'all' ? 'selected' : '' }}>Semua Rayon</option>
-                        @foreach($daftarKamar as $kamar)
-                            <option value="{{ $kamar->id }}" {{ $kamarId == $kamar->id ? 'selected' : '' }}>{{ $kamar->nama_kamar }}</option>
-                        @endforeach
-                    </select>
+                    <div class="wdp-bj">
+                        <button type="button" class="wdp-trigger-bj" onclick="toggleWdpBJ(event)">
+                            <span id="rdpLabelBJ">{{ $kamarId === 'all' ? 'Semua Rayon' : implode(' + ', $rkNames) }}</span>
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div class="wdp-menu-bj">
+                            <label class="wdp-opt all-opt"><input type="checkbox" name="kamar_ids[]" value="all" onchange="toggleRayonAllBJ(this)" {{ $kamarId === 'all' ? 'checked' : '' }}> Semua Rayon</label>
+                            @foreach($daftarKamar as $kamar)
+                                <label class="wdp-opt"><input type="checkbox" name="kamar_ids[]" value="{{ $kamar->id }}" class="rayon-cb-bj" data-name="{{ $kamar->nama_kamar }}" onchange="onRayonChipBJ()" {{ in_array((string)$kamar->id, $rkIds) ? 'checked' : '' }}> {{ $kamar->nama_kamar }}</label>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
-                <div class="animate-slide-in" style="animation-delay: 0.1s">
+                <div class="animate-fade-in">
+                    @php $wfArr = $waktuFilter === 'all' ? [] : array_map('trim', explode(',', $waktuFilter)); @endphp
                     <label class="block text-[10px] font-bold uppercase tracking-wide mb-1 text-slate-600 pl-0.5">Waktu Sholat</label>
-                    <select name="waktu" class="border-0 py-1.5 px-2.5 rounded-md focus:ring-2 focus:ring-emerald-300 text-slate-800 transition-smooth focus:outline-none text-[13px] bg-slate-50 h-[34px] box-border">
-                        <option value="all" {{ $waktuFilter == 'all' ? 'selected' : '' }}>Semua Waktu</option>
-                        @foreach(['Subuh','Dzuhur','Ashar','Maghrib','Isya'] as $w)
-                            <option value="{{ $w }}" {{ $waktuFilter == $w ? 'selected' : '' }}>{{ $w }}</option>
-                        @endforeach
-                    </select>
+                    <div class="wdp-bj">
+                        <button type="button" class="wdp-trigger-bj" onclick="toggleWdpBJ(event)">
+                            <span id="wdpLabelBJ">{{ $waktuFilter === 'all' ? 'Semua Waktu' : implode(' + ', $wfArr) }}</span>
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div class="wdp-menu-bj">
+                            <label class="wdp-opt all-opt"><input type="checkbox" name="waktu[]" value="all" onchange="toggleWaktuAllBJ(this)" {{ $waktuFilter === 'all' ? 'checked' : '' }}> Semua Waktu</label>
+                            @foreach(['Subuh','Dzuhur','Ashar','Maghrib','Isya'] as $w)
+                                <label class="wdp-opt"><input type="checkbox" name="waktu[]" value="{{ $w }}" class="waktu-cb-bj" onchange="onWaktuChipBJ()" {{ in_array($w, $wfArr) ? 'checked' : '' }}> {{ $w }}</label>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
-                <div class="ml-auto animate-slide-in flex gap-2" style="animation-delay: 0.1s">
+                <div class="ml-auto animate-fade-in flex flex-wrap items-center gap-2 min-w-0">
                     @if(auth()->user()?->canManagePresensi())
-                        <a href="{{ route('presensi.rekapBerjamaah.export', request()->only(['bulan', 'kamar_id', 'waktu'])) }}"
+                        <div class="relative z-50" id="cetakDropdown">
+                            <button type="button" onclick="toggleCetakDropdown()" class="bg-blue-500 text-white py-1.5 px-4 rounded-md font-semibold hover:bg-blue-600 shadow transition-smooth text-[13px] h-[34px] box-border flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                Cetak Rekap
+                                <svg class="w-3 h-3 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div id="cetakMenu" class="hidden absolute right-0 mt-1.5 w-52 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50 animate-fade-in-fast">
+                                <div class="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Absensi Mustahik &amp; Munawib</div>
+                                <a href="javascript:void(0)" onclick="cetakRekap('mingguan')" class="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 transition-colors">
+                                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    <div><p class="font-semibold">Mingguan</p><p class="text-[10px] text-slate-400">1 minggu terakhir bulan ini</p></div>
+                                </a>
+                                <a href="javascript:void(0)" onclick="cetakRekap('bulanan')" class="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 transition-colors">
+                                    <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                    <div><p class="font-semibold">Bulanan</p><p class="text-[10px] text-slate-400">1 bulan (s/d hari ini)</p></div>
+                                </a>
+                                <a href="javascript:void(0)" onclick="cetakRekap('tahunan')" class="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 transition-colors">
+                                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                    <div><p class="font-semibold">Tahunan</p><p class="text-[10px] text-slate-400">1 tahun penuh</p></div>
+                                </a>
+                                <div class="my-1 border-t border-slate-100"></div>
+                                <div class="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">PDF Rekap (Versi Lama)</div>
+                                <a href="javascript:void(0)" onclick="cetakRekap('mingguan','pdf')" class="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 transition-colors">
+                                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <div><p class="font-semibold">Mingguan</p><p class="text-[10px] text-slate-400">download PDF lama</p></div>
+                                </a>
+                                <a href="javascript:void(0)" onclick="cetakRekap('bulanan','pdf')" class="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 transition-colors">
+                                    <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <div><p class="font-semibold">Bulanan</p><p class="text-[10px] text-slate-400">download PDF lama</p></div>
+                                </a>
+                                <a href="javascript:void(0)" onclick="cetakRekap('tahunan','pdf')" class="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 transition-colors">
+                                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <div><p class="font-semibold">Tahunan</p><p class="text-[10px] text-slate-400">download PDF lama</p></div>
+                                </a>
+                            </div>
+                        </div>
+                        <a href="javascript:void(0)" onclick="exportRekap()"
                            class="bg-blue-500 text-white py-1.5 px-4 rounded-md font-semibold hover:bg-blue-600 shadow transition-smooth text-[13px] h-[34px] box-border inline-flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                             Excel/CSV
@@ -187,6 +310,12 @@
                 </div>
             </div>
         </form>
+
+        <!-- Backdrop Cetak Rekap (HP) -->
+        <div id="cetakBackdrop" class="hidden"></div>
+
+        <!-- Backdrop dropdown waktu sholat (HP) -->
+        <div id="wdpBackdrop" class="hidden"></div>
 
         @if(count($rekapData) > 0)
             @php
@@ -242,17 +371,17 @@
             </div>
             <div id="viewOnlyBannerBJ" class="view-only-banner show">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                <span id="viewOnlyBannerBJText">@if(auth()->user()?->canManagePresensi())Mode Lihat Saja Ã¢â‚¬â€ klik gembok untuk membuka pengubahan presensi@else Mode Lihat Saja Ã¢â‚¬â€ hanya admin/musyrif yang dapat mengubah presensi @endif</span>
+                <span id="viewOnlyBannerBJText">@if(auth()->user()?->canManagePresensi())Mode Lihat Saja — klik gembok untuk membuka pengubahan presensi@else Mode Lihat Saja — hanya admin/musyrif yang dapat mengubah presensi @endif</span>
             </div>
 
             <!-- Table -->
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden animate-fade-in border border-slate-100">
-                <div class="overflow-x-auto rekap-scroll">
+            <div class="bg-white rounded-xl shadow-sm animate-fade-in border border-slate-100 overflow-visible">
+                <div class="overflow-x-auto rekap-scroll rounded-xl">
                     <table class="w-full" style="min-width: {{ max(950, $numDates * 58 + 480) }}px">
                         <thead>
                             <tr>
                                 <th class="px-2 py-2.5 text-center text-[11px] sticky-corner stickyleft" style="min-width: 36px; left: 0;">No</th>
-                                <th class="px-2 py-2.5 text-left text-[11px] stickyleft" style="min-width: 170px; left: 36px;">Nama Santri</th>
+                                <th class="px-2 py-2.5 text-left text-[11px]" style="min-width: 170px;">Nama Santri</th>
                                 <th class="px-2 py-2.5 text-center text-[11px]" style="min-width: 70px;">Persentase</th>
                                 @foreach($allDates as $date)
                                     <th class="px-1 py-2.5 text-center text-[10px]" style="min-width: 58px;">
@@ -273,12 +402,12 @@
                                 @endphp
                                 <tr class="hover:bg-slate-50 transition-smooth">
                                     <td class="px-2 py-2 text-center sticky-corner-left text-[11px] font-bold text-slate-500" style="background: #ffffff; min-width: 36px; left: 0;">{{ $idx + 1 }}</td>
-                                    <td class="px-2 py-2 sticky-corner-left text-[11px]" style="background: #ffffff; min-width: 170px; left: 36px;">
+                                    <td class="px-2 py-2 text-[11px]" style="min-width: 170px;">
                                         <div class="flex items-center gap-2">
                                             <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-blue-400 flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">{{ substr($santri['nama'], 0, 1) }}</div>
                                             <div class="min-w-0">
                                                 <p class="font-semibold text-slate-900 truncate text-[12px]">{{ $santri['nama'] }}</p>
-                                                <p class="text-[10px] text-slate-400 truncate">{{ $santri['kamar'] }}{{ $santri['jabatan'] ? ' Ã‚Â· ' . $santri['jabatan'] : '' }}</p>
+                                                <p class="text-[10px] text-slate-400 truncate">{{ $santri['kamar'] }}{{ $santri['jabatan'] ? ' &middot; ' . $santri['jabatan'] : '' }}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -311,7 +440,7 @@
                                     <td id="cnt-hadir-{{ $santri['id'] }}" class="px-2 py-2 text-center text-[11px] font-bold stickyright" style="background: #ffffff; right: 150px; color: #059669;">{{ $santri['hadir'] }}</td>
                                     <td id="cnt-masbuq-{{ $santri['id'] }}" class="px-2 py-2 text-center text-[11px] font-bold stickyright" style="background: #ffffff; right: 100px; color: #ea580c;">{{ $santri['masbuq'] }}</td>
                                     <td id="cnt-izin-{{ $santri['id'] }}" class="px-2 py-2 text-center text-[11px] font-bold stickyright" style="background: #ffffff; right: 50px; color: #2563eb;">{{ $santri['izin'] }}</td>
-                                    <td id="cnt-alfa-{{ $santri['id'] }}" class="px-2 py-2 text-center text-[11px] font-bold sticky-corner-right" style="background: #ffffff; right: 0; color: #94a3b8;">{{ $santri['alfa'] }}</td>
+                                    <td id="cnt-alfa-{{ $santri['id'] }}" class="px-2 py-2 text-center text-[11px] font-bold sticky-corner-right" style="background: #ffffff; right: 0; color: #ef4444;">{{ $santri['alfa'] }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -341,7 +470,7 @@
     </div>
 
     <!-- Edit Presensi Modal -->
-    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[90]">
+    <div id="editModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[1000]">
         <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-slide-up">
             <div class="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-t-2xl">
                 <h2 class="text-white font-bold text-sm">Ubah Presensi</h2>
@@ -352,7 +481,7 @@
     </div>
 
     <!-- Confirm Save Modal -->
-    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[95]">
+    <div id="confirmModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[1005]">
         <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 animate-slide-up">
             <div class="p-6">
                 <div class="mx-auto w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mb-4">
@@ -373,7 +502,7 @@
     <div id="toast-container"></div>
 
     <!-- Logout Modal -->
-    <div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[100]">
+    <div id="logoutModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[1010]">
         <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 animate-slide-up">
             <div class="p-6 text-center">
                 <div class="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
@@ -436,7 +565,7 @@
         var pendingChangesFinal = [];
 
         var CHECK_SVG = '<svg class="w-[11px] h-[11px]" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
-        var STATUS_OPTIONS = [['Jamaah', 'Ã¢Å“â€œ Berjamaah'], ['Masbuq', 'M Masbuq'], ['Izin', 'I Izin'], ['Alfa', 'A Alfa'], ['-', 'Ã¢â‚¬â€ Kosong']];
+        var STATUS_OPTIONS = [['Jamaah', '✓ Berjamaah'], ['Masbuq', 'M Masbuq'], ['Izin', 'I Izin'], ['Alfa', 'A Alfa'], ['-', '— Kosong']];
         var STATUS_LABEL = { 'Jamaah': 'Berjamaah', 'Masbuq': 'Masbuq', 'Izin': 'Izin', 'Alfa': 'Alfa', '-': 'Kosong' };
 
         function badgeHtml(st) {
@@ -670,6 +799,150 @@
                 if (fail === 0) showToast('Perubahan tersimpan & seluruh rekap tersinkron.', 'success');
                 else showToast(fail + ' perubahan gagal disimpan. Coba lagi.', 'error');
             });
+        }
+
+        function toggleCetakDropdown() {
+            var menu = document.getElementById('cetakMenu');
+            if (!menu) return;
+            var dd = document.getElementById('cetakDropdown');
+            var mobile = window.matchMedia('(max-width: 639px)').matches;
+            var wasHidden = menu.classList.contains('hidden');
+            if (wasHidden) {
+                closeWdpBJ();
+                if (mobile) {
+                    menu.classList.add('cetak-mobile');
+                    if (menu.parentNode !== document.body) document.body.appendChild(menu);
+                    var bd = document.getElementById('cetakBackdrop');
+                    if (bd) { bd.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+                } else {
+                    menu.classList.remove('cetak-mobile');
+                    if (dd && menu.parentNode !== dd) dd.appendChild(menu);
+                }
+            } else {
+                menu.classList.remove('cetak-mobile');
+                if (dd && menu.parentNode !== dd) dd.appendChild(menu);
+                closeCetakView();
+            }
+            menu.classList.toggle('hidden');
+            if (wasHidden) {
+                setTimeout(function() { document.addEventListener('click', closeCetakMenu); }, 0);
+            }
+        }
+        function closeCetakView() {
+            var bd = document.getElementById('cetakBackdrop');
+            if (bd) bd.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        function closeCetakMenu(e) {
+            var dd = document.getElementById('cetakDropdown');
+            if (dd && !dd.contains(e.target)) closeCetakBackdrop();
+        }
+        function closeCetakBackdrop() {
+            var menu = document.getElementById('cetakMenu');
+            var dd = document.getElementById('cetakDropdown');
+            if (menu) {
+                menu.classList.add('hidden');
+                menu.classList.remove('cetak-mobile');
+                if (dd && menu.parentNode !== dd) dd.appendChild(menu);
+            }
+            closeCetakView();
+            document.removeEventListener('click', closeCetakMenu);
+        }
+        function toggleWdpBJ(e) {
+            e.stopPropagation();
+            closeCetakBackdrop();
+            var wdp = e.currentTarget.closest('.wdp-bj');
+            if (!wdp) return;
+            var menu = wdp.querySelector('.wdp-menu-bj');
+            if (!menu) return;
+            if (menu.classList.contains('wdp-open')) { closeWdpBJ(); return; }
+            var mobile = window.matchMedia('(max-width: 639px)').matches;
+            document.querySelectorAll('.wdp-bj').forEach(function(w) { if (w !== wdp) w.classList.remove('open'); });
+            if (mobile) {
+                menu.classList.add('wdp-mobile');
+                menu._wdpOwner = wdp;
+                if (menu.parentNode !== document.body) document.body.appendChild(menu);
+                var bd = document.getElementById('wdpBackdrop');
+                if (bd) { bd.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+            }
+            menu.classList.add('wdp-open');
+            wdp.classList.add('open');
+            setTimeout(function() { document.addEventListener('click', closeWdpBJ); }, 0);
+        }
+        function closeWdpBJ(e) {
+            if (e && e.target && e.target.closest && (e.target.closest('.wdp-opt') || e.target.closest('.wdp-trigger-bj'))) return;
+            document.querySelectorAll('.wdp-menu-bj').forEach(function(m) {
+                m.classList.remove('wdp-mobile');
+                m.classList.remove('wdp-open');
+                if (m._wdpOwner && m.parentNode !== m._wdpOwner) m._wdpOwner.appendChild(m);
+                m._wdpOwner = null;
+            });
+            document.querySelectorAll('.wdp-bj').forEach(function(w) { w.classList.remove('open'); });
+            var bd = document.getElementById('wdpBackdrop');
+            if (bd) bd.classList.add('hidden');
+            document.body.style.overflow = '';
+            document.removeEventListener('click', closeWdpBJ);
+        }
+        function toggleWaktuAllBJ(cb) {
+            document.querySelectorAll('.waktu-cb-bj').forEach(function(c) { c.checked = !cb.checked; });
+            updateWdpLabelBJ();
+        }
+        function onWaktuChipBJ() {
+            var any = document.querySelectorAll('.waktu-cb-bj:checked').length > 0;
+            var allEl = document.querySelector('input[name="waktu[]"][value="all"]');
+            if (allEl) allEl.checked = !any;
+            updateWdpLabelBJ();
+        }
+        function updateWdpLabelBJ() {
+            var checked = [];
+            document.querySelectorAll('.waktu-cb-bj:checked').forEach(function(c) { checked.push(c.value); });
+            var labelEl = document.getElementById('wdpLabelBJ');
+            if (labelEl) labelEl.textContent = checked.length ? checked.join(' + ') : 'Semua Waktu';
+        }
+        function toggleRayonAllBJ(cb) {
+            document.querySelectorAll('.rayon-cb-bj').forEach(function(c) { c.checked = !cb.checked; });
+            updateRdpLabelBJ();
+        }
+        function onRayonChipBJ() {
+            var any = document.querySelectorAll('.rayon-cb-bj:checked').length > 0;
+            var allEl = document.querySelector('input[name="kamar_ids[]"][value="all"]');
+            if (allEl) allEl.checked = !any;
+            updateRdpLabelBJ();
+        }
+        function updateRdpLabelBJ() {
+            var checked = [];
+            document.querySelectorAll('.rayon-cb-bj:checked').forEach(function(c) {
+                checked.push(c.getAttribute('data-name') || c.value);
+            });
+            var labelEl = document.getElementById('rdpLabelBJ');
+            if (labelEl) labelEl.textContent = checked.length ? checked.join(' + ') : 'Semua Rayon';
+        }
+        function getSelectedRayon() {
+            var checked = [];
+            document.querySelectorAll('input[name="kamar_ids[]"]:checked').forEach(function(c) {
+                if (c.value !== 'all') checked.push(c.value);
+            });
+            return checked.length ? checked.join(',') : 'all';
+        }
+        function getSelectedWaktu() {
+            var checked = [];
+            document.querySelectorAll('input[name="waktu[]"]:checked').forEach(function(c) {
+                if (c.value !== 'all') checked.push(c.value);
+            });
+            return checked.length ? checked.join(',') : 'all';
+        }
+        function cetakRekap(periode, mode) {
+            var bulanEl = document.querySelector('input[name="bulan"]');
+            var bulan = bulanEl ? bulanEl.value : '{{ $bulan }}';
+            var url = '{{ route("presensi.rekap.cetak") }}?periode=' + periode + '&tanggal=' + bulan + '-01&kamar_ids=' + getSelectedRayon() + '&filter_waktu=' + getSelectedWaktu() + '&mode=' + (mode || 'absensi');
+            window.location.href = url;
+            document.getElementById('cetakMenu').classList.add('hidden');
+        }
+        function exportRekap() {
+            var bulanEl = document.querySelector('input[name="bulan"]');
+            var bulan = bulanEl ? bulanEl.value : '{{ $bulan }}';
+            var url = '{{ route("presensi.rekapBerjamaah.export") }}?bulan=' + bulan + '&kamar_ids=' + getSelectedRayon() + '&waktu=' + getSelectedWaktu();
+            window.location.href = url;
         }
     </script>
 </body>

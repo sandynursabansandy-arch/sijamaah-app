@@ -5,15 +5,188 @@ namespace App\Http\Controllers;
 use App\Models\Kamar;
 use App\Models\Santri;
 use App\Models\PresensiSholat;
+use App\Support\SchemaCache;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class PresensiSholatController extends Controller
 {
+    /** Peta status database -> label yang dipakai di UI. */
+    protected const STATUS_LABEL = [
+        'Jamaah' => 'Hadir',
+        'Masbuq' => 'Masbuq',
+        'Izin'   => 'Izin',
+        'Alfa'   => 'Alfa',
+    ];
+
+    protected const WAKTU_SHOLAT = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'];
+
+    protected ?int $jumlahSantriAktifCache = null;
+
+    protected function jumlahSantriAktif(): int
+    {
+        if ($this->jumlahSantriAktifCache === null) {
+            $this->jumlahSantriAktifCache = max(1, (int) $this->activeSantriQuery()->count());
+        }
+        return $this->jumlahSantriAktifCache;
+    }
+
+    /**
+     * Query dasar Santri aktif; otomatis menyesuaikan bila kolom `status` belum ada
+     * (instalasi lama / dev) sehingga tidak relies pada information_schema tiap request.
+     */
+    protected function activeSantriQuery()
+    {
+        $q = Santri::query();
+
+        if (SchemaCache::hasColumn('santris', 'status')) {
+            $q->where('status', 'Aktif');
+        }
+
+        return $q;
+    }
+
+    /**
+     * Agregasi jumlah presensi untuk sekumpulan rentang tanggal dalam SATU query.
+     *
+     * Sebelumnya tiap grafik memuat SELURUH baris presensi sebagai Eloquent model
+     * (ratusan ribu baris untuk dashboard 6 bulan) lalu menghitung di PHP. Itu
+     * penyebab utama "502 Bad Gateway": memori PHP habis / request terlalu lama.
+     * Sekarang MySQL yang menjumlahkan, sehingga hanya puluhan baris yang dikirim ke PHP.
+     *
+     * @param  array<int, array{start: string, end: string}>  $buckets
+     * @return array<int, array<string, array<string, int>>>  [bucketIndex][waktu]['total'|'hadir'|status]
+     */
+    protected function aggregatePresensi(array $buckets, ?int $santriId = null, bool $perWaktu = false): array
+    {
+        if (empty($buckets)) {
+            return [];
+        }
+
+        $caseParts = [];
+        $bindings = [];
+        $min = null;
+        $max = null;
+
+        foreach (array_values($buckets) as $i => $bucket) {
+            $caseParts[] = "WHEN tanggal >= ? AND tanggal <= ? THEN {$i}";
+            $bindings[] = $bucket['start'];
+            $bindings[] = $bucket['end'];
+            $min = $min === null || $bucket['start'] < $min ? $bucket['start'] : $min;
+            $max = $max === null || $bucket['end'] > $max ? $bucket['end'] : $max;
+        }
+
+        $group = $perWaktu ? 'bucket, waktu_sholat, status' : 'bucket, status';
+
+        $sql = 'SELECT CASE ' . implode(' ', $caseParts) . ' END AS bucket'
+            . ($perWaktu ? ', waktu_sholat' : '')
+            . ', status, COUNT(*) AS c'
+            . ' FROM presensi_sholats'
+            . ' WHERE tanggal >= ? AND tanggal <= ?'
+            . ($santriId ? ' AND santri_id = ?' : '')
+            . ' GROUP BY ' . $group;
+
+        $bindings[] = $min;
+        $bindings[] = $max;
+        if ($santriId) {
+            $bindings[] = $santriId;
+        }
+
+        $out = [];
+        foreach (DB::select($sql, $bindings) as $row) {
+            $bucketKey = (int) $row->bucket;
+            $waktuKey = $perWaktu ? (string) $row->waktu_sholat : '-';
+            $count = (int) $row->c;
+
+            $out[$bucketKey][$waktuKey]['total'] = ($out[$bucketKey][$waktuKey]['total'] ?? 0) + $count;
+            if ($row->status === 'Jamaah') {
+                $out[$bucketKey][$waktuKey]['hadir'] = ($out[$bucketKey][$waktuKey]['hadir'] ?? 0) + $count;
+            }
+            if (isset(self::STATUS_LABEL[$row->status])) {
+                $out[$bucketKey][$waktuKey][$row->status] = ($out[$bucketKey][$waktuKey][$row->status] ?? 0) + $count;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Statistik kehadiran per santri dari SATU query agregat.
+     *
+     * @param  array<int>  $santriIds
+     * @return array<int, array<string, array<string, int>>>  [santri_id][waktu|'*'][status] => jumlah
+     */
+    protected function presensiStats(array $santriIds, string $start, string $end): array
+    {
+        if (empty($santriIds) || $start > $end) {
+            return [];
+        }
+
+        $stats = [];
+
+        $rows = DB::table('presensi_sholats')
+            ->select('santri_id', 'waktu_sholat', 'status', DB::raw('COUNT(*) as c'))
+            ->where('tanggal', '>=', $start)
+            ->where('tanggal', '<=', $end)
+            ->whereIn('santri_id', $santriIds)
+            ->groupBy('santri_id', 'waktu_sholat', 'status')
+            ->get();
+
+        foreach ($rows as $row) {
+            $id = (int) $row->santri_id;
+            $count = (int) $row->c;
+            $status = (string) $row->status;
+            $waktu = (string) $row->waktu_sholat;
+
+            $stats[$id]['*'][$status] = ($stats[$id]['*'][$status] ?? 0) + $count;
+            $stats[$id][$waktu][$status] = ($stats[$id][$waktu][$status] ?? 0) + $count;
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Slot jadwal = jumlah hari × 5 waktu × jumlah santri.
+     * Dipakai sebagai pembagi persentase agar hari yang belum terisi tidak
+     * otomatis dianggap tidak hadir.
+     */
+    protected function slotJadwal(Carbon $start, Carbon $end, ?int $santriId = null, int $perHari = 5): int
+    {
+        $end = $end->copy();
+        if ($end->greaterThan(Carbon::now())) {
+            $end = Carbon::now();
+        }
+        if ($start->greaterThan($end)) {
+            return 0;
+        }
+
+        $jumlahSantri = $santriId ? 1 : $this->jumlahSantriAktif();
+
+        return (((int) $start->diffInDays($end)) + 1) * $perHari * $jumlahSantri;
+    }
+
+    /**
+     * Fingerprint status data presensi (jumlah + tanggal terakhir + updated_at terakhir).
+     * Dipakai sebagai bagian key cache agar cache otomatis basi saat data berubah.
+     */
+    protected function presensiVersion(): string
+    {
+        static $v = null;
+        if ($v === null) {
+            $row = PresensiSholat::query()
+                ->selectRaw('COUNT(*) as c, MAX(tanggal) as mt, MAX(updated_at) as mu')
+                ->first();
+            $v = ($row->c ?? 0) . '|' . ($row->mt ?? '') . '|' . ($row->mu ?? '');
+        }
+        return $v;
+    }
+
     public function index(Request $request)
     {
-        $tanggal = $request->get('tanggal', date('Y-m-d'));
+        $latestTanggal = PresensiSholat::max('tanggal') ?? date('Y-m-d');
+        $tanggal = $request->get('tanggal', $latestTanggal);
         $waktu = $request->get('waktu_sholat', 'Subuh');
         $kamarId = $request->get('kamar_id', 'all');
         $periodRating = $request->get('period', 7);
@@ -21,10 +194,14 @@ class PresensiSholatController extends Controller
         $chartStart = $request->get('chart_start');
         $chartEnd = $request->get('chart_end');
 
+        // Navigasi bulan untuk panel "Hadir per Sholat" (hanya admin/musyrif)
+        $pwOffset = (int) $request->get('pw', 0);
+
         $perOrangPeriode = $request->get('per_orang_periode', 'minggu');
         $perOrangStart = $request->get('per_orang_start');
         $perOrangEnd = $request->get('per_orang_end');
         $perOrangWaktu = $request->get('per_orang_waktu', 'all');
+        $perOrangKeterangan = $request->get('per_orang_keterangan', 'all');
 
         $daftarKamar = Kamar::all();
 
@@ -34,7 +211,7 @@ class PresensiSholatController extends Controller
             $santriQuery->where('kamar_id', $kamarId);
         }
 
-        if (Schema::hasColumn('santris', 'status')) {
+        if (SchemaCache::hasColumn('santris', 'status')) {
             $santriQuery->where('status', 'Aktif');
         }
 
@@ -43,37 +220,128 @@ class PresensiSholatController extends Controller
                 $query->where('tanggal', $tanggal)->where('waktu_sholat', $waktu);
             }])
             ->orderBy('nama', 'asc')
-            ->get()
-            ->map(function ($santri) use ($periodRating, $waktu, $tanggal) {
-                $santri->rating = $santri->getRating($periodRating, $tanggal);
-                $santri->ratingByWaktu = $santri->getRatingByWaktu($waktu, $periodRating, $tanggal);
-                return $santri;
-            });
+            ->get();
 
-        $chartData = $this->buildChartData($chartFilter, $chartStart, $chartEnd);
-        $statusBreakdown = $this->buildStatusBreakdown($tanggal, $waktu);
+        // Hitung rating (persen) untuk semua santri dari SATU query agregat
+        // (sebelumnya N query per santri via getRating()/getRatingByWaktu()).
+        $ratingStart = \Carbon\Carbon::parse($tanggal)->subDays($periodRating - 1)->format('Y-m-d');
+        $totalSeharusnya = 5 * $periodRating;
+        $stats = $this->presensiStats($santris->pluck('id')->all(), $ratingStart, $tanggal);
+
+        $santris = $santris->map(function ($santri) use ($stats, $waktu, $totalSeharusnya) {
+            $all = $stats[$santri->id]['*'] ?? [];
+            $jamaah = $all['Jamaah'] ?? 0;
+            $santri->rating = $totalSeharusnya > 0 ? round(($jamaah / $totalSeharusnya) * 100) : 0;
+
+            $rowsWaktu = $stats[$santri->id][$waktu] ?? [];
+            $jamaahW = $rowsWaktu['Jamaah'] ?? 0;
+            $masbuqW = $rowsWaktu['Masbuq'] ?? 0;
+            $totalW = array_sum($rowsWaktu);
+            $score = $jamaahW + ($masbuqW * 0.5);
+            $santri->ratingByWaktu = $totalW > 0 ? round(($score / $totalW) * 100, 1) : 0;
+            return $santri;
+        });
+
+        $isPersonalMode = auth()->check() && !auth()->user()->canManagePresensi();
+        $personalSantri = null;
+        $scopeSantriId = null;
+        if ($isPersonalMode) {
+            $personalSantri = Santri::where('nama', auth()->user()->name)->where('status', 'Aktif')->first();
+            $scopeSantriId = $personalSantri?->id ?? -1;
+        }
+
+        $chartData = $this->chartDataCached($chartFilter, $chartStart, $chartEnd, $scopeSantriId);
+        $statusBreakdown = $this->buildStatusBreakdown($tanggal, $waktu, $scopeSantriId);
+
+        // Data panel "Hadir per Sholat" per bulan terpilih (navigasi < >)
+        $pwMonth = Carbon::now()->startOfMonth()->addMonths($pwOffset);
+        $perWaktu = $this->buildPerWaktuBulan($pwMonth, $scopeSantriId);
+        $perWaktuData = $perWaktu['chart'];
+        $perWaktuBreakdown = $perWaktu['breakdown'];
+        $pwHasData = $perWaktu['hasData'];
 
         $perOrangFilterNama = null;
         if (auth()->check() && !auth()->user()->isAdmin()) {
             $perOrangFilterNama = auth()->user()->name;
         }
-        $perOrangData = $this->buildPerOrangData($kamarId, $perOrangPeriode, $perOrangStart, $perOrangEnd, $perOrangWaktu, $perOrangFilterNama);
+        $perOrangData = $this->buildPerOrangData($kamarId, $perOrangPeriode, $perOrangStart, $perOrangEnd, $perOrangWaktu, $perOrangFilterNama, $perOrangKeterangan);
 
         $topRating = $santris->sortByDesc('rating')->values();
+
+        $personalRating = 0;
+        $personalRatingByWaktu = 0;
+        $personalRank = null;
+        $santriTotal = null;
+        if ($isPersonalMode && $personalSantri) {
+            $myAll = $stats[$personalSantri->id]['*'] ?? [];
+            $personalRating = $totalSeharusnya > 0 ? round((($myAll['Jamaah'] ?? 0) / $totalSeharusnya) * 100) : 0;
+
+            $myWaktu = $stats[$personalSantri->id][$waktu] ?? [];
+            $myTotalWaktu = array_sum($myWaktu);
+            $myScore = ($myWaktu['Jamaah'] ?? 0) + (($myWaktu['Masbuq'] ?? 0) * 0.5);
+            $personalRatingByWaktu = $myTotalWaktu > 0 ? round(($myScore / $myTotalWaktu) * 100, 1) : 0;
+
+            $rankedIds = $this->activeSantriQuery()->pluck('id')->all();
+            $jamaahPerSantri = DB::table('presensi_sholats')
+                ->select('santri_id', DB::raw('COUNT(*) as c'))
+                ->where('tanggal', '>=', $ratingStart)
+                ->where('tanggal', '<=', $tanggal)
+                ->where('status', 'Jamaah')
+                ->whereIn('santri_id', $rankedIds)
+                ->groupBy('santri_id')
+                ->pluck('c', 'santri_id');
+
+            $ranked = $this->activeSantriQuery()->get()->map(function ($s) use ($jamaahPerSantri, $totalSeharusnya) {
+                $s->santriRating = $totalSeharusnya > 0 ? round(((int) ($jamaahPerSantri[$s->id] ?? 0) / $totalSeharusnya) * 100) : 0;
+                return $s;
+            })->sortByDesc('santriRating')->values();
+            $santriTotal = $ranked->count();
+            $rankIdx = $ranked->search(fn ($s) => $s->id === $personalSantri->id);
+            $personalRank = $rankIdx !== false ? $rankIdx + 1 : null;
+        }
+
+        $notifData = $this->buildNotifData($perOrangFilterNama);
 
         return view('presensi.index', compact(
             'tanggal', 'waktu', 'kamarId', 'daftarKamar', 'santris',
             'periodRating', 'chartData', 'statusBreakdown', 'chartFilter',
             'chartStart', 'chartEnd', 'topRating', 'perOrangData',
-            'perOrangPeriode', 'perOrangStart', 'perOrangEnd', 'perOrangWaktu'
+            'perOrangPeriode', 'perOrangStart', 'perOrangEnd', 'perOrangWaktu', 'perOrangKeterangan',
+            'notifData', 'isPersonalMode', 'personalSantri', 'personalRating', 'personalRatingByWaktu',
+            'personalRank', 'santriTotal'
         ) + [
             'alfaBeruntun' => $this->getAlfaBeruntun(),
-            'trenBulanan' => $this->getTrenBulanan(),
+            'trenBulanan' => $this->trenBulananCached(6, $scopeSantriId),
+            'pwOffset' => $pwOffset,
+            'pwMonth' => $pwMonth,
+            'perWaktuData' => $perWaktuData,
+            'perWaktuBreakdown' => $perWaktuBreakdown,
+            'pwHasData' => $pwHasData,
         ]);
     }
 
     /**
-     * Santri dengan alfa >= 3 hari beruntun (berdasarkan tanggal terakhir alfa).
+     * Parse tanggal input user dengan format ketat Y-m-d.
+     * Return null bila kosong/tidak valid (bukan melempar exception).
+     */
+    protected function parseTanggal($value): ?Carbon
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (!is_string($value) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('Y-m-d', $value)->startOfDay();
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Santri dengan alfa beruntun >= $minStreak hari (berdasarkan tanggal terakhir alfa).
      */
     protected function getAlfaBeruntun(int $minStreak = 3): array
     {
@@ -81,56 +349,275 @@ class PresensiSholatController extends Controller
     }
 
     /**
-     * Persentase kehadiran (Jamaah / total terisi) per bulan, 6 bulan terakhir.
+     * Lazy-load daftar nama + tanggal untuk modal detail.
+     *
+     * Dashboard lama menyertakan daftar nama EVERY status di dalam HTML/JSON awal.
+     * Untuk rentang 6 bulan itu ratusan ribu baris -> HTML belasan MB, dan inilah
+     * pemicu utama "502 Bad Gateway". Sekarang halaman utama hanya mengirim angka
+     * agregat; daftar nama diambil saat modal benar-benar diklik.
+     *
+     * Query: satu SELECT sempit (tanpa hydrasi model) + join santris.
      */
-    protected function getTrenBulanan(int $jumlahBulan = 6): array
+    public function detail(Request $request): JsonResponse
     {
-        $start = Carbon::now()->subMonths($jumlahBulan - 1)->startOfMonth();
-        $end = Carbon::now()->endOfMonth();
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
 
-        $presensis = PresensiSholat::whereBetween('tanggal', [$start->format('Y-m-d'), $end->format('Y-m-d')])
-            ->with('santri')
-            ->get(['santri_id', 'tanggal', 'status']);
+        // Tanggal harus benar-benar Y-m-d. Tanpa validasi, input rusak membuat
+        // Carbon melempar InvalidFormatException -> 500.
+        $start = $this->parseTanggal($request->query('start'));
+        if ($start === null) {
+            return response()->json(['error' => 'Format tanggal harus YYYY-MM-DD'], 422);
+        }
+        $end = $this->parseTanggal($request->query('end')) ?? $start->copy();
+        if ($end === null) {
+            return response()->json(['error' => 'Format tanggal harus YYYY-MM-DD'], 422);
+        }
 
-        $grouped = [];
-        foreach ($presensis as $p) {
-            $key = $p->tanggal->format('Y-m');
-            $grouped[$key]['total'] = ($grouped[$key]['total'] ?? 0) + 1;
-            $grouped[$key]['hadir'] = ($grouped[$key]['hadir'] ?? 0) + ($p->status === 'Jamaah' ? 1 : 0);
-            $statusKey = match ($p->status) {
-                'Jamaah' => 'Hadir',
-                'Masbuq', 'Izin', 'Alfa' => $p->status,
-                default => null,
-            };
-            if ($statusKey) {
-                $grouped[$key]['breakdown'][$statusKey][] = [
-                    'nama' => $p->santri?->nama ?? 'Unknown',
-                    'tanggal' => $p->tanggal->format('Y-m-d'),
+        if ($start->greaterThan($end)) {
+            [$start, $end] = [$end, $start];
+        }
+        if ($start->diffInDays($end) > 400) {
+            return response()->json(['error' => 'Rentang tanggal terlalu besar'], 422);
+        }
+
+        // Waktu sholat yang tidak dikenal harus DITOLAK, bukan diabaikan diam-diam,
+        // kalau tidak caller diam-diam mendapat data satu bulan penuh.
+        $waktu = $request->query('waktu');
+        if ($waktu !== null && $waktu !== '' && !in_array($waktu, self::WAKTU_SHOLAT, true)) {
+            return response()->json(['error' => 'Waktu sholat tidak dikenal'], 422);
+        }
+
+        // Santri non-manager hanya boleh melihat datanya sendiri.
+        $santriId = null;
+        if (!$user->canManagePresensi()) {
+            $santriId = Santri::where('nama', $user->name)->value('id');
+            if (!$santriId) {
+                return response()->json(['names' => []], 200);
+            }
+        }
+
+        $query = DB::table('presensi_sholats')
+            ->join('santris', 'santris.id', '=', 'presensi_sholats.santri_id')
+            ->whereBetween('presensi_sholats.tanggal', [$start->format('Y-m-d'), $end->format('Y-m-d')])
+            ->when($santriId, fn ($q) => $q->where('presensi_sholats.santri_id', $santriId));
+
+        if ($waktu) {
+            $query->where('presensi_sholats.waktu_sholat', $waktu);
+        }
+
+        $names = [];
+        foreach (self::STATUS_LABEL as $dbStatus => $label) {
+            $names[$label] = [];
+        }
+
+        // Format wire: { label: { nama: [tanggal, ...] } }.
+        // Kalau nama dikirim ulang untuk tiap baris, payload untuk rentang 6 bulan
+        // jadi ~3,6x lebih besar (nama adalah bagian terbesar dan berulang).
+        $query->select('santris.nama', 'presensi_sholats.tanggal', 'presensi_sholats.status')
+            ->orderBy('santris.nama')
+            ->chunk(2000, function ($rows) use (&$names) {
+                foreach ($rows as $row) {
+                    $label = self::STATUS_LABEL[$row->status] ?? null;
+                    if ($label === null) {
+                        continue;
+                    }
+                    $names[$label][$row->nama][] = substr((string) $row->tanggal, 0, 10);
+                }
+            });
+
+        return response()->json(['names' => $names]);
+    }
+
+    /**
+     * Build notifikasi personal untuk user yang login berdasarkan kehadiran minggu ini.
+     */
+    public function buildNotifData(?string $filterNama = null): array
+    {
+        $user = auth()->user();
+        if (!$user) return [];
+
+        $nama = $filterNama ?: $user->name;
+        $santri = Santri::where('nama', $nama)->first();
+
+        $now = Carbon::now();
+        $startWeek = $now->copy()->startOfWeek(Carbon::MONDAY);
+        $endWeek = $now->copy()->endOfWeek(Carbon::SUNDAY);
+        $startMonth = $now->copy()->startOfMonth();
+        $endMonth = $now->copy()->endOfMonth();
+
+        $messages = [];
+        $dayIndex = (int) now()->dayOfWeek;
+
+        if ($santri) {
+            $weekPresensi = PresensiSholat::where('santri_id', $santri->id)
+                ->whereBetween('tanggal', [$startWeek->format('Y-m-d'), $endWeek->format('Y-m-d')])
+                ->get();
+
+            $monthPresensi = PresensiSholat::where('santri_id', $santri->id)
+                ->whereBetween('tanggal', [$startMonth->format('Y-m-d'), $endMonth->format('Y-m-d')])
+                ->get();
+
+            $totalWeek = $weekPresensi->count();
+            $hadirWeek = $weekPresensi->where('status', 'Jamaah')->count();
+            $alfaWeek = $weekPresensi->where('status', 'Alfa')->count();
+            $pctWeek = $totalWeek > 0 ? round(($hadirWeek / $totalWeek) * 100, 1) : 0;
+
+            $totalMonth = $monthPresensi->count();
+            $alfaMonth = $monthPresensi->where('status', 'Alfa')->count();
+            $pctMonth = $totalMonth > 0 ? round(($monthPresensi->where('status', 'Jamaah')->count() / $totalMonth) * 100, 1) : 0;
+
+            $alfaStreak = 0;
+            $today = $now->copy();
+            while (true) {
+                $p = $monthPresensi->firstWhere('tanggal', $today->format('Y-m-d'));
+                if ($p && $p->status === 'Alfa') {
+                    $alfaStreak++;
+                    $today->subDay();
+                } else {
+                    break;
+                }
+            }
+
+            $praiseTexts = [
+                "Mashaa Allah! Kehadiran berjamaahmu minggu ini {$pctWeek}%. Pertahankan semangatmu!",
+                "Alhamdulillah, kehadiran berjamaahmu minggu ini {$pctWeek}%! Semoga Allah ridha.",
+                "Subhanallah! Kehadiran berjamaahmu {$pctWeek}% minggu ini. Terus istiqamah!",
+                "Luar biasa! Kehadiran berjamaahmu minggu ini {$pctWeek}%. Jazakumullah khairan!",
+                "Masya Allah, kehadiranmu berjamaah minggu ini {$pctWeek}%! Semoga menjadi amal sholeh.",
+                "Allahu Akbar! Kehadiran berjamaahmu minggu ini {$pctWeek}%. Pantang menyerah!",
+                "Barakallahu fiik, kehadiran berjamaahmu minggu ini {$pctWeek}%. Semoga diberkahi!",
+            ];
+
+            $warningTexts = [
+                "Sudah alfa {$alfaStreak} hari berturut-turut. Segera perbaiki dan jangan tinggalkan sholat berjamaah!",
+                "Alfa {$alfaStreak} hari berturut! Ingatlah Allah memanggilmu setiap waktu. Yuk bangkit!",
+                " Sudah {$alfaStreak} hari alfa beruntun. Sholat berjamaah itu panglima, jangan lewatkan!",
+                "Kamu alfa {$alfaStreak} hari berturut. Teman-temanmu menunggumu di masjid!",
+                "Alfa beruntun {$alfaStreak} hari! Jangan biarkan Allah menunggumu. Segera perbaiki!",
+                "Sudah {$alfaStreak} hari tidak berjamaah. Mulai hari ini, ayo kembali ke masjid!",
+                "Peringatan! Alfa {$alfaStreak} hari berturut. Kekuatan ada di sholat berjamaah!",
+            ];
+
+            if ($alfaStreak >= 3 || $alfaMonth >= 5 || ($pctWeek < 50 && $totalWeek > 0)) {
+                $detail = '';
+                if ($alfaStreak >= 3) {
+                    $detail = $warningTexts[$dayIndex % count($warningTexts)];
+                } elseif ($alfaMonth >= 5) {
+                    $detail = "Bulan ini sudah {$alfaMonth} kali alfa. Sholat berjamaah lebih utama dari tidur!";
+                    if ($dayIndex % 3 === 1) $detail = "Bulan ini sudah {$alfaMonth} kali alfa. Bangunlah wahai santri, masjid menunggumu!";
+                    if ($dayIndex % 3 === 2) $detail = "Bulan ini {$alfaMonth} kali alfa. Jangan sia-siakan waktu muda di jalan Allah!";
+                } else {
+                    $detail = "Kehadiran berjamaah minggu ini baru {$pctWeek}%. Masjid selalu terbuka untukmu!";
+                    if ($dayIndex % 2 === 1) $detail = "Kehadiran berjamaah minggu ini baru {$pctWeek}%. Yuk tingkatkan, Allah pasti membantu!";
+                }
+                if (!$user->isAdmin()) {
+                    $messages[] = [
+                        'type' => 'danger',
+                        'icon' => 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+                        'title' => 'Peringatan: Kehadiran Buruk',
+                        'text' => $detail,
+                    ];
+                }
+            } elseif ($pctWeek >= 75) {
+                if (!$user->isAdmin()) {
+                    $messages[] = [
+                        'type' => 'success',
+                        'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+                        'title' => 'Penghargaan: Kehadiran Baik!',
+                        'text' => $praiseTexts[$dayIndex % count($praiseTexts)],
+                    ];
+                }
+            }
+        }
+
+        if ($user->isAdmin()) {
+            $startMonth = $now->copy()->startOfMonth();
+            $endMonth = $now->copy()->endOfMonth();
+            // Heavy: 30 hari x 5 waktu x semua santri, eager-load + loadMissing = query ganda.
+            // Diganti agregasi SQL + join santris, hasilnya hanya maksimal 5 baris per santri.
+            $topAlfa = DB::table('presensi_sholats as p')
+                ->join('santris as s', 's.id', '=', 'p.santri_id')
+                ->leftJoin('kamars as k', 'k.id', '=', 's.kamar_id')
+                ->whereBetween('p.tanggal', [$startMonth->format('Y-m-d'), $endMonth->format('Y-m-d')])
+                ->where('p.status', 'Alfa')
+                ->groupBy('p.santri_id', 's.nama', 'k.nama_kamar')
+                ->havingRaw('COUNT(*) >= 3')
+                ->orderByDesc('c')
+                ->limit(5)
+                ->selectRaw('s.nama as nama, k.nama_kamar as kamar, COUNT(*) as c')
+                ->get();
+
+            if ($topAlfa->isNotEmpty()) {
+                $list = $topAlfa->map(fn ($a) => "<strong>{$a->nama}</strong> (" . ($a->kamar ?? '-') . ") &mdash; {$a->c} kali")->implode(', ');
+                $messages[] = [
+                    'type' => 'danger',
+                    'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
+                    'title' => 'Admin: Santri Sering Alfa Bulan Ini',
+                    'text' => "{$list}. Segera hubungi pengasuh masing-masing!",
+                ];
+            }
+
+            $alfaStreakList = array_slice($this->getAlfaBeruntun(3), 0, 5);
+
+            if (count($alfaStreakList) > 0) {
+                $listStr = array_map(fn($a) => "<strong>{$a['nama']}</strong> ({$a['kamar']}) &mdash; {$a['streak']} hari berturut", $alfaStreakList);
+                $messages[] = [
+                    'type' => 'danger',
+                    'icon' => 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+                    'title' => 'Admin: Santri Alfa Berturut-turut',
+                    'text' => implode(', ', $listStr) . '. Segera tindak lanjuti!',
                 ];
             }
         }
 
-        $tren = [];
+        return $messages;
+    }
+
+    /**
+     * Persentase kehadiran (Jamaah / slot jadwal) per bulan, 6 bulan terakhir.
+     *
+     * Rincian nama per status TIDAK lagi disertakan: jumlahnya ratusan ribu baris
+     * dan membuat HTML dashboard berukuran belasan MB (penyebab 502). Rincian
+     * diambil on-demand lewat endpoint `detail()` saat modal diklik.
+     */
+    protected function getTrenBulanan(int $jumlahBulan = 6, ?int $santriId = null): array
+    {
+        $months = [];
         for ($i = $jumlahBulan - 1; $i >= 0; $i--) {
             $m = Carbon::now()->subMonths($i);
-            $key = $m->format('Y-m');
-            $g = $grouped[$key] ?? [];
-            $total = (int) ($g['total'] ?? 0);
-            $hadir = (int) ($g['hadir'] ?? 0);
+            $months[] = $m;
+        }
+
+        $buckets = [];
+        foreach ($months as $m) {
+            $buckets[] = ['start' => $m->copy()->startOfMonth()->format('Y-m-d'), 'end' => $m->copy()->endOfMonth()->format('Y-m-d')];
+        }
+
+        $agg = $this->aggregatePresensi($buckets, $santriId);
+
+        $tren = [];
+        foreach ($months as $i => $m) {
+            $row = $agg[$i]['-'] ?? [];
+            $total = (int) ($row['total'] ?? 0);
+            $hadir = (int) ($row['hadir'] ?? 0);
+
+            $slotAkhir = $m->format('Y-m') === Carbon::now()->format('Y-m')
+                ? Carbon::now()->copy()
+                : $m->copy()->endOfMonth();
+            $slotJadwal = $this->slotJadwal($m->copy()->startOfMonth(), $slotAkhir, $santriId);
 
             $tren[] = [
                 'label' => $m->translatedFormat('M'),
-                'pct' => $total > 0 ? round(($hadir / $total) * 100) : 0,
+                'pct' => $slotJadwal > 0 ? round(($hadir / $slotJadwal) * 100) : 0,
                 'detail' => [
                     'label' => $m->translatedFormat('F Y'),
+                    'start' => $buckets[$i]['start'],
+                    'end' => $slotAkhir->format('Y-m-d'),
                     'total' => $total,
                     'hadir' => $hadir,
-                    'breakdown' => [
-                        'Hadir' => $g['breakdown']['Hadir'] ?? [],
-                        'Masbuq' => $g['breakdown']['Masbuq'] ?? [],
-                        'Izin' => $g['breakdown']['Izin'] ?? [],
-                        'Alfa' => $g['breakdown']['Alfa'] ?? [],
-                    ],
                 ],
             ];
         }
@@ -138,55 +625,87 @@ class PresensiSholatController extends Controller
         return $tren;
     }
 
-    protected function buildChartData(string $filter = 'minggu', ?string $startDate = null, ?string $endDate = null): array
+    /**
+     * buildChartData() yang di-cache. Data basi otomatis saat presensi berubah (via presensiVersion).
+     */
+    protected function chartDataCached(string $filter, ?string $startDate, ?string $endDate, ?int $santriId): array
+    {
+        // Hanya cache untuk filter yang memang berat (bulan penuh / setahun penuh).
+        // Untuk minggu/hari yang sudah ~0,1s, memakai cache hanya menambah query overhead.
+        if (!in_array($filter, ['bulan', 'tahun'], true)) {
+            return $this->buildChartData($filter, $startDate, $endDate, $santriId);
+        }
+        return \Illuminate\Support\Facades\Cache::remember(
+            'presensi.chart.' . $filter . '.' . ($startDate ?? 'x') . '.' . ($endDate ?? 'x') . '.' . ($santriId ?? 'all') . '.' . $this->presensiVersion(),
+            300,
+            fn () => $this->buildChartData($filter, $startDate, $endDate, $santriId)
+        );
+    }
+
+    /**
+     * getTrenBulanan() yang di-cache.
+     */
+    protected function trenBulananCached(int $jumlahBulan = 6, ?int $santriId = null): array
+    {
+        return \Illuminate\Support\Facades\Cache::remember(
+            'dash.tren.' . $jumlahBulan . '.' . ($santriId ?? 'all') . '.' . $this->presensiVersion(),
+            300,
+            fn () => $this->getTrenBulanan($jumlahBulan, $santriId)
+        );
+    }
+
+    protected function buildChartData(string $filter = 'minggu', ?string $startDate = null, ?string $endDate = null, ?int $santriId = null): array
     {
         $chartData = match ($filter) {
-            'minggu' => $this->buildMingguanData($startDate, $endDate),
-            'bulan' => $this->buildBulananData($startDate, $endDate),
-            'tahun' => $this->buildTahunanData(),
-            default => $this->buildMingguanData($startDate, $endDate),
+            'hari' => $this->buildHarianData($startDate, $santriId),
+            'minggu' => $this->buildMingguanData($startDate, $endDate, $santriId),
+            'bulan' => $this->buildBulananData($startDate, $endDate, $santriId),
+            'tahun' => $this->buildTahunanData($santriId),
+            default => $this->buildMingguanData($startDate, $endDate, $santriId),
         };
 
         $rangeStart = $chartData['dateRange']['start'];
         $rangeEnd = $chartData['dateRange']['end'];
 
-        $waktuSholatLabels = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'];
+        $waktuSholatLabels = self::WAKTU_SHOLAT;
         $presensiPerWaktu = [];
         $waktuBreakdownDetail = [];
 
-        foreach ($waktuSholatLabels as $waktuLabel) {
-            $result = PresensiSholat::query()
-                ->where('waktu_sholat', $waktuLabel)
-                ->whereBetween('tanggal', [$rangeStart, $rangeEnd])
-                ->selectRaw('COUNT(*) as total, SUM(CASE WHEN status = "Jamaah" THEN 1 ELSE 0 END) as jamaah, SUM(CASE WHEN status = "Masbuq" THEN 1 ELSE 0 END) as masbuq, SUM(CASE WHEN status = "Izin" THEN 1 ELSE 0 END) as izin, SUM(CASE WHEN status = "Alfa" THEN 1 ELSE 0 END) as alfa')
-                ->first();
+        // SATU query agregat (sebelumnya: memuat seluruh baris range sebagai Eloquent
+        // model + daftar nama per status, ratusan ribu baris untuk filter bulan/tahun).
+        $perWaktuAgg = $this->aggregatePresensi(
+            [['start' => $rangeStart, 'end' => $rangeEnd]],
+            $santriId,
+            true
+        )[0] ?? [];
 
-            $total = (int) ($result->total ?? 0);
-            $jamaah = (int) ($result->jamaah ?? 0);
-            $presensiPerWaktu[] = $total > 0 ? round(($jamaah / $total) * 100) : 0;
+        $slotJadwal = $this->slotJadwal(Carbon::parse($rangeStart), Carbon::parse($rangeEnd), $santriId, 1);
+        $statusKehadiran = ['Hadir' => 0, 'Masbuq' => 0, 'Izin' => 0, 'Alfa' => 0];
+
+        foreach ($waktuSholatLabels as $waktuLabel) {
+            $row = $perWaktuAgg[$waktuLabel] ?? [];
+            $total = (int) ($row['total'] ?? 0);
+            $jamaah = (int) ($row['Jamaah'] ?? 0);
+            $percentage = $slotJadwal > 0 ? round(($jamaah / $slotJadwal) * 100) : 0;
+
+            $presensiPerWaktu[] = $percentage;
+
+            $statusKehadiran['Hadir'] += $jamaah;
+            $statusKehadiran['Masbuq'] += (int) ($row['Masbuq'] ?? 0);
+            $statusKehadiran['Izin'] += (int) ($row['Izin'] ?? 0);
+            $statusKehadiran['Alfa'] += (int) ($row['Alfa'] ?? 0);
 
             $waktuBreakdownDetail[$waktuLabel] = [
                 'total' => $total,
                 'jamaah' => $jamaah,
-                'masbuq' => (int) ($result->masbuq ?? 0),
-                'izin' => (int) ($result->izin ?? 0),
-                'alfa' => (int) ($result->alfa ?? 0),
-                'percentage' => $total > 0 ? round(($jamaah / $total) * 100) : 0,
-                'names' => [
-                    'Jamaah' => PresensiSholat::where('waktu_sholat', $waktuLabel)->whereBetween('tanggal', [$rangeStart, $rangeEnd])->where('status', 'Jamaah')->with('santri')->get()->map(fn($p) => ['nama' => $p->santri?->nama ?? 'Unknown', 'tanggal' => $p->tanggal])->toArray(),
-                    'Masbuq' => PresensiSholat::where('waktu_sholat', $waktuLabel)->whereBetween('tanggal', [$rangeStart, $rangeEnd])->where('status', 'Masbuq')->with('santri')->get()->map(fn($p) => ['nama' => $p->santri?->nama ?? 'Unknown', 'tanggal' => $p->tanggal])->toArray(),
-                    'Izin' => PresensiSholat::where('waktu_sholat', $waktuLabel)->whereBetween('tanggal', [$rangeStart, $rangeEnd])->where('status', 'Izin')->with('santri')->get()->map(fn($p) => ['nama' => $p->santri?->nama ?? 'Unknown', 'tanggal' => $p->tanggal])->toArray(),
-                    'Alfa' => PresensiSholat::where('waktu_sholat', $waktuLabel)->whereBetween('tanggal', [$rangeStart, $rangeEnd])->where('status', 'Alfa')->with('santri')->get()->map(fn($p) => ['nama' => $p->santri?->nama ?? 'Unknown', 'tanggal' => $p->tanggal])->toArray(),
-                ],
+                'masbuq' => (int) ($row['Masbuq'] ?? 0),
+                'izin' => (int) ($row['Izin'] ?? 0),
+                'alfa' => (int) ($row['Alfa'] ?? 0),
+                'percentage' => $percentage,
+                'start' => $rangeStart,
+                'end' => $rangeEnd,
             ];
         }
-
-        $statusKehadiran = [
-            'Hadir' => PresensiSholat::query()->where('status', 'Jamaah')->whereBetween('tanggal', [$rangeStart, $rangeEnd])->count(),
-            'Masbuq' => PresensiSholat::query()->where('status', 'Masbuq')->whereBetween('tanggal', [$rangeStart, $rangeEnd])->count(),
-            'Izin' => PresensiSholat::query()->where('status', 'Izin')->whereBetween('tanggal', [$rangeStart, $rangeEnd])->count(),
-            'Alfa' => PresensiSholat::query()->where('status', 'Alfa')->whereBetween('tanggal', [$rangeStart, $rangeEnd])->count(),
-        ];
 
         $chartData['presensiPerWaktu'] = [
             'labels' => $waktuSholatLabels,
@@ -199,50 +718,175 @@ class PresensiSholatController extends Controller
         return $chartData;
     }
 
-    protected function buildMingguanData(?string $startDate = null, ?string $endDate = null): array
+    /**
+     * Persentase kehadiran per waktu sholat untuk satu bulan penuh (panel "Hadir per Sholat" admin).
+     * Bulan berjalan dibatasi sampai hari ini. Bulan tanpa data -> hasData = false.
+     */
+    protected function buildPerWaktuBulan(Carbon $month, ?int $santriId = null): array
     {
-        $end = $endDate ? Carbon::parse($endDate) : Carbon::now();
-        $start = $startDate ? Carbon::parse($startDate) : $end->copy()->subDays(6);
+        $monthStart = $month->copy()->startOfMonth();
+        $isCurrent = $monthStart->format('Y-m') === Carbon::now()->format('Y-m');
+        $monthEnd = $isCurrent ? Carbon::now()->copy() : $month->copy()->endOfMonth();
+
+        $rangeStart = $monthStart->format('Y-m-d');
+        $rangeEnd = $monthEnd->format('Y-m-d');
+
+        $waktuLabels = self::WAKTU_SHOLAT;
+        $values = [];
+        $breakdown = [];
+        $slotJadwal = $this->slotJadwal($monthStart, $monthEnd, $santriId, 1);
+
+        $perWaktuAgg = $this->aggregatePresensi(
+            [['start' => $rangeStart, 'end' => $rangeEnd]],
+            $santriId,
+            true
+        )[0] ?? [];
+
+        $totalRecord = 0;
+        foreach ($waktuLabels as $wl) {
+            $row = $perWaktuAgg[$wl] ?? [];
+            $total = (int) ($row['total'] ?? 0);
+            $totalRecord += $total;
+            $jamaah = (int) ($row['Jamaah'] ?? 0);
+            $percentage = $slotJadwal > 0 ? round(($jamaah / $slotJadwal) * 100) : 0;
+            $values[] = $percentage;
+
+            $breakdown[$wl] = [
+                'total' => $total,
+                'jamaah' => $jamaah,
+                'masbuq' => (int) ($row['Masbuq'] ?? 0),
+                'izin' => (int) ($row['Izin'] ?? 0),
+                'alfa' => (int) ($row['Alfa'] ?? 0),
+                'percentage' => $percentage,
+                'start' => $rangeStart,
+                'end' => $rangeEnd,
+            ];
+        }
+
+        return [
+            'chart' => [
+                'labels' => $waktuLabels,
+                'values' => $values,
+                'subtitle' => $monthStart->translatedFormat('F Y') . ($isCurrent ? ' (s/d hari ini)' : ''),
+            ],
+            'breakdown' => $breakdown,
+            'hasData' => $totalRecord > 0,
+        ];
+    }
+
+    protected function buildMingguanData(?string $startDate = null, ?string $endDate = null, ?int $santriId = null): array
+    {
+        $target = Carbon::parse($endDate ?: $startDate ?: now())->startOfMonth();
+        $monthStart = $target->copy();
+        $monthEnd = $target->copy()->endOfMonth();
 
         $labels = [];
         $detailLabels = [];
         $values = [];
         $detailData = [];
 
-        $days = (int) $start->diffInDays($end) + 1;
-        $days = min($days, 90);
+        $daysInMonth = (int) $monthEnd->format('d');
+        $base = intdiv($daysInMonth, 4);
+        $rem = $daysInMonth % 4;
+        $segStart = null;
+        $prevEnd = null;
+        $segments = [];
 
-        for ($i = 0; $i < $days; $i++) {
-            $date = $start->copy()->addDays($i);
-            $dateStr = $date->format('Y-m-d');
-            $labels[] = $date->translatedFormat('d M');
-            $detailLabels[] = $date->translatedFormat('d M Y');
+        for ($i = 0; $i < 4; $i++) {
+            $segLen = $base + ($i < $rem ? 1 : 0);
+            $segStart = $i === 0 ? $monthStart->copy() : $prevEnd->copy()->addDay();
+            $segEnd = $segStart->copy()->addDays($segLen - 1);
 
-            $dayData = PresensiSholat::query()
-                ->where('tanggal', $dateStr)
-                ->selectRaw('COUNT(*) as total, SUM(CASE WHEN status = "Jamaah" THEN 1 ELSE 0 END) as hadir')
-                ->first();
+            $segments[] = ['start' => $segStart, 'end' => $segEnd];
+            $prevEnd = $segEnd->copy();
+        }
 
-            $total = (int) ($dayData->total ?? 0);
-            $hadir = (int) ($dayData->hadir ?? 0);
-            $values[] = $total > 0 ? round(($hadir / $total) * 100) : 0;
+        // SATU query untuk keempat segmen (sebelumnya 4 aggregate + 4 query nama = 8 query
+        // yang masing-masing memuat semua baris segmen sebagai Eloquent model).
+        $agg = $this->aggregatePresensi(array_map(fn ($s) => [
+            'start' => $s['start']->format('Y-m-d'),
+            'end' => $s['end']->format('Y-m-d'),
+        ], $segments), $santriId);
 
-            $statusBreakdown = [];
-            foreach (['Jamaah' => 'Hadir', 'Masbuq' => 'Masbuq', 'Izin' => 'Izin', 'Alfa' => 'Alfa'] as $dbStatus => $label) {
-                $names = PresensiSholat::where('tanggal', $dateStr)
-                    ->where('status', $dbStatus)
-                    ->with('santri')
-                    ->get()
-                    ->map(fn($p) => ['nama' => $p->santri?->nama ?? 'Unknown', 'tanggal' => $p->tanggal])
-                    ->toArray();
-                $statusBreakdown[$label] = $names;
-            }
+        foreach ($segments as $i => $segment) {
+            $segStart = $segment['start'];
+            $segEnd = $segment['end'];
+            $row = $agg[$i]['-'] ?? [];
+            $total = (int) ($row['total'] ?? 0);
+            $hadir = (int) ($row['hadir'] ?? 0);
+
+            $labels[] = 'Minggu ' . ($i + 1);
+            $detailLabels[] = $segStart->translatedFormat('d M') . ' - ' . $segEnd->translatedFormat('d M Y');
+
+            $slotJadwal = $this->slotJadwal($segStart, $segEnd, $santriId);
+            $values[] = $slotJadwal > 0 ? round(($hadir / $slotJadwal) * 100) : 0;
 
             $detailData[] = [
-                'label' => $date->translatedFormat('d M Y'),
+                'label' => 'Minggu ' . ($i + 1) . ' (' . $segStart->translatedFormat('d M') . ' - ' . $segEnd->translatedFormat('d M Y') . ')',
+                'start' => $segStart->format('Y-m-d'),
+                'end' => $segEnd->format('Y-m-d'),
                 'total' => $total,
                 'hadir' => $hadir,
-                'breakdown' => $statusBreakdown,
+            ];
+        }
+
+        return [
+            'presensiBulanan' => [
+                'labels' => $labels,
+                'detailLabels' => $detailLabels,
+                'values' => $values,
+                'detailData' => $detailData,
+                'title' => 'Kehadiran Per Minggu',
+                'subtitle' => $monthStart->translatedFormat('M Y'),
+            ],
+            'dateRange' => [
+                'start' => $monthStart->format('Y-m-d'),
+                'end' => $monthEnd->format('Y-m-d'),
+            ],
+        ];
+    }
+
+    protected function buildHarianData(?string $date = null, ?int $santriId = null): array
+    {
+        $ref = $date ? Carbon::parse($date) : Carbon::now();
+        $start = $ref->copy()->startOfWeek(Carbon::MONDAY);
+        $end = $ref->copy()->endOfWeek(Carbon::SUNDAY);
+
+        $labels = [];
+        $detailLabels = [];
+        $values = [];
+        $detailData = [];
+
+        $days = [];
+        for ($i = 0; $i < 7; $i++) {
+            $days[] = $start->copy()->addDays($i);
+        }
+
+        // SATU query untuk 7 hari (sebelumnya 7 aggregate + 7 query nama).
+        $agg = $this->aggregatePresensi(array_map(fn ($d) => [
+            'start' => $d->format('Y-m-d'),
+            'end' => $d->format('Y-m-d'),
+        ], $days), $santriId);
+
+        foreach ($days as $i => $date) {
+            $dateStr = $date->format('Y-m-d');
+            $row = $agg[$i]['-'] ?? [];
+            $total = (int) ($row['total'] ?? 0);
+            $hadir = (int) ($row['hadir'] ?? 0);
+
+            $labels[] = $date->translatedFormat('D');
+            $detailLabels[] = $date->translatedFormat('d M Y');
+
+            // Slot jadwal = 5 waktu per hari × jumlah santri; 0 untuk hari yang belum tiba
+            $slotJadwal = $date->lte(Carbon::now()) ? 5 * ($santriId ? 1 : $this->jumlahSantriAktif()) : 0;
+            $values[] = $slotJadwal > 0 ? round(($hadir / $slotJadwal) * 100) : 0;
+
+            $detailData[] = [
+                'label' => $date->translatedFormat('l, d M Y'),
+                'start' => $dateStr,
+                'end' => $dateStr,
+                'total' => $total,
+                'hadir' => $hadir,
             ];
         }
 
@@ -253,7 +897,7 @@ class PresensiSholatController extends Controller
                 'values' => $values,
                 'detailData' => $detailData,
                 'title' => 'Kehadiran Per Hari',
-                'subtitle' => $start->translatedFormat('d M') . ' - ' . $end->translatedFormat('d M Y'),
+                'subtitle' => $start->translatedFormat('d M Y') . ' - ' . $end->translatedFormat('d M Y'),
             ],
             'dateRange' => [
                 'start' => $start->format('Y-m-d'),
@@ -262,7 +906,7 @@ class PresensiSholatController extends Controller
         ];
     }
 
-    protected function buildBulananData(?string $startMonth = null, ?string $endMonth = null): array
+    protected function buildBulananData(?string $startMonth = null, ?string $endMonth = null, ?int $santriId = null): array
     {
         $end = $endMonth ? Carbon::parse($endMonth)->endOfMonth() : Carbon::now();
         $start = $startMonth ? Carbon::parse($startMonth)->startOfMonth() : $end->copy()->subMonths(5)->startOfMonth();
@@ -275,39 +919,40 @@ class PresensiSholatController extends Controller
         $months = (int) $start->diffInMonths($end) + 1;
         $months = min($months, 24);
 
+        $buckets = [];
         for ($i = 0; $i < $months; $i++) {
             $month = $start->copy()->addMonths($i);
+            $buckets[] = [
+                'start' => $month->copy()->startOfMonth()->format('Y-m-d'),
+                'end' => $month->copy()->endOfMonth()->format('Y-m-d'),
+            ];
+        }
+
+        // SATU query untuk seluruh bulan yang dipilih (sebelumnya 2 query per bulan,
+        // masing-masing memuat semua baris bulan + daftar nama).
+        $agg = $this->aggregatePresensi($buckets, $santriId);
+
+        for ($i = 0; $i < $months; $i++) {
+            $month = $start->copy()->addMonths($i);
+            $row = $agg[$i]['-'] ?? [];
+            $total = (int) ($row['total'] ?? 0);
+            $hadir = (int) ($row['hadir'] ?? 0);
+
             $labels[] = $month->translatedFormat('M Y');
             $detailLabels[] = $month->translatedFormat('M Y');
 
-            $periodStart = $month->copy()->startOfMonth()->format('Y-m-d');
-            $periodEnd = $month->copy()->endOfMonth()->format('Y-m-d');
-
-            $monthData = PresensiSholat::query()
-                ->whereBetween('tanggal', [$periodStart, $periodEnd])
-                ->selectRaw('COUNT(*) as total, SUM(CASE WHEN status = "Jamaah" THEN 1 ELSE 0 END) as hadir')
-                ->first();
-
-            $total = (int) ($monthData->total ?? 0);
-            $hadir = (int) ($monthData->hadir ?? 0);
-            $values[] = $total > 0 ? round(($hadir / $total) * 100) : 0;
-
-            $statusBreakdown = [];
-            foreach (['Jamaah' => 'Hadir', 'Masbuq' => 'Masbuq', 'Izin' => 'Izin', 'Alfa' => 'Alfa'] as $dbStatus => $label) {
-                $names = PresensiSholat::whereBetween('tanggal', [$periodStart, $periodEnd])
-                    ->where('status', $dbStatus)
-                    ->with('santri')
-                    ->get()
-                    ->map(fn($p) => $p->santri?->nama ?? 'Unknown')
-                    ->toArray();
-                $statusBreakdown[$label] = $names;
-            }
+            $slotAkhir = $month->format('Y-m') === Carbon::now()->format('Y-m')
+                ? Carbon::now()->copy()
+                : $month->copy()->endOfMonth();
+            $slotJadwal = $this->slotJadwal($month->copy()->startOfMonth(), $slotAkhir, $santriId);
+            $values[] = $slotJadwal > 0 ? round(($hadir / $slotJadwal) * 100) : 0;
 
             $detailData[] = [
                 'label' => $month->translatedFormat('F Y'),
+                'start' => $buckets[$i]['start'],
+                'end' => $buckets[$i]['end'],
                 'total' => $total,
                 'hadir' => $hadir,
-                'breakdown' => $statusBreakdown,
             ];
         }
 
@@ -327,47 +972,46 @@ class PresensiSholatController extends Controller
         ];
     }
 
-    protected function buildTahunanData(): array
+    protected function buildTahunanData(?int $santriId = null): array
     {
         $labels = [];
         $detailLabels = [];
         $values = [];
         $detailData = [];
 
+        $years = [];
         for ($i = 2; $i >= 0; $i--) {
-            $year = now()->subYears($i);
+            $years[] = now()->subYears($i);
+        }
+
+        // SATU query untuk tiga tahun (sebelumnya 2 query per tahun; filter "tahun"
+        // sebelumnya memuat SELURUH baris 3 tahun sekaligus sebagai Eloquent model).
+        $agg = $this->aggregatePresensi(array_map(fn ($y) => [
+            'start' => $y->copy()->startOfYear()->format('Y-m-d'),
+            'end' => $y->copy()->endOfYear()->format('Y-m-d'),
+        ], $years), $santriId);
+
+        foreach ($years as $i => $year) {
             $yearLabel = $year->translatedFormat('Y');
+            $row = $agg[$i]['-'] ?? [];
+            $total = (int) ($row['total'] ?? 0);
+            $hadir = (int) ($row['hadir'] ?? 0);
+
             $labels[] = $yearLabel;
             $detailLabels[] = $yearLabel;
 
-            $periodStart = $year->copy()->startOfYear()->format('Y-m-d');
-            $periodEnd = $year->copy()->endOfYear()->format('Y-m-d');
-
-            $yearData = PresensiSholat::query()
-                ->whereBetween('tanggal', [$periodStart, $periodEnd])
-                ->selectRaw('COUNT(*) as total, SUM(CASE WHEN status = "Jamaah" THEN 1 ELSE 0 END) as hadir')
-                ->first();
-
-            $total = (int) ($yearData->total ?? 0);
-            $hadir = (int) ($yearData->hadir ?? 0);
-            $values[] = $total > 0 ? round(($hadir / $total) * 100) : 0;
-
-            $statusBreakdown = [];
-            foreach (['Jamaah' => 'Hadir', 'Masbuq' => 'Masbuq', 'Izin' => 'Izin', 'Alfa' => 'Alfa'] as $dbStatus => $label) {
-                $names = PresensiSholat::whereBetween('tanggal', [$periodStart, $periodEnd])
-                    ->where('status', $dbStatus)
-                    ->with('santri')
-                    ->get()
-                    ->map(fn($p) => $p->santri?->nama ?? 'Unknown')
-                    ->toArray();
-                $statusBreakdown[$label] = $names;
-            }
+            $slotAkhir = $year->format('Y') === Carbon::now()->format('Y')
+                ? Carbon::now()->copy()
+                : $year->copy()->endOfYear();
+            $slotJadwal = $this->slotJadwal($year->copy()->startOfYear(), $slotAkhir, $santriId);
+            $values[] = $slotJadwal > 0 ? round(($hadir / $slotJadwal) * 100) : 0;
 
             $detailData[] = [
                 'label' => $yearLabel,
+                'start' => $year->copy()->startOfYear()->format('Y-m-d'),
+                'end' => $year->copy()->endOfYear()->format('Y-m-d'),
                 'total' => $total,
                 'hadir' => $hadir,
-                'breakdown' => $statusBreakdown,
             ];
         }
 
@@ -387,7 +1031,7 @@ class PresensiSholatController extends Controller
         ];
     }
 
-    protected function buildStatusBreakdown(string $tanggal, string $waktu): array
+    protected function buildStatusBreakdown(string $tanggal, string $waktu, ?int $santriId = null): array
     {
         $statuses = ['Jamaah', 'Masbuq', 'Izin', 'Alfa'];
         $breakdown = [];
@@ -396,7 +1040,8 @@ class PresensiSholatController extends Controller
             $santris = PresensiSholat::where('tanggal', $tanggal)
                 ->where('waktu_sholat', $waktu)
                 ->where('status', $status)
-                ->with('santri')
+                ->when($santriId, fn ($q) => $q->where('santri_id', $santriId))
+                ->with(['santri:id,nama,nis,kamar_id,jabatan', 'santri.kamar:id,nama_kamar'])
                 ->get()
                 ->map(function ($presensi) {
                     return [
@@ -413,9 +1058,10 @@ class PresensiSholatController extends Controller
         return $breakdown;
     }
 
-    protected function buildPerOrangData(?string $kamarId, string $periode = 'minggu', ?string $startDate = null, ?string $endDate = null, ?string $waktuSholat = null, ?string $filterNama = null): array
+    protected function buildPerOrangData(?string $kamarId, string $periode = 'minggu', ?string $startDate = null, ?string $endDate = null, ?string $waktuSholat = null, ?string $filterNama = null, ?string $filterKeterangan = null): array
     {
-        $ref = now();
+        $latestDate = PresensiSholat::max('tanggal') ?? date('Y-m-d');
+        $ref = Carbon::parse($latestDate);
         switch ($periode) {
             case 'bulan':
                 $start = $endDate ? Carbon::parse($endDate)->startOfMonth() : $ref->copy()->startOfMonth();
@@ -437,11 +1083,14 @@ class PresensiSholatController extends Controller
         $allWaktu = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'];
         $waktuList = $waktuSholat && $waktuSholat !== 'all' ? [$waktuSholat] : $allWaktu;
 
-        $santriQuery = Santri::query();
-        if ($kamarId && $kamarId !== 'all' && $kamarId !== '') {
-            $santriQuery->where('kamar_id', $kamarId);
+$santriQuery = Santri::query();
+        $kamarIds = ($kamarId === 'all' || $kamarId === '' || $kamarId === null)
+            ? []
+            : array_map('trim', explode(',', $kamarId));
+        if (count($kamarIds) > 0) {
+            $santriQuery->whereIn('kamar_id', $kamarIds);
         }
-        if (Schema::hasColumn('santris', 'status')) {
+        if (SchemaCache::hasColumn('santris', 'status')) {
             $santriQuery->where('status', 'Aktif');
         }
         if ($filterNama) {
@@ -449,7 +1098,7 @@ class PresensiSholatController extends Controller
         }
 
         $santris = $santriQuery
-            ->with(['presensis' => function ($q) use ($startStr, $endStr, $waktuList) {
+            ->with(['kamar:id,nama_kamar', 'presensis' => function ($q) use ($startStr, $endStr, $waktuList) {
                 $q->where('tanggal', '>=', $startStr)
                   ->where('tanggal', '<=', $endStr)
                   ->whereIn('waktu_sholat', $waktuList);
@@ -460,7 +1109,7 @@ class PresensiSholatController extends Controller
         $days = (int) $start->diffInDays($end) + 1;
         $totalJadwal = $days * count($waktuList);
 
-        $perOrang = $santris->map(function ($santri) use ($totalJadwal) {
+        $perOrang = $santris->map(function ($santri) use ($totalJadwal, $filterKeterangan) {
             $hadir = 0; $masbuq = 0; $izin = 0; $alfa = 0;
             foreach ($santri->presensis as $p) {
                 match ($p->status) {
@@ -472,7 +1121,14 @@ class PresensiSholatController extends Controller
                 };
             }
             $totalIsi = $hadir + $masbuq + $izin + $alfa;
-            $persentase = $totalJadwal > 0 ? round(($hadir / $totalJadwal) * 100) : 0;
+            if ($filterKeterangan && $filterKeterangan !== 'all') {
+                $filteredCount = match($filterKeterangan) {
+                    'Jamaah' => $hadir, 'Masbuq' => $masbuq, 'Izin' => $izin, 'Alfa' => $alfa, default => 0,
+                };
+                $persentase = $totalJadwal > 0 ? round(($filteredCount / $totalJadwal) * 100) : 0;
+            } else {
+                $persentase = $totalJadwal > 0 ? round(($hadir / $totalJadwal) * 100) : 0;
+            }
 
             return [
                 'id' => $santri->id,
@@ -487,7 +1143,23 @@ class PresensiSholatController extends Controller
                 'total' => $totalIsi,
                 'persentase' => $persentase,
             ];
-        })->sortByDesc('persentase')->sortByDesc('hadir')->values();
+        });
+
+        if ($filterKeterangan && $filterKeterangan !== 'all' && !$filterNama) {
+            $sortField = match ($filterKeterangan) {
+                'Jamaah' => 'hadir',
+                'Masbuq' => 'masbuq',
+                'Izin'   => 'izin',
+                'Alfa'   => 'alfa',
+                default  => 'hadir',
+            };
+            $perOrang = $perOrang->sortByDesc($sortField);
+        } elseif ($filterNama) {
+            $perOrang = $perOrang->sortBy('nama');
+        } else {
+            $perOrang = $perOrang->sortByDesc('persentase')->sortByDesc('hadir');
+        }
+        $perOrang = $perOrang->values();
 
         return [
             'data' => $perOrang,
@@ -516,7 +1188,7 @@ class PresensiSholatController extends Controller
             $santriQuery->where('kamar_id', $kamarId);
         }
 
-        if (Schema::hasColumn('santris', 'status')) {
+        if (SchemaCache::hasColumn('santris', 'status')) {
             $santriQuery->where('status', 'Aktif');
         }
 
@@ -541,9 +1213,22 @@ class PresensiSholatController extends Controller
     {
         $periode      = $request->get('periode', 'mingguan');
         $tanggalRef   = $request->get('tanggal', date('Y-m-d'));
-        $kamarId      = $request->get('kamar_id', 'all');
+        $kamarId      = $this->normalizeRayonFilter($request->get('kamar_ids', $request->get('kamar_id', 'all')));
         $filterWaktu  = $request->get('filter_waktu', 'all');
         $filterStatus = $request->get('filter_status', '');
+        $mode         = $request->get('mode', 'absensi');
+
+        // Hanya status yang valid yang masuk mode filter; nilai lain dianggap
+        // "Semua Status" agar tampilan halaman selalu sinkron dengan data.
+        if (!in_array($filterStatus, ['alfa', 'masbuq', 'izin'])) {
+            $filterStatus = '';
+        }
+
+        // Support multi-waktu: "Maghrib,Subuh" atau array (checkbox)
+        $semuaWaktu = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'];
+        $filterWaktu = $this->normalizeWaktuFilter($filterWaktu);
+        $waktuList  = $filterWaktu !== 'all' ? explode(',', $filterWaktu) : $semuaWaktu;
+        $filterWaktuParam = $filterWaktu;
 
         $ref = Carbon::parse($tanggalRef);
 
@@ -567,9 +1252,6 @@ class PresensiSholatController extends Controller
 
         $daftarKamar = Kamar::all();
 
-        $semuaWaktu = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'];
-        $waktuList  = $filterWaktu !== 'all' ? [$filterWaktu] : $semuaWaktu;
-
         $allDates = [];
         $temp = $tanggalMulai->copy();
         while ($temp->lte($tanggalSelesai)) {
@@ -578,10 +1260,13 @@ class PresensiSholatController extends Controller
         }
 
         $santriQuery = Santri::query();
-        if ($kamarId !== 'all' && $kamarId !== null && $kamarId !== '') {
-            $santriQuery->where('kamar_id', $kamarId);
+        $kamarIdsArr = ($kamarId === 'all' || $kamarId === '' || $kamarId === null)
+            ? []
+            : array_map('trim', explode(',', $kamarId));
+        if (count($kamarIdsArr) > 0) {
+            $santriQuery->whereIn('kamar_id', $kamarIdsArr);
         }
-        if (Schema::hasColumn('santris', 'status')) {
+        if (SchemaCache::hasColumn('santris', 'status')) {
             $santriQuery->where('status', 'Aktif');
         }
 
@@ -681,19 +1366,28 @@ class PresensiSholatController extends Controller
             ? (int) round(($totalHadir / $totalDiisiAll) * 100)
             : 0;
 
+        $kamarNamaList = [];
+        if ($kamarId !== 'all') {
+            foreach (explode(',', $kamarId) as $kid) {
+                $k = $daftarKamar->firstWhere('id', (int)$kid);
+                if ($k) $kamarNamaList[] = $k->nama_kamar;
+            }
+        }
+        $kamarLabel = count($kamarNamaList) > 0 ? implode(', ', $kamarNamaList) : 'Semua Rayon';
+
         $statusLabels = [
             'alfa'   => 'Alfa',
             'masbuq' => 'Masbuq',
             'izin'   => 'Izin',
         ];
 
-        return view('presensi.rekap-cetak', compact(
+        return view($mode === 'pdf' ? 'presensi.rekap-cetak-pdf' : 'presensi.rekap-cetak', compact(
             'periode', 'periodeLabel', 'tanggalMulai', 'tanggalSelesai',
-            'kamarId', 'daftarKamar', 'santris', 'allDates', 'waktuList', 'semuaWaktu',
-            'filterWaktu', 'filterStatus', 'rekapData',
+            'kamarId', 'kamarLabel', 'daftarKamar', 'santris', 'allDates', 'waktuList', 'semuaWaktu',
+            'filterStatus', 'rekapData',
             'totalHadir', 'totalMasbuq', 'totalIzin', 'totalAlfa', 'totalDiisiAll', 'persentaseUmum',
             'statusLabels'
-        ));
+        ) + ['filterWaktu' => $filterWaktuParam]);
     }
 
     public function store(Request $request)
@@ -733,7 +1427,7 @@ class PresensiSholatController extends Controller
             $santriQuery->where('kamar_id', $kamarId);
         }
 
-        if (Schema::hasColumn('santris', 'status')) {
+        if (SchemaCache::hasColumn('santris', 'status')) {
             $santriQuery->where('status', 'Aktif');
         }
 
@@ -790,7 +1484,7 @@ class PresensiSholatController extends Controller
             $santriQuery->where('kamar_id', $kamarId);
         }
 
-        if (Schema::hasColumn('santris', 'status')) {
+        if (SchemaCache::hasColumn('santris', 'status')) {
             $santriQuery->where('status', 'Aktif');
         }
 
@@ -855,8 +1549,8 @@ class PresensiSholatController extends Controller
     public function rekapBerjamaah(Request $request)
     {
         $bulan = $request->get('bulan', Carbon::now()->format('Y-m'));
-        $kamarId = $request->get('kamar_id', 'all');
-        $waktuFilter = $request->get('waktu', 'all');
+        $kamarId = $this->normalizeRayonFilter($request->get('kamar_ids', $request->get('kamar_id', 'all')));
+        $waktuFilter = $this->normalizeWaktuFilter($request->get('waktu', 'all'));
 
         [$rekapData, $allDates, $showWaktu, $tanggalMulai, $tanggalSelesai] =
             $this->buildRekapBulanan($bulan, $kamarId, $waktuFilter);
@@ -879,44 +1573,100 @@ class PresensiSholatController extends Controller
     public function exportRekapBerjamaah(Request $request)
     {
         $bulan = $request->get('bulan', Carbon::now()->format('Y-m'));
-        $kamarId = $request->get('kamar_id', 'all');
-        $waktuFilter = $request->get('waktu', 'all');
+        $kamarId = $this->normalizeRayonFilter($request->get('kamar_ids', $request->get('kamar_id', 'all')));
+        $waktuFilter = $this->normalizeWaktuFilter($request->get('waktu', 'all'));
 
-        [$rekapData, $allDates, $showWaktu] =
+        [$rekapData, $allDates, $showWaktu, $tanggalMulai] =
             $this->buildRekapBulanan($bulan, $kamarId, $waktuFilter);
 
-        $abbr = ['Jamaah' => "\xE2\x9C\x93", 'Masbuq' => 'M', 'Izin' => 'I', 'Alfa' => 'A'];
+        $abbr = ['Jamaah' => 'H', 'Masbuq' => 'M', 'Izin' => 'I', 'Alfa' => 'A'];
 
-        $fileName = 'Rekap_Berjamaah_' . str_replace('-', '_', $bulan)
-            . ($kamarId !== 'all' ? '_rayon' . $kamarId : '')
+        $fileName = 'Absen_' . str_replace('-', '_', $bulan)
+            . ($kamarId !== 'all' ? '_rayon' . str_replace(',', '_', $kamarId) : '')
             . ($waktuFilter !== 'all' ? '_' . $waktuFilter : '') . '.csv';
 
-        $callback = function () use ($rekapData, $allDates, $showWaktu, $abbr) {
+        $callback = function () use ($rekapData, $allDates, $showWaktu, $abbr, $tanggalMulai) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
 
+            $daysInMonth = (int) $tanggalMulai->format('t');
+
+            // Tabel Absensi: 2 baris header persis PREVIEW.HTML (NO, NAMA, TANGGAL sebagai span / nomor 1..N)
             fputcsv($out, array_merge(
-                ['No', 'Nama Santri', 'Rayon'],
-                array_map(fn ($d) => $d->isoFormat('D/M'), $allDates),
-                ['Hadir', 'Masbuq', 'Izin', 'Alfa', 'Persentase']
+                ['NO', 'NAMA'],
+                array_fill(0, $daysInMonth, 'TANGGAL')
             ), ';');
 
+            fputcsv($out, array_merge(
+                ['', ''],
+                array_map(fn ($d) => $d, range(1, $daysInMonth))
+            ), ';');
+
+            // Satu huruf per hari seperti PREVIEW.HTML; bila ada beberapa waktu sholat, ambil status terburuk
+            $priority = ['Alfa' => 4, 'Izin' => 3, 'Masbuq' => 2, 'Jamaah' => 1];
+            $rollup = [];
+
             foreach ($rekapData as $i => $row) {
-                $cells = [];
+                $perDay = [];
+                $H = 0; $M = 0; $I = 0; $A = 0;
+
                 foreach ($row['hariDetail'] as $hari) {
-                    $sts = [];
+                    $day = (int) date('j', strtotime($hari['date']));
+
+                    $best = null;
+                    $bestScore = 0;
                     foreach ($showWaktu as $w) {
                         $st = $hari['statuses'][$w] ?? '-';
-                        $sts[] = $abbr[$st] ?? '-';
+                        $score = $priority[$st] ?? 0;
+                        if ($score > $bestScore) {
+                            $bestScore = $score;
+                            $best = $st;
+                        }
                     }
-                    $cells[] = implode('/', $sts);
+
+                    $letter = $best ? ($abbr[$best] ?? '') : '';
+                    $perDay[$day] = $letter;
+
+                    match ($letter) {
+                        'H' => $H++,
+                        'M' => $M++,
+                        'I' => $I++,
+                        'A' => $A++,
+                        default => null,
+                    };
                 }
 
+                $cells = [];
+                for ($d = 1; $d <= $daysInMonth; $d++) {
+                    $cells[] = $perDay[$d] ?? '';
+                }
+
+                $rollup[] = ['no' => $i + 1, 'nama' => $row['nama'], 'H' => $H, 'M' => $M, 'I' => $I, 'A' => $A];
+
                 fputcsv($out, array_merge(
-                    [$i + 1, $row['nama'] . ($row['jabatan'] ? ' (' . $row['jabatan'] . ')' : ''), $row['kamar']],
-                    $cells,
-                    [$row['hadir'], $row['masbuq'], $row['izin'], $row['alfa'], $row['persentase'] . '%']
+                    [$i + 1, $row['nama']],
+                    $cells
                 ), ';');
+            }
+
+            // Bagian Rekapitulasi: judul + dua tabel (recap1 & recap2) seperti PREVIEW.HTML
+            fputcsv($out, []);
+            fputcsv($out, ['RINCIAN REKAPITULASI KEHADIRAN']);
+            fputcsv($out, []);
+
+            $mid = (int) ceil(count($rollup) / 2);
+
+            foreach ([array_slice($rollup, 0, $mid), array_slice($rollup, $mid)] as $block) {
+                fputcsv($out, ['NO', 'NAMA', 'HDR', 'MSB', 'IZN', 'ALF', '%'], ';');
+                foreach ($block as $r) {
+                    $filled = $r['H'] + $r['M'] + $r['I'] + $r['A'];
+                    $pct = $filled > 0 ? round(($r['H'] + $r['M']) / $filled * 100) : 0;
+                    fputcsv($out, [
+                        $r['no'], $r['nama'],
+                        $r['H'], $r['M'], $r['I'], $r['A'], $pct . '%',
+                    ], ';');
+                }
+                fputcsv($out, []);
             }
 
             fclose($out);
@@ -928,16 +1678,76 @@ class PresensiSholatController extends Controller
     }
 
     /**
+     * Normalisasi filter waktu sholat dari request (array checkbox / CSV / 'all').
+     * Mengembalikan 'all' untuk semua, atau string CSV terurut sesuai urutan waktu baku.
+     */
+    protected function normalizeWaktuFilter($waktuFilter): string
+    {
+        $allWaktu = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'];
+
+        if (is_array($waktuFilter)) {
+            if (in_array('all', $waktuFilter)) return 'all';
+            $waktuFilter = implode(',', $waktuFilter);
+        }
+
+        if ($waktuFilter === null || $waktuFilter === '' || $waktuFilter === 'all') {
+            return 'all';
+        }
+
+        $list = array_values(array_intersect($allWaktu, array_map('trim', explode(',', (string)$waktuFilter))));
+
+        return count($list) === count($allWaktu) ? 'all' : implode(',', $list);
+    }
+
+    /**
+     * Normalisasi filter rayon/kamar dari request (array checkbox / CSV / single id / 'all').
+     * Mengembalikan 'all' untuk semua rayon, atau string CSV id rayon.
+     */
+    protected function normalizeRayonFilter($kamarFilter): string
+    {
+        if (is_array($kamarFilter)) {
+            if (in_array('all', $kamarFilter)) return 'all';
+            $kamarFilter = implode(',', $kamarFilter);
+        }
+
+        if ($kamarFilter === null || $kamarFilter === '' || $kamarFilter === 'all') {
+            return 'all';
+        }
+
+        $ids = array_values(array_filter(array_map('trim', explode(',', (string)$kamarFilter))));
+
+        return count($ids) === 0 ? 'all' : implode(',', $ids);
+    }
+
+    /**
      * @return array{0: \Illuminate\Support\Collection, 1: array, 2: array, 3: \Carbon\Carbon, 4: \Carbon\Carbon}
      */
-    protected function buildRekapBulanan(string $bulan, $kamarId, string $waktuFilter): array
+    protected function buildRekapBulanan(string $bulan, $kamarId, $waktuFilter): array
     {
         $ref = Carbon::parse($bulan . '-01');
         $tanggalMulai = $ref->copy()->startOfMonth();
-        $tanggalSelesai = $ref->copy()->endOfMonth();
+        // Untuk bulan berjalan: tutup di tanggal hari ini (konsisten dengan Rating Berjamaah).
+        // Untuk bulan lampau: gunakan akhir bulan penuh.
+        $tanggalSelesai = ($bulan === Carbon::now()->format('Y-m'))
+            ? Carbon::now()->copy()->endOfDay()
+            : $ref->copy()->endOfMonth();
 
         $allWaktu = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'];
-        $showWaktu = $waktuFilter !== 'all' && in_array($waktuFilter, $allWaktu) ? [$waktuFilter] : $allWaktu;
+
+        // Support multi-waktu: array atau CSV string. 'all' di dalam array = semua.
+        $normalized = [];
+        if (is_array($waktuFilter)) {
+            $normalized = $waktuFilter;
+        } elseif ($waktuFilter !== 'all' && $waktuFilter !== '') {
+            $normalized = array_map('trim', explode(',', $waktuFilter));
+        }
+        if (in_array('all', $normalized)) {
+            $showWaktu = $allWaktu;
+        } elseif (count($normalized) > 0) {
+            $showWaktu = array_values(array_intersect($allWaktu, $normalized));
+        } else {
+            $showWaktu = $allWaktu;
+        }
 
         $allDates = [];
         $temp = $tanggalMulai->copy();
@@ -950,7 +1760,7 @@ class PresensiSholatController extends Controller
         if ($kamarId !== 'all' && $kamarId !== null && $kamarId !== '') {
             $santriQuery->where('kamar_id', $kamarId);
         }
-        if (Schema::hasColumn('santris', 'status')) {
+        if (SchemaCache::hasColumn('santris', 'status')) {
             $santriQuery->where('status', 'Aktif');
         }
 

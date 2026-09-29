@@ -66,10 +66,13 @@ class AuthController extends Controller
             'password.confirmed' => 'Konfirmasi password tidak sesuai.',
         ]);
 
+        \App\Support\UserSchema::ensurePasswordPlain();
+
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => $data['password'],
+            'password_plain' => $data['password'],
             'role' => 'pengasuh',
         ]);
 
@@ -97,8 +100,57 @@ class AuthController extends Controller
             return back()->withErrors(['current_password' => 'Password lama tidak sesuai.']);
         }
 
-        $user->update(['password' => $request->password]);
+        \App\Support\UserSchema::ensurePasswordPlain();
+
+        $user->update([
+            'password' => $request->password,
+            'password_plain' => $request->password,
+        ]);
 
         return back()->with('success', 'Password berhasil diubah.');
+    }
+
+    public function showProfile()
+    {
+        $user = Auth::user();
+        $santri = \App\Models\Santri::where('nama', $user->name)->first();
+
+        return view('auth.profile', compact('user', 'santri'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ], [
+            'name.required' => 'Nama wajib diisi.',
+        ]);
+
+        $oldName = $user->name;
+        $user->update(['name' => $request->name]);
+
+        if ($oldName !== $request->name) {
+            $santri = \App\Models\Santri::where('nama', $oldName)->first();
+            if ($santri) {
+                $santri->update(['nama' => $request->name]);
+            }
+        }
+
+        return back()->with('success', 'Profil berhasil diperbarui.');
+    }
+
+    public function updateFontSize(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'font_size' => 'required|in:kecil,sedang,besar',
+        ]);
+
+        $user->update(['font_size' => $request->font_size]);
+
+        return back()->with('success', 'Ukuran font berhasil diubah.');
     }
 }

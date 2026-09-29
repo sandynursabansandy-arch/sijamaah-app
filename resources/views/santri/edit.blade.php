@@ -1,6 +1,7 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
+    @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Santri</title>
@@ -8,12 +9,7 @@
     <style>
         /* Cegah layout shift saat scrollbar muncul/hilang selama animasi masuk */
         html {
-            overflow-y: scroll;
             scrollbar-gutter: stable;
-        }
-
-        body {
-            overflow-x: hidden;
         }
 
         @keyframes slideIn {
@@ -149,7 +145,7 @@
 
         @if(session('success'))
             <script>
-                document.addEventListener('DOMContentLoaded', function() {
+                window.__pageBoot('santriEditInit', function() {
                     var container = document.getElementById('toast-container');
                     var toast = document.createElement('div');
                     toast.className = 'toast success';
@@ -237,7 +233,7 @@
         </form>
     </div>
 
-    <div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[100]">
+    <div id="logoutModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[1010]">
         <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 animate-slide-up">
             <div class="p-6 text-center">
                 <div class="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
