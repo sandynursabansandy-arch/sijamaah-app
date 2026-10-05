@@ -237,8 +237,14 @@ class KelasMasterController extends Controller
         $this->pastikanTabelKelas();
 
         // Kalau tetap gagal (mis. hak akses DB tidak cukup), tampilkan
-        // instruksi, jangan 500.
-        if (!Schema::hasTable('kelas_master') || !Schema::hasColumn('santris', 'kelas_master_id')) {
+        // instruksi, jangan 500. Syaratnya harus sama persis dengan
+        // pastikanTabelKelas(): kalau `kapasitas` belum ada tapi tabelnya
+        // sudah, halaman ini akan lanjut lalu error saat membaca kolom itu.
+        if (!Schema::hasTable('kelas_master')
+            || !Schema::hasColumn('kelas_master', 'kapasitas')
+            || !Schema::hasColumn('santris', 'kelas_master_id')
+            || !Schema::hasColumn('santris', 'kelas_pengajian_id')
+            || !Schema::hasColumn('santris', 'kelas_sekolah_id')) {
             return view('kelas.index', [
                 'kelas' => collect(),
                 'tahunAjar' => TahunAjar::sekarang(),
