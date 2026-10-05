@@ -40,7 +40,7 @@ class NotifikasiAlfaCommand extends Command
             try {
                 Mail::raw($body, function ($message) use ($email) {
                     $message->to($email)
-                        ->subject('[SIJAMAAH] Peringatan Alfa Beruntun')
+                        ->subject('[SANTRI.ID] Peringatan Alfa Beruntun')
                         ->from(config('mail.from.address'), config('mail.from.name'));
                 });
                 $terkirim++;
@@ -53,3 +53,4 @@ class NotifikasiAlfaCommand extends Command
         return self::SUCCESS;
     }
 }
+

@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
     {
         // Seed Users
         User::updateOrCreate(
-            ['email' => 'admin@sijamaah.id'],
+            ['email' => 'admin@santri.id'],
             [
                 'name' => 'Admin',
                 'password' => 'password',
@@ -98,3 +98,4 @@ class DatabaseSeeder extends Seeder
         }
     }
 }
+

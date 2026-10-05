@@ -4,7 +4,7 @@
     @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ganti Password — SIJAMAAH</title>
+    <title>Ganti Password — SANTRI.ID</title>
     @vite(['resources/css/app.css'])
     <style>
         .input-glow {
@@ -207,3 +207,4 @@
     </script>
 </body>
 </html>
+

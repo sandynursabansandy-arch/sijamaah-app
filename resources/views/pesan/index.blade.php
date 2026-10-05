@@ -4,7 +4,7 @@
     @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kirim Pesan &mdash; SIJAMAAH</title>
+    <title>Kirim Pesan &mdash; SANTRI.ID</title>
     @vite(['resources/css/app.css'])
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -110,7 +110,7 @@
                                     <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700">{{ $m['read'] }}/{{ $m['total'] }} dibaca</span>
                                 @endif
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-0.5">{{ $m['created_at']->format('d M Y H:i') }} &middot; ke {{ $m['total'] }} santri</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">{{ $m['created_at']->format('d M Y H:i') }} ke {{ $m['total'] }} santri</p>
                             <p class="text-[13px] text-slate-700 mt-2 break-words">{!! nl2br(e($m['pesan'])) !!}</p>
                             @if(count($m['read_by']) > 0)
                                 <details class="mt-2 pt-2 border-t border-slate-100">

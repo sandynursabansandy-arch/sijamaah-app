@@ -4,7 +4,7 @@
     @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Saya — SIJAMAAH</title>
+    <title>Panel Saya — SANTRI.ID</title>
     @vite(['resources/css/app.css'])
     <style>
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -42,7 +42,7 @@
                 </div>
                 <div>
                     <h1 class="text-[15px] font-bold text-slate-800 leading-tight">Panel Saya</h1>
-                    <p class="text-[11px] text-slate-400">Kehadiran pribadi &middot; {{ $santri->nama }}</p>
+                    <p class="text-[11px] text-slate-400">Kehadiran pribadi {{ $santri->nama }}</p>
                 </div>
             </div>
 
@@ -80,8 +80,12 @@
                         @if($pesanUnread > 0)
                             <button type="button" onclick="pesanMarkAll()" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[12px] font-semibold transition">Tandai semua dibaca</button>
                         @endif
+                        <button type="button" onclick="togglePesanList()" aria-expanded="false" class="ml-auto sm:ml-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-700 text-[12px] font-semibold transition">
+                            <svg id="pesanChevron" class="w-3.5 h-3.5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            <span id="pesanToggleLabel">Lihat Semua Pesan ({{ $pesanMessages->count() }})</span>
+                        </button>
                     </div>
-                    <div class="space-y-2">
+                    <div id="pesanList" class="hidden space-y-2">
                         @foreach($pesanMessages as $pm)
                             <div class="rounded-xl border p-3 {{ $pm->is_read ? 'border-slate-100' : 'border-amber-200 bg-amber-50' }}" id="pesan-{{ $pm->id }}">
                                 <div class="flex items-start gap-2.5">
@@ -107,6 +111,14 @@
                     </div>
                 </div>
                 <script>
+                    function togglePesanList() {
+                        var w = document.getElementById('pesanList');
+                        var c = document.getElementById('pesanChevron');
+                        var l = document.getElementById('pesanToggleLabel');
+                        var open = w.classList.toggle('hidden') === false;
+                        if (c) c.classList.toggle('rotate-180', open);
+                        if (l) l.textContent = open ? 'Sembunyikan Pesan' : 'Lihat Semua Pesan ({{ $pesanMessages->count() }})';
+                    }
                     function hideUserNotifDot() {
                         var d = document.getElementById('userNotifDot');
                         if (d) d.classList.add('hidden');
@@ -152,7 +164,7 @@
                 <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                     <div class="h-full rounded-full transition-all duration-700 {{ $targets['pct'] >= $targets['target'] ? 'bg-emerald-500' : ($targets['pct'] >= 60 ? 'bg-amber-500' : 'bg-red-500') }}" style="width: {{ min(100, $targets['pct']) }}%"></div>
                 </div>
-                <div class="mt-1.5 text-[11px] text-slate-400">Target: {{ $targets['target'] }}% berjamaah &middot; {{ $targets['jamaah'] }}/{{ $targets['seharusnya'] }} jadwal</div>
+                <div class="mt-1.5 text-[11px] text-slate-400">Target: {{ $targets['target'] }}% berjamaah {{ $targets['jamaah'] }}/{{ $targets['seharusnya'] }} jadwal</div>
 
                 @if(!$targets['achieved'] && $targets['sisaJamaah'] > 0)
                     <div class="mt-2 bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-[12px] text-amber-800">
@@ -193,12 +205,12 @@
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-3 animate-slide-up">
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                     <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-md">
                             <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
                         </div>
                         <div>
                             <h3 class="text-[14px] font-bold text-slate-800">Tingkat Bulan Ini</h3>
-                            <p class="text-[11px] text-slate-400">Penilaian privat &middot; hanya Anda yang melihat ({{ \Carbon\Carbon::parse($bulan . '-01')->translatedFormat('F Y') }})</p>
+                            <p class="text-[11px] text-slate-400">Penilaian privat hanya Anda yang melihat ({{ \Carbon\Carbon::parse($bulan . '-01')->translatedFormat('F Y') }})</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-1.5">
@@ -215,7 +227,7 @@
                     </div>
                     <div>
                         <div class="text-lg font-extrabold {{ $monthStats['level']['text'] }}">{{ $monthStats['level']['label'] }}</div>
-                        <div class="text-[11px] text-slate-500 mt-0.5">Rating {{ $monthStats['rating'] }}% &middot; {{ $monthStats['jamaah'] }}/{{ $monthStats['seharusnya'] }} berjamaah</div>
+                        <div class="text-[11px] text-slate-500 mt-0.5">Rating {{ $monthStats['rating'] }}% {{ $monthStats['jamaah'] }}/{{ $monthStats['seharusnya'] }} berjamaah</div>
                         <div class="text-[10px] text-slate-400 mt-1">Terus istiqamah agar tingkat Anda naik</div>
                     </div>
                     @if(!empty($monthStats['rank']))
@@ -338,7 +350,7 @@
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-3 animate-slide-up">
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                     <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-md">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-md">
                             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         </div>
                         <div>
@@ -462,3 +474,4 @@
     </div>
 </body>
 </html>
+

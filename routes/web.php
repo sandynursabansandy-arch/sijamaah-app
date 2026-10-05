@@ -9,6 +9,7 @@ use App\Http\Controllers\IzinRequestController;
 use App\Http\Controllers\InputCepatController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\KamarController;
+use App\Http\Controllers\KelasMasterController;
 use App\Http\Controllers\PanelSayaController;
 use App\Http\Controllers\KritikSaranController;
 use App\Http\Controllers\NotifikasiController;
@@ -105,6 +106,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/santri/{santri}/toggle-status', [SantriController::class, 'toggleStatus'])->name('santri.toggleStatus');
         Route::get('/santri-import', [SantriController::class, 'importForm'])->name('santri.import.form');
         Route::post('/santri-import', [SantriController::class, 'importStore'])->name('santri.import.store');
+        Route::get('/santri-import/template', [SantriController::class, 'importTemplate'])->name('santri.import.template');
+        Route::get('/santri-export/fdf', [SantriController::class, 'exportFdf'])->name('santri.export.fdf');
+        Route::get('/santri-export/excel', [SantriController::class, 'exportExcel'])->name('santri.export.excel');
+        Route::get('/santri-export/cetak', [SantriController::class, 'exportCetak'])->name('santri.cetak');
 
         // Izin: approval saja (admin & musyrif)
         Route::post('/izin/{izin}/setujui', [IzinRequestController::class, 'setujui'])->name('izin.setujui');
@@ -115,6 +120,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/kamar', [KamarController::class, 'store'])->name('kamar.store');
         Route::put('/kamar/{kamar}', [KamarController::class, 'update'])->name('kamar.update');
         Route::delete('/kamar/{kamar}', [KamarController::class, 'destroy'])->name('kamar.destroy');
+
+        // Master Kelas & Tahun Ajar: naik kelas per KELAS (bukan per siswa)
+        Route::get('/kelas', [KelasMasterController::class, 'index'])->name('kelas.index');
+        Route::post('/kelas', [KelasMasterController::class, 'store'])->name('kelas.store');
+        Route::put('/kelas/{kelas}', [KelasMasterController::class, 'update'])->name('kelas.update');
+        Route::delete('/kelas/{kelas}', [KelasMasterController::class, 'destroy'])->name('kelas.destroy');
+        Route::post('/kelas/naik', [KelasMasterController::class, 'naikKelas'])->name('kelas.naik');
+        Route::post('/kelas/naik-pengajian', [KelasMasterController::class, 'naikPengajian'])->name('kelas.naik-pengajian');
+        Route::post('/kelas/buka-tahun-ajar', [KelasMasterController::class, 'bukaTahunAjar'])->name('kelas.buka-tahun-ajar');
+        Route::patch('/kelas/{kelas}/jenis', [KelasMasterController::class, 'jenis'])->name('kelas.jenis');
+        Route::get('/kelas/{kelas}/pratinjau', [KelasMasterController::class, 'pratinjau'])->name('kelas.pratinjau');
+        Route::get('/kelas/{kelas}/anggota', [KelasMasterController::class, 'anggota'])->name('kelas.anggota');
 
         // Pesan admin ke santri
         Route::get('/pesan', [PesanController::class, 'index'])->name('pesan.index');

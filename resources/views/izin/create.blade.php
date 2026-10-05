@@ -4,7 +4,7 @@
     @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ajukan Izin — SIJAMAAH</title>
+    <title>Ajukan Izin â€” SANTRI.ID</title>
     @vite(['resources/css/app.css'])
     <style>
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -87,10 +87,11 @@
                     class="w-full border border-slate-200 py-2 px-3 rounded-lg focus:ring-2 focus:ring-emerald-300 text-sm bg-slate-50 focus:outline-none">{{ old('alasan') }}</textarea>
             </div>
 
-            <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-2.5 rounded-lg font-semibold text-sm shadow-lg hover:opacity-90 transition">
+            <button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white py-2.5 rounded-lg font-semibold text-sm shadow-lg hover:opacity-90 transition">
                 Kirim Pengajuan
             </button>
         </form>
     </div>
 </body>
 </html>
+

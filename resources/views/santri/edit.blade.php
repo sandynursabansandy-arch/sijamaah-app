@@ -4,7 +4,7 @@
     @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Santri</title>
+    <title>Edit Santri — SANTRI.ID</title>
     @vite(['resources/css/app.css'])
     <style>
         /* Cegah layout shift saat scrollbar muncul/hilang selama animasi masuk */
@@ -98,6 +98,38 @@
         .toast.fade-out { animation: toastOut 0.3s ease-in forwards; }
         @keyframes toastIn { from { opacity:0; transform:translateY(-20px) scale(0.95); } to { opacity:1; transform:translateY(0) scale(1); } }
         @keyframes toastOut { from { opacity:1; transform:translateY(0) scale(1); } to { opacity:0; transform:translateY(-20px) scale(0.95); } }
+
+        /* ===== POPUP KONFIRMASI SIMPAN (CSS mandiri, tidak bergantung build Tailwind) ===== */
+        #savePopup {
+            position: fixed; inset: 0; z-index: 10050;
+            display: none; align-items: center; justify-content: center;
+            padding: 16px;
+            background: rgba(15, 23, 42, .55);
+        }
+        #savePopup.tampil { display: flex; }
+        #savePopup .kartu-popup {
+            width: 100%; max-width: 380px; padding: 28px 24px; text-align: center;
+            background: #fff; border-radius: 18px;
+            box-shadow: 0 30px 60px -18px rgba(2, 6, 23, .6);
+            animation: popupMasuk .3s cubic-bezier(.22, 1, .36, 1) both;
+        }
+        #savePopup .kartu-popup h3 { font-size: 1.125rem; font-weight: 700; color: #0f172a; margin-bottom: .4rem; }
+        #savePopup .kartu-popup p { font-size: .875rem; color: #475569; line-height: 1.6; }
+        #savePopup .kartu-popup .lencana {
+            width: 60px; height: 60px; margin: 0 auto 1rem; border-radius: 9999px;
+            display: flex; align-items: center; justify-content: center;
+            background: #d1fae5; color: #059669;
+        }
+        #savePopup .kartu-popup .lencana svg { width: 30px; height: 30px; }
+        #savePopup .kartu-popup .tombol-ok {
+            margin-top: 1.25rem; padding: .6rem 1.6rem; border: 0; border-radius: 10px;
+            background: #059669; color: #fff; font-size: .875rem; font-weight: 600; cursor: pointer;
+        }
+        #savePopup .kartu-popup .tombol-ok:hover { background: #047857; }
+        @keyframes popupMasuk {
+            from { opacity: 0; transform: translateY(16px) scale(.96); }
+            to   { opacity: 1; transform: none; }
+        }
     </style>
 </head>
 <body class="bg-gradient-to-b from-slate-100 via-white to-emerald-50 text-slate-800 min-h-screen py-8">
@@ -143,22 +175,67 @@
             </div>
         </div>
 
-        @if(session('success'))
-            <script>
-                window.__pageBoot('santriEditInit', function() {
-                    var container = document.getElementById('toast-container');
-                    var toast = document.createElement('div');
-                    toast.className = 'toast success';
-                    toast.innerHTML = '<svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>{{ session('success') }}';
-                    container.appendChild(toast);
-                    setTimeout(function() { toast.classList.add('fade-out'); }, 2800);
-                    setTimeout(function() { toast.remove(); }, 3100);
-                });
-            </script>
-        @endif
+        <!-- Save Confirmation Popup -->
+        <div id="savePopup">
+            <div class="kartu-popup">
+                <div class="lencana">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <h3 id="savePopupTitle">Berhasil!</h3>
+                <p id="savePopupMessage">Santri berhasil diperbarui.</p>
+                <button type="button" onclick="closeSavePopup()" class="tombol-ok">Oke, Mengerti</button>
+            </div>
+        </div>
+        <script>
+            var savePopupTimer = null;
+            var savePopupTick = null;
+
+            function closeSavePopup() {
+                var popup = document.getElementById('savePopup');
+                if (!popup) return;
+                popup.classList.remove('tampil');
+                document.body.style.overflow = '';
+                if (savePopupTimer) { clearTimeout(savePopupTimer); savePopupTimer = null; }
+                if (savePopupTick) { clearInterval(savePopupTick); savePopupTick = null; }
+            }
+            document.getElementById('savePopup').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeSavePopup();
+                }
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    var popup = document.getElementById('savePopup');
+                    if (popup && popup.classList.contains('tampil')) {
+                        closeSavePopup();
+                    }
+                }
+            });
+
+            // Konfirmasi otomatis setelah halaman selesai dimuat (flash message).
+            @if (session('success'))
+            (function () {
+                var popup = document.getElementById('savePopup');
+                if (!popup) return;
+                var judul = document.getElementById('savePopupTitle');
+                if (judul) judul.textContent = @json(session('success_judul', 'Berhasil!'));
+                var pesan = document.getElementById('savePopupMessage');
+                if (pesan) pesan.textContent = @json(session('success'));
+
+                var DETIK = 1;
+
+                popup.classList.add('tampil');
+                document.body.style.overflow = 'hidden';
+                var tombol = popup.querySelector('button');
+                if (tombol) tombol.focus();
+
+                savePopupTimer = setTimeout(closeSavePopup, DETIK * 1000);
+            })();
+            @endif
+        </script>
 
         <!-- Form Card -->
-        <form method="POST" action="{{ route('santri.update', $santri->id) }}" class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
+        <form method="POST" action="{{ route('santri.update', $santri->id) }}" enctype="multipart/form-data" class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
             @csrf
             @method('PUT')
 
@@ -185,16 +262,8 @@
                     @enderror
                 </div>
 
-                <!-- Kelas -->
-                <div class="input-group">
-                    <label class="block text-[13px] font-semibold text-slate-700 mb-1">Kelas</label>
-                    <input type="text" name="kelas" value="{{ old('kelas', $santri->kelas) }}" 
-                        placeholder="Contoh: Kelas 1 Aliyah" maxlength="50" required
-                        class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
-                    @error('kelas')
-                        <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
-                    @enderror
-                </div>
+                {{-- Kelas Pengajian + Kelas Sekolah (dua jalur terpisah). --}}
+                @include('santri._fields-kelas-ganda')
 
                 <!-- Jabatan -->
                 <div class="input-group">
@@ -206,6 +275,209 @@
                         <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
                     @enderror
                 </div>
+
+                <!-- Is Pengajar -->
+                <div class="input-group">
+                    <label class="flex items-center gap-2 text-[13px] font-semibold text-slate-700 mb-1 cursor-pointer">
+                        <input type="checkbox" name="is_pengajar" value="1" {{ old('is_pengajar', $santri->is_pengajar ?? false) ? 'checked' : '' }} class="rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+                        <span>Ikut presensi (pengajar/mudir/mustahik/munawwib)</span>
+                    </label>
+                    <p class="text-[10px] text-slate-500 mt-1">Centang agar nama muncul di daftar absen presensi berjamaah</p>
+                </div>
+
+                <!-- No HP Wali -->
+                <div class="input-group">
+                    <label class="block text-[13px] font-semibold text-slate-700 mb-1">No. HP Wali</label>
+                    <input type="text" name="no_hp_wali" value="{{ old('no_hp_wali', $santri->no_hp_wali ?? '') }}" 
+                        placeholder="Contoh: 08123456789" maxlength="20"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
+                    @error('no_hp_wali')
+                        <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- No WhatsApp -->
+                <div class="input-group">
+                    <label class="block text-[13px] font-semibold text-slate-700 mb-1">No. WhatsApp</label>
+                    <input type="text" name="no_whatsapp" value="{{ old('no_whatsapp', $santri->no_whatsapp ?? '') }}" 
+                        placeholder="Contoh: 08123456789" maxlength="20"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
+                    <p class="text-[10px] text-slate-400 mt-1">Nomor WhatsApp yang bisa dihubungi langsung</p>
+                    @error('no_whatsapp')
+                        <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+            </div>
+
+            <!-- Separator -->
+            <div class="mt-6 mb-4 border-t border-slate-200"></div>
+
+            <!-- Address Section -->
+            <h3 class="text-[14px] font-bold text-slate-700 mb-3 flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.25 8.25L12 13.5L6.75 8.25M12 13.5V3"/></svg>
+                Alamat Lengkap Santri
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Provinsi -->
+                <div class="input-group">
+                    <label class="block text-[13px] font-semibold text-slate-700 mb-1">Provinsi</label>
+                    <input type="text" name="alamat_provinsi" value="{{ old('alamat_provinsi', $santri->alamat_provinsi ?? '') }}" 
+                        placeholder="Contoh: Jawa Timur" maxlength="50"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
+                    @error('alamat_provinsi')
+                        <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Kabupaten/Kota -->
+                <div class="input-group">
+                    <label class="block text-[13px] font-semibold text-slate-700 mb-1">Kabupaten/Kota</label>
+                    <input type="text" name="alamat_kabupaten" value="{{ old('alamat_kabupaten', $santri->alamat_kabupaten ?? '') }}" 
+                        placeholder="Contoh: Kota Pasuruan" maxlength="50"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
+                    @error('alamat_kabupaten')
+                        <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Kecamatan -->
+                <div class="input-group">
+                    <label class="block text-[13px] font-semibold text-slate-700 mb-1">Kecamatan</label>
+                    <input type="text" name="alamat_kecamatan" value="{{ old('alamat_kecamatan', $santri->alamat_kecamatan ?? '') }}" 
+                        placeholder="Contoh: Purmera" maxlength="50"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
+                    @error('alamat_kecamatan')
+                        <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Desa/Kelurahan -->
+                <div class="input-group">
+                    <label class="block text-[13px] font-semibold text-slate-700 mb-1">Desa/Kelurahan</label>
+                    <input type="text" name="alamat_desa" value="{{ old('alamat_desa', $santri->alamat_desa ?? '') }}" 
+                        placeholder="Contoh: Desa Sidoarjo" maxlength="50"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
+                    @error('alamat_desa')
+                        <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Dusun/Kampung -->
+                <div class="input-group">
+                    <label class="block text-[13px] font-semibold text-slate-700 mb-1">Dusun/Kampung</label>
+                    <input type="text" name="alamat_dusun" value="{{ old('alamat_dusun', $santri->alamat_dusun ?? '') }}" 
+                        placeholder="Contoh: Dusun 1" maxlength="50"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
+                    @error('alamat_dusun')
+                        <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- RT -->
+                <div class="input-group">
+                    <label class="block text-[13px] font-semibold text-slate-700 mb-1">RT</label>
+                    <input type="text" name="alamat_rt" value="{{ old('alamat_rt', $santri->alamat_rt ?? '') }}" 
+                        placeholder="Contoh: 03" maxlength="5"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
+                    @error('alamat_rt')
+                        <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- RW -->
+                <div class="input-group">
+                    <label class="block text-[13px] font-semibold text-slate-700 mb-1">RW</label>
+                    <input type="text" name="alamat_rw" value="{{ old('alamat_rw', $santri->alamat_rw ?? '') }}" 
+                        placeholder="Contoh: 01" maxlength="5"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
+                    @error('alamat_rw')
+                        <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Jalan -->
+                <div class="input-group">
+                    <label class="block text-[13px] font-semibold text-slate-700 mb-1">Jalan</label>
+                    <input type="text" name="alamat_jalan" value="{{ old('alamat_jalan', $santri->alamat_jalan ?? '') }}" 
+                        placeholder="Contoh: Jln. Raya Sidoarjo" maxlength="100"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
+                    @error('alamat_jalan')
+                        <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- No. Rumah -->
+                <div class="input-group">
+                    <label class="block text-[13px] font-semibold text-slate-700 mb-1">No. Rumah</label>
+                    <input type="text" name="alamat_nomor_rumah" value="{{ old('alamat_nomor_rumah', $santri->alamat_nomor_rumah ?? '') }}" 
+                        placeholder="Contoh: 45/B" maxlength="20"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
+                    @error('alamat_nomor_rumah')
+                        <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Kode Pos -->
+                <div class="input-group">
+                    <label class="block text-[13px] font-semibold text-slate-700 mb-1">Kode Pos</label>
+                    <input type="text" name="kode_pos" value="{{ old('kode_pos', $santri->kode_pos ?? '') }}" 
+                        placeholder="Contoh: 61252" maxlength="10"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
+                    @error('kode_pos')
+                        <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Latitude -->
+                <div class="input-group">
+                    <label class="block text-[13px] font-semibold text-slate-700 mb-1">Latitude (GPS)</label>
+                    <input type="text" name="latitude" value="{{ old('latitude', $santri->latitude ?? '') }}" 
+                        placeholder="Contoh: -7.5123456" maxlength="20"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
+                    <p class="text-[10px] text-slate-400 mt-1">Opsional</p>
+                    @error('latitude')
+                        <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Longitude -->
+                <div class="input-group">
+                    <label class="block text-[13px] font-semibold text-slate-700 mb-1">Longitude (GPS)</label>
+                    <input type="text" name="longitude" value="{{ old('longitude', $santri->longitude ?? '') }}" 
+                        placeholder="Contoh: 112.3456789" maxlength="20"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
+                    <p class="text-[10px] text-slate-400 mt-1">Opsional</p>
+                    @error('longitude')
+                        <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+            </div>
+
+            <!-- Foto Rumah -->
+            <div class="mt-4 input-group">
+                <label class="block text-[13px] font-semibold text-slate-700 mb-1">Foto Rumah</label>
+                <input type="file" name="foto_rumah" accept="image/*"
+                    class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                <p class="text-[10px] text-slate-400 mt-1">Maksimal 2MB. JPG, PNG, WEBP</p>
+                @if($santri->foto_rumah)
+                    <a href="{{ asset('storage/' . $santri->foto_rumah) }}" target="_blank" class="text-[10px] text-emerald-600 hover:underline block mt-1">Lihat foto yang ada</a>
+                @endif
+                @error('foto_rumah')
+                    <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <!-- Consent Checkbox -->
+            <div class="mt-2 input-group">
+                <label class="flex items-start gap-2 text-[12px] text-slate-700">
+                    <input type="checkbox" name="foto_rumah_consent" value="1" {{ old('foto_rumah_consent', false) ? 'checked' : '' }}
+                        class="mt-0.5 w-4 h-4 rounded border-slate-300 text-emerald-500 focus:ring-emerald-200">
+                    <span>Saya menyetujukan pengambilan dan penyimpanan foto rumah untuk keperluan administrasi pondok pesantren. Foto hanya dapat dilihat oleh admin.</span>
+                </label>
+                @error('foto_rumah_consent')
+                    <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                @enderror
             </div>
 
             <!-- Buttons -->
@@ -225,9 +497,9 @@
             </div>
 
             <!-- Info Box -->
-            <div class="mt-5 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
-                <p class="text-[12px] text-blue-700">
-                    <strong>Tips:</strong> Lengkapi semua data santri dengan benar. Data akan digunakan untuk presensi sholat berjamaah.
+            <div class="mt-5 p-3 bg-emerald-50 border-l-4 border-emerald-400 rounded-lg">
+                <p class="text-[12px] text-emerald-700">
+                    <strong>Tips:</strong> Lengkapi data alamat dan WhatsApp untuk memudahkan kontak darurat dan administrasi pondok. Foto rumah wajib mendapat persetujuan dan hanya dapat dilihat admin.
                 </p>
             </div>
         </form>

@@ -7,7 +7,7 @@
 
 {{-- Ukuran font pengguna: diterapkan ke akar (html) agar memengaruhi seluruh halaman --}}
 {{-- ===== HEADER 1: INSTANSI ===== --}}
-<header id="app-header" class="bg-white border-b border-slate-200" style="margin:0;">
+<header id="app-header" class="bg-white" style="margin:0;">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center gap-3">
         <div class="w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-full overflow-hidden ring-2 ring-emerald-200 bg-white">
             <img src="{{ asset('images/image.png') }}" alt="Logo Yayasan" class="w-full h-full object-cover">
@@ -22,7 +22,7 @@
 <style>
 html { margin: 0 !important; padding: 0 !important; }
     body { margin: 0 !important; padding: 0 !important; }
-    #app-header { margin-top: 0 !important; }
+    #app-header { margin-top: 0 !important; border: 0 !important; box-shadow: none !important; }
     html.nav-open { overflow: hidden !important; overflow-x: clip !important; scrollbar-gutter: stable !important; }
     body.nav-open { overflow: hidden !important; overflow-x: clip !important; position: fixed !important; left: 0 !important; right: 0 !important; }
     #navPanel { position: fixed !important; top: 0 !important; left: -300px !important; bottom: 0 !important; width: 280px !important; max-width: 80vw !important; z-index: 2147483647 !important; background: #fff !important; box-shadow: 4px 0 24px rgba(0,0,0,0.25) !important; transition: left 0.4s cubic-bezier(0.4,0,0.2,1) !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch !important; overscroll-behavior: contain !important; }
@@ -92,7 +92,7 @@ html { margin: 0 !important; padding: 0 !important; }
             {{-- Tombol hamburger --}}
             <button type="button" onclick="toggleNavPanel()" aria-label="Buka menu navigasi"
                     id="navPanelBtn"
-                    class="shrink-0 w-10 h-10 -ml-1.5 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-emerald-600 active:scale-95 transition">
+                    class="shrink-0 w-10 h-10 -ml-1.5 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-teal-600 active:scale-95 transition">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
 
@@ -107,7 +107,7 @@ html { margin: 0 !important; padding: 0 !important; }
                     default => ucfirst($u->role ?? 'Pengguna'),
                 };
             @endphp
-            <div class="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-extrabold text-sm ring-2 ring-emerald-100 select-none">
+            <div class="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 text-white flex items-center justify-center font-extrabold text-sm ring-2 ring-emerald-100 select-none">
                 {{ strtoupper(substr($u->name ?? 'U', 0, 1)) }}
             </div>
             <div class="min-w-0 leading-tight">
@@ -163,9 +163,9 @@ html { margin: 0 !important; padding: 0 !important; }
         Profil Saya
     </a>
     <div class="border-t border-slate-100 my-1"></div>
-    <form method="POST" action="{{ route('logout') }}">
+    <form id="hdrLogoutForm" method="POST" action="{{ route('logout') }}" target="_self">
         @csrf
-        <button type="submit" onclick="return confirm('Yakin ingin keluar dari aplikasi?')" class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+        <button type="button" onclick="openHdrLogout()" class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
             Keluar
         </button>
@@ -209,13 +209,14 @@ html { margin: 0 !important; padding: 0 !important; }
     <div class="p-3 space-y-1 pt-4">
 @php
     $navItems = [
-        ['Dashboard', 'presensi.index', 'bg-emerald-100 text-emerald-600', 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
+        ['Dashboard', 'presensi.index', 'bg-teal-100 text-teal-600', 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
         ['Panel Saya', 'panel-saya.index', 'bg-violet-100 text-violet-600', 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z'],
         ['Rekap Berjamaah', 'presensi.rekapBerjamaah', 'bg-teal-100 text-teal-600', 'M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z'],
         ['Ranking Berjamaah', 'presensi.rankingBerjamaah', 'bg-amber-100 text-amber-600', 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z'],
         ['Ranking Alfa', 'presensi.rankingAlfa', 'bg-red-100 text-red-600', 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'],
         ['Kelola Santri', 'santri.index', 'bg-blue-100 text-blue-600', 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'],
         ['Input Cepat', 'input-cepat.index', 'bg-orange-100 text-orange-600', 'M13 10V3L4 14h7v7l9-11h-7z'],
+        ['Kelas & Tahun Ajar', 'kelas.index', 'bg-indigo-100 text-indigo-600', 'M4 6h16M4 12h16M4 18h16M8 12v6'],
         ['Pengajuan Izin', 'izin.index', 'bg-cyan-100 text-cyan-600', 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'],
         ['Riwayat', 'riwayat.index', 'bg-slate-100 text-slate-600', 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
         ['Kritik & Saran', auth()->user()->isAdmin() ? 'kritik-saran.index' : 'kritik-saran.create', 'bg-amber-100 text-amber-600', 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z'],
@@ -224,7 +225,7 @@ html { margin: 0 !important; padding: 0 !important; }
     ];
 @endphp
 @foreach ($navItems as $item)
-    @continue(in_array($item[1], ['santri.index', 'kamar.index', 'input-cepat.index', 'riwayat.index', 'user.index']) && !auth()->user()?->canManagePresensi())
+    @continue(in_array($item[1], ['santri.index', 'kamar.index', 'kelas.index', 'input-cepat.index', 'riwayat.index', 'user.index']) && !auth()->user()?->canManagePresensi())
     @continue(in_array($item[1], ['presensi.rankingBerjamaah', 'presensi.rankingAlfa', 'presensi.rekapBerjamaah']) && !auth()->user()?->canManagePresensi())
     @continue($item[1] === 'user.index' && auth()->user()->role !== 'admin')
     @continue($item[1] === 'panel-saya.index' && auth()->user()?->canManagePresensi())
@@ -246,7 +247,78 @@ html { margin: 0 !important; padding: 0 !important; }
 {{-- Overlay gelap --}}
 <div id="navOverlay" onclick="closeNavPanel()"></div>
 
+{{-- ===== KONFIRMASI KELUAR (global, elegan) ===== --}}
+<style>
+    #hdrLogoutModal { z-index: 2147483647; }
+    #hdrLogoutModal.hdr-lo-show .hdr-lo-backdrop { opacity: 1; }
+    #hdrLogoutModal.hdr-lo-show .hdr-lo-box { opacity: 1; transform: translateY(0) scale(1); }
+    #hdrLogoutModal .hdr-lo-backdrop { opacity: 0; transition: opacity .22s ease; }
+    #hdrLogoutModal .hdr-lo-box {
+        opacity: 0; transform: translateY(14px) scale(.96);
+        transition: opacity .22s ease, transform .22s cubic-bezier(.21,1.02,.73,1);
+    }
+    #hdrLogoutModal .hdr-lo-ring { box-shadow: 0 10px 30px -8px rgba(220,38,38,.45); }
+</style>
+<div id="hdrLogoutModal" class="fixed inset-0 hidden items-center justify-center px-4" role="dialog" aria-modal="true" aria-labelledby="hdrLogoutTitle">
+    <div class="hdr-lo-backdrop absolute inset-0 bg-slate-900/45 backdrop-blur-sm" onclick="closeHdrLogout()"></div>
+    <div class="hdr-lo-box relative w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden">
+        <div class="px-6 pt-6 pb-5 text-center">
+            <div class="hdr-lo-ring w-14 h-14 mx-auto rounded-full bg-red-50 text-red-500 flex items-center justify-center">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            </div>
+            <h3 id="hdrLogoutTitle" class="mt-4 text-base font-bold text-slate-800">Keluar dari aplikasi?</h3>
+            <p class="mt-1.5 text-[13px] leading-relaxed text-slate-500">
+                Anda akan keluar dari sesi <span class="font-semibold text-slate-700">SANTRI.ID</span>. Lanjutkan?
+            </p>
+        </div>
+        <div class="flex items-center gap-3 px-6 pb-6">
+            <button type="button" onclick="closeHdrLogout()" id="hdrLogoutCancel"
+                class="flex-1 px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-semibold hover:bg-slate-200 transition">Batal</button>
+            <button type="button" onclick="confirmHdrLogout()" id="hdrLogoutOk"
+                class="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold shadow hover:bg-red-600 transition">Ya, Keluar</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    (function () {
+        // Konfirmasi keluar: modal halus, tutup via Escape/backdrop, fokus ke tombol utama.
+        var m = document.getElementById('hdrLogoutModal');
+        var f = document.getElementById('hdrLogoutForm');
+        if (!m || !f) return;
+        var terakhir = null;
+
+        window.openHdrLogout = function () {
+            terakhir = document.activeElement;
+            if (typeof closeHdrAccount === 'function') closeHdrAccount();
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+            requestAnimationFrame(function () { m.classList.add('hdr-lo-show'); });
+            var ok = document.getElementById('hdrLogoutOk');
+            if (ok) setTimeout(function () { ok.focus(); }, 60);
+        };
+
+        window.closeHdrLogout = function () {
+            if (m.classList.contains('hidden')) return;
+            m.classList.remove('hdr-lo-show');
+            setTimeout(function () {
+                m.classList.add('hidden');
+                m.classList.remove('flex');
+            }, 200);
+            if (terakhir && typeof terakhir.focus === 'function') terakhir.focus();
+        };
+
+        window.confirmHdrLogout = function () {
+            var ok = document.getElementById('hdrLogoutOk');
+            if (ok) { ok.disabled = true; ok.textContent = 'Keluar...'; }
+            f.submit();
+        };
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !m.classList.contains('hidden')) closeHdrLogout();
+        });
+    })();
+
     (function () {
         var h1 = document.getElementById('app-header');
         var h2 = document.getElementById('header2');
@@ -493,7 +565,7 @@ html { margin: 0 !important; padding: 0 !important; }
         var cls, icon;
         if (it.type === 'pesan') { cls = 'bg-cyan-100 text-cyan-600'; icon = 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'; }
         else if (it.type === 'danger') { cls = 'bg-red-100 text-red-600'; icon = 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'; }
-        else { cls = 'bg-emerald-100 text-emerald-600'; icon = 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'; }
+        else { cls = 'bg-teal-100 text-teal-600'; icon = 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'; }
         a.innerHTML =
             '<span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ' + cls + '">' +
             '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="' + icon + '"/></svg></span>' +

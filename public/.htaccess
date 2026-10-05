@@ -5,6 +5,12 @@
 
     RewriteEngine On
 
+    # ===== PROTEKSI BERKAS SENSITIF (jangan bisa diakses lewat browser) =====
+    # Tanpa ini, kode sumber, log Laravel, .env, composer.json, dll. bisa diunduh siapa saja.
+    RewriteRule ^(?:app|bootstrap|config|database|resources|routes|storage|tests|vendor|node_modules|sijamaah-app)(?:/|$) - [F,L]
+    RewriteRule ^(?:composer\.(?:json|lock)|package(?:-lock)?\.json|phpunit\.xml|artisan|\.env.*|\.editorconfig|\.gitignore|\.phpunit\.result\.cache)$ - [F,L]
+    RewriteRule \.(?:log|sql|sqlite|md|bak|old|ini)$ - [F,L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
@@ -22,6 +28,19 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
+</IfModule>
+
+# ===== PENOLAKAN BERKAS SENSITIF (lapis kedua, tetap jalan bila mod_rewrite mati) =====
+<IfModule mod_authz_core.c>
+    <FilesMatch "^\.(?:env|git|editorconfig)|^(?:composer\.(?:json|lock)|package(?:-lock)?\.json|phpunit\.xml|artisan)$|\.(?:log|sql|sqlite|bak|old|ini)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    <FilesMatch "^\.(?:env|git|editorconfig)|^(?:composer\.(?:json|lock)|package(?:-lock)?\.json|phpunit\.xml|artisan)$|\.(?:log|sql|sqlite|bak|old|ini)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
 </IfModule>
 
 # ===== GZIP KOMPRESI (menghemat bandwidth & mempercepat transfer) =====

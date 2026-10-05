@@ -48,13 +48,13 @@
         #navOverlay.nav-open { display: block !important; }
     </style>
 </head>
-<body class="bg-gradient-to-b from-slate-100 via-white to-emerald-50 text-slate-800 min-h-screen pb-28">
+<body class="bg-gradient-to-b from-slate-100 via-white to-teal-50 text-slate-800 min-h-screen pb-28">
     <div id="toast-container"></div>
     <div class="max-w-lg mx-auto px-4 py-6">
         <!-- Header -->
         <div class="mb-4 animate-slide-in">
             <div class="flex items-center gap-2 mb-2">
-                <button type="button" onclick="toggleNav()" id="navBtn" class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-emerald-600 active:scale-95 transition">
+                <button type="button" onclick="toggleNav()" id="navBtn" class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-teal-600 active:scale-95 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
                 <h1 class="text-xl sm:text-2xl md:text-[26px] leading-tight font-extrabold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
@@ -133,14 +133,14 @@
         <!-- Bar simpan sticky -->
         <div class="fixed bottom-0 inset-x-0 p-3 bg-white/90 backdrop-blur border-t border-slate-200 z-40 bar-up">
             <div class="max-w-lg mx-auto flex items-center gap-2">
-                <p class="text-xs text-slate-500 flex-1 min-w-0"><span id="countFilled" class="font-bold text-emerald-600">0</span> santri terisi</p>
+                <p class="text-xs text-slate-500 flex-1 min-w-0"><span id="countFilled" class="font-bold text-teal-600">0</span> santri terisi</p>
                 <button type="button" onclick="openDeleteModal()"
                     class="shrink-0 bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-lg active:scale-95 transition flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     Hapus
                 </button>
                 <button type="button" onclick="openConfirm()"
-                    class="shrink-0 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg active:scale-95 transition">
+                    class="shrink-0 bg-gradient-to-r from-teal-500 to-teal-600 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg active:scale-95 transition">
                     Simpan
                 </button>
             </div>
@@ -149,8 +149,8 @@
         <!-- Modal konfirmasi simpan -->
         <div id="confirmModal" class="hidden fixed inset-0 z-[1000] items-center justify-center p-4" style="background: rgba(15,23,42,.55);">
             <div class="modal-in bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5 text-center">
-                <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-emerald-100 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-teal-100 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                 </div>
                 <h3 class="font-bold text-base mb-1">Simpan presensi?</h3>
                 <p id="confirmDetail" class="text-[13px] text-slate-500 mb-4"></p>
@@ -161,7 +161,7 @@
                     <div id="hiddenStatuses"></div>
                     <div class="flex gap-2">
                         <button type="button" onclick="closeConfirm()" class="flex-1 bg-slate-100 text-slate-700 py-2.5 rounded-xl font-semibold text-sm">Batal</button>
-                        <button type="submit" class="flex-1 bg-emerald-500 text-white py-2.5 rounded-xl font-bold text-sm">Ya, Simpan</button>
+                        <button type="submit" class="flex-1 bg-gradient-to-r from-teal-500 to-teal-600 text-white py-2.5 rounded-xl font-bold text-sm">Ya, Simpan</button>
                     </div>
                 </form>
             </div>
@@ -244,7 +244,7 @@
                 return;
             }
             document.getElementById('confirmDetail').textContent =
-                `${Object.keys(sel).length} santri � ${document.querySelector('[name=waktu_sholat]').value}, ${document.querySelector('[name=tanggal]').value}`;
+                `${Object.keys(sel).length} santri • ${document.querySelector('[name=waktu_sholat]').value}, ${document.querySelector('[name=tanggal]').value}`;
             const hidden = document.getElementById('hiddenStatuses');
             hidden.innerHTML = '';
             Object.entries(sel).forEach(([id, status]) => {
@@ -329,7 +329,7 @@
         <div class="p-3 space-y-1">
             @php
                 $navItems = [
-                    ['Dashboard', 'presensi.index', 'bg-emerald-100 text-emerald-600', 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
+                    ['Dashboard', 'presensi.index', 'bg-teal-100 text-teal-600', 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
                     ['Ranking Berjamaah', 'presensi.rankingBerjamaah', 'bg-amber-100 text-amber-600', 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z'],
                     ['Rekap Berjamaah', 'presensi.rekapBerjamaah', 'bg-teal-100 text-teal-600', 'M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z'],
                     ['Ranking Alfa', 'presensi.rankingAlfa', 'bg-red-100 text-red-600', 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'],

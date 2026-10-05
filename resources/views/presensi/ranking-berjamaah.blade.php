@@ -4,7 +4,7 @@
     @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ranking Berjamaah — SIJAMAAH</title>
+    <title>Ranking Berjamaah — SANTRI.ID</title>
     @vite(['resources/css/app.css'])
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -252,7 +252,7 @@
                     <div class="podium-body">
                         <div class="podium-avatar">{{ substr($second['nama'], 0, 1) }}</div>
                         <div class="podium-name">{{ $second['nama'] }}</div>
-                        <div class="podium-detail">{{ $second['kamar'] }} &middot; <strong>Kali Hadir: {{ $second['hadir'] }}</strong></div>
+                        <div class="podium-detail">{{ $second['kamar'] }} <strong>Kali Hadir: {{ $second['hadir'] }}</strong></div>
                     </div>
                     <div class="podium-step"></div>
                     <div class="podium-bar">{{ $second['hadir'] }}</div>
@@ -263,7 +263,7 @@
                     <div class="podium-body">
                         <div class="podium-avatar">{{ substr($first['nama'], 0, 1) }}</div>
                         <div class="podium-name">{{ $first['nama'] }}</div>
-                        <div class="podium-detail">{{ $first['kamar'] }} &middot; <strong>Kali Hadir: {{ $first['hadir'] }}</strong></div>
+                        <div class="podium-detail">{{ $first['kamar'] }} <strong>Kali Hadir: {{ $first['hadir'] }}</strong></div>
                     </div>
                     <div class="podium-step"></div>
                     <div class="podium-bar">{{ $first['hadir'] }}</div>
@@ -274,7 +274,7 @@
                     <div class="podium-body">
                         <div class="podium-avatar">{{ substr($third['nama'], 0, 1) }}</div>
                         <div class="podium-name">{{ $third['nama'] }}</div>
-                        <div class="podium-detail">{{ $third['kamar'] }} &middot; <strong>Kali Hadir: {{ $third['hadir'] }}</strong></div>
+                        <div class="podium-detail">{{ $third['kamar'] }} <strong>Kali Hadir: {{ $third['hadir'] }}</strong></div>
                     </div>
                     <div class="podium-step"></div>
                     <div class="podium-bar">{{ $third['hadir'] }}</div>
@@ -458,3 +458,4 @@
     </script>
 </body>
 </html>
+

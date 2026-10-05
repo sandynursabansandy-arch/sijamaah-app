@@ -4,7 +4,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="SIJAMAAH">
+<meta name="apple-mobile-web-app-title" content="SANTRI.ID">
 <link rel="icon" type="image/png" href="{{ asset('icons/icon-192.png') }}">
 <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">
 <script src="{{ asset('vendor/turbo/turbo.min.js') }}" defer data-turbo-eval="false"></script>

@@ -19,7 +19,9 @@ class InputCepatController extends Controller
 
         $daftarKamar = Kamar::all();
 
-        $query = Santri::query();
+        $query = Santri::query()
+            ->where('is_pengajar', true);
+
         if ($kamarId !== 'all' && $kamarId !== '') {
             $query->where('kamar_id', $kamarId);
         }

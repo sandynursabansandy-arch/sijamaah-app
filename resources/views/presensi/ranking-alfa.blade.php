@@ -4,7 +4,7 @@
     @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ranking Alfa — SIJAMAAH</title>
+    <title>Ranking Alfa — SANTRI.ID</title>
     @vite(['resources/css/app.css'])
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -255,7 +255,7 @@
                     <div class="podium-body">
                         <div class="podium-avatar">{{ substr($second['nama'], 0, 1) }}</div>
                         <div class="podium-name">{{ $second['nama'] }}</div>
-                        <div class="podium-detail">{{ $second['kamar'] }} &middot; <strong>Kali Alfa: {{ $second['alfa_count'] }}</strong></div>
+                        <div class="podium-detail">{{ $second['kamar'] }} <strong>Kali Alfa: {{ $second['alfa_count'] }}</strong></div>
                     </div>
                     <div class="podium-step"></div>
                     <div class="podium-bar">{{ $second['alfa_count'] }}</div>
@@ -266,7 +266,7 @@
                     <div class="podium-body">
                         <div class="podium-avatar">{{ substr($first['nama'], 0, 1) }}</div>
                         <div class="podium-name">{{ $first['nama'] }}</div>
-                        <div class="podium-detail">{{ $first['kamar'] }} &middot; <strong>Kali Alfa: {{ $first['alfa_count'] }}</strong></div>
+                        <div class="podium-detail">{{ $first['kamar'] }} <strong>Kali Alfa: {{ $first['alfa_count'] }}</strong></div>
                     </div>
                     <div class="podium-step"></div>
                     <div class="podium-bar">{{ $first['alfa_count'] }}</div>
@@ -277,7 +277,7 @@
                     <div class="podium-body">
                         <div class="podium-avatar">{{ substr($third['nama'], 0, 1) }}</div>
                         <div class="podium-name">{{ $third['nama'] }}</div>
-                        <div class="podium-detail">{{ $third['kamar'] }} &middot; <strong>Kali Alfa: {{ $third['alfa_count'] }}</strong></div>
+                        <div class="podium-detail">{{ $third['kamar'] }} <strong>Kali Alfa: {{ $third['alfa_count'] }}</strong></div>
                     </div>
                     <div class="podium-step"></div>
                     <div class="podium-bar">{{ $third['alfa_count'] }}</div>
@@ -386,7 +386,7 @@
 
             <div class="mt-3 text-right text-[11px] text-slate-400 animate-fade-in">
                 Dari <strong>{{ \Carbon\Carbon::parse($start_date)->translatedFormat('d M Y') }}</strong> sampai <strong>{{ \Carbon\Carbon::parse($end_date)->translatedFormat('d M Y') }}</strong>
-                &middot; Poin pelanggaran: Alfa = 5, Masbuq = 2, Izin = 1 (tandai merah jika &ge; 25 poin)
+                Poin pelanggaran: Alfa = 5, Masbuq = 2, Izin = 1 (tandai merah jika &ge; 25 poin)
             </div>
         @else
             <div class="bg-white rounded-xl shadow-sm p-8 text-center animate-fade-in border border-slate-100">
@@ -457,3 +457,4 @@
     </script>
 </body>
 </html>
+

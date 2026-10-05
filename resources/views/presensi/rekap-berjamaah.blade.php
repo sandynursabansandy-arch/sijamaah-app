@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Rekap Berjamaah — SIJAMAAH</title>
+    <title>Rekap Berjamaah — SANTRI.ID</title>
     @vite(['resources/css/app.css'])
     <style>
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -407,7 +407,7 @@
                                             <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-blue-400 flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">{{ substr($santri['nama'], 0, 1) }}</div>
                                             <div class="min-w-0">
                                                 <p class="font-semibold text-slate-900 truncate text-[12px]">{{ $santri['nama'] }}</p>
-                                                <p class="text-[10px] text-slate-400 truncate">{{ $santri['kamar'] }}{{ $santri['jabatan'] ? ' &middot; ' . $santri['jabatan'] : '' }}</p>
+                                                <p class="text-[10px] text-slate-400 truncate">{{ $santri['kamar'] }}{{ $santri['jabatan'] ? ' ' . $santri['jabatan'] : '' }}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -557,9 +557,9 @@
         var isLockedBJ = true;
         var SHOW_WAKTU = @json($showWaktu);
         var TOTAL_DATES = {{ count($allDates) }};
-        var NAMES = @json($namesForJs);
-        var DATE_LABELS = @json($dateLabelsForJs);
-        var rekapState = @json($stateForJs);
+        var NAMES = @json($namesForJs ?? []);
+        var DATE_LABELS = @json($dateLabelsForJs ?? []);
+        var rekapState = @json($stateForJs ?? []);
 
         var currentEdit = null;
         var pendingChangesFinal = [];
@@ -684,7 +684,7 @@
             }
             pendingChangesFinal = changes;
 
-            var listHtml = '<p class="text-[12px] font-bold text-slate-700 mb-1">' + (NAMES[currentEdit.sid] || '') + ' &middot; ' + (DATE_LABELS[currentEdit.date] || currentEdit.date) + '</p>';
+            var listHtml = '<p class="text-[12px] font-bold text-slate-700 mb-1">' + (NAMES[currentEdit.sid] || '') + ' ' + (DATE_LABELS[currentEdit.date] || currentEdit.date) + '</p>';
             changes.forEach(function(c) {
                 listHtml += '<div class="flex items-center justify-between py-1.5 border-b border-slate-100 text-[12px]"><span class="text-slate-500 font-medium">' + c.w + '</span><span class="font-bold text-slate-700">' + STATUS_LABEL[c.from] + ' <span class="text-slate-400">&rarr;</span> <span class="text-emerald-600">' + STATUS_LABEL[c.to] + '</span></span></div>';
             });
@@ -947,3 +947,4 @@
     </script>
 </body>
 </html>
+

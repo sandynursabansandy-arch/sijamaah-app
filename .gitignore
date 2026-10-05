@@ -28,8 +28,19 @@ Thumbs.db
 
 /storage/framework/views/*.php
 /tmp_check*.php
+/_compile_test.php
+/clear-views.php
+/check_server.py
+/fetch_page.py
+/run_remote.py
+/gen_up.py
+/show_title.py
+/diag*.php
+/*diag*.py
+/health-check.php
 sync-ke-web.sql
 *.sql
+__pycache__/
 
 upload-ke-hosting.zip
 upload-stage

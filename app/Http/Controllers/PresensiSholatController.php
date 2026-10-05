@@ -80,10 +80,17 @@ class PresensiSholatController extends Controller
 
         $group = $perWaktu ? 'bucket, waktu_sholat, status' : 'bucket, status';
 
+        // USE INDEX mengarahkan MySQL ke index tanggal. Tanpa itu optimizer
+        // cenderung memilih ps_status_tanggal_idx yang tidak selektif, sehingga
+        // query jadi efektifnya full table scan.
+        // Catatan: ini hanya petunjuk, bukan paksaan — MySQL bebas memakai index
+        // lain bila menilainya lebih baik. SQLite tidak mendukung sintaks ini,
+        // jadi hanya dipakai di MySQL.
+        $useIndex = DB::getDriverName() === 'mysql' ? ' USE INDEX (ps_tanggal_idx)' : '';
         $sql = 'SELECT CASE ' . implode(' ', $caseParts) . ' END AS bucket'
             . ($perWaktu ? ', waktu_sholat' : '')
             . ', status, COUNT(*) AS c'
-            . ' FROM presensi_sholats'
+            . ' FROM presensi_sholats' . $useIndex
             . ' WHERE tanggal >= ? AND tanggal <= ?'
             . ($santriId ? ' AND santri_id = ?' : '')
             . ' GROUP BY ' . $group;
@@ -205,7 +212,8 @@ class PresensiSholatController extends Controller
 
         $daftarKamar = Kamar::all();
 
-        $santriQuery = Santri::query();
+        $santriQuery = Santri::query()
+            ->where('is_pengajar', true);
 
         if ($kamarId !== 'all' && $kamarId !== null && $kamarId !== '') {
             $santriQuery->where('kamar_id', $kamarId);
@@ -310,7 +318,10 @@ class PresensiSholatController extends Controller
             'notifData', 'isPersonalMode', 'personalSantri', 'personalRating', 'personalRatingByWaktu',
             'personalRank', 'santriTotal'
         ) + [
-            'alfaBeruntun' => $this->getAlfaBeruntun(),
+            // 'alfaBeruntun' dihapus: tidak pernah dipakai di view, dan
+            // buildNotifData() sudah memanggil getAlfaBeruntun() sendiri.
+            // Dua pemanggilan berarti dua query berat (~400 ms) untuk data
+            // yang akhirnya dibuang.
             'trenBulanan' => $this->trenBulananCached(6, $scopeSantriId),
             'pwOffset' => $pwOffset,
             'pwMonth' => $pwMonth,
@@ -1083,7 +1094,8 @@ class PresensiSholatController extends Controller
         $allWaktu = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'];
         $waktuList = $waktuSholat && $waktuSholat !== 'all' ? [$waktuSholat] : $allWaktu;
 
-$santriQuery = Santri::query();
+        $santriQuery = Santri::query()
+            ->where('is_pengajar', true);
         $kamarIds = ($kamarId === 'all' || $kamarId === '' || $kamarId === null)
             ? []
             : array_map('trim', explode(',', $kamarId));
@@ -1098,28 +1110,40 @@ $santriQuery = Santri::query();
         }
 
         $santris = $santriQuery
-            ->with(['kamar:id,nama_kamar', 'presensis' => function ($q) use ($startStr, $endStr, $waktuList) {
-                $q->where('tanggal', '>=', $startStr)
-                  ->where('tanggal', '<=', $endStr)
-                  ->whereIn('waktu_sholat', $waktuList);
-            }])
+            ->with(['kamar:id,nama_kamar'])
             ->orderBy('nama', 'asc')
             ->get();
 
         $days = (int) $start->diffInDays($end) + 1;
         $totalJadwal = $days * count($waktuList);
 
-        $perOrang = $santris->map(function ($santri) use ($totalJadwal, $filterKeterangan) {
-            $hadir = 0; $masbuq = 0; $izin = 0; $alfa = 0;
-            foreach ($santri->presensis as $p) {
-                match ($p->status) {
-                    'Jamaah' => $hadir++,
-                    'Masbuq' => $masbuq++,
-                    'Izin'   => $izin++,
-                    'Alfa'   => $alfa++,
-                    default  => null,
-                };
+        // Angka kehadiran diambil dari SATU query agregat, bukan eager-load.
+        // Versi lama memakai with(['presensis' => ...]) yang menghydrasi tiap baris
+        // presensi menjadi objek Eloquent: 300 santri x 30 hari x 5 waktu =
+        // 45.000 objek (~70 MB), padahal view hanya butuh 4 angka per santri.
+        // Pemakaian memori berlebihan itulah pemicu "502 Bad Gateway" di hosting.
+        $jumlahPerSantri = [];
+        if ($santris->isNotEmpty()) {
+            $agg = DB::table('presensi_sholats')
+                ->select('santri_id', 'status', DB::raw('COUNT(*) as c'))
+                ->whereIn('santri_id', $santris->pluck('id')->all())
+                ->where('tanggal', '>=', $startStr)
+                ->where('tanggal', '<=', $endStr)
+                ->whereIn('waktu_sholat', $waktuList)
+                ->groupBy('santri_id', 'status')
+                ->get();
+
+            foreach ($agg as $row) {
+                $jumlahPerSantri[(int) $row->santri_id][(string) $row->status] = (int) $row->c;
             }
+        }
+
+        $perOrang = $santris->map(function ($santri) use ($totalJadwal, $filterKeterangan, $jumlahPerSantri) {
+            $rows = $jumlahPerSantri[$santri->id] ?? [];
+            $hadir = (int) ($rows['Jamaah'] ?? 0);
+            $masbuq = (int) ($rows['Masbuq'] ?? 0);
+            $izin = (int) ($rows['Izin'] ?? 0);
+            $alfa = (int) ($rows['Alfa'] ?? 0);
             $totalIsi = $hadir + $masbuq + $izin + $alfa;
             if ($filterKeterangan && $filterKeterangan !== 'all') {
                 $filteredCount = match($filterKeterangan) {
@@ -1182,7 +1206,8 @@ $santriQuery = Santri::query();
 
         $daftarKamar = Kamar::all();
 
-        $santriQuery = Santri::query();
+        $santriQuery = Santri::query()
+            ->where('is_pengajar', true);
 
         if ($kamarId !== 'all' && $kamarId !== null && $kamarId !== '') {
             $santriQuery->where('kamar_id', $kamarId);
@@ -1259,7 +1284,8 @@ $santriQuery = Santri::query();
             $temp->addDay();
         }
 
-        $santriQuery = Santri::query();
+        $santriQuery = Santri::query()
+            ->where('is_pengajar', true);
         $kamarIdsArr = ($kamarId === 'all' || $kamarId === '' || $kamarId === null)
             ? []
             : array_map('trim', explode(',', $kamarId));
@@ -1421,7 +1447,8 @@ $santriQuery = Santri::query();
         $end_date = $request->get('end_date', Carbon::now()->format('Y-m-d'));
         $daftarKamar = Kamar::all();
 
-        $santriQuery = Santri::query();
+        $santriQuery = Santri::query()
+            ->where('is_pengajar', true);
 
         if ($kamarId !== 'all' && $kamarId !== null && $kamarId !== '') {
             $santriQuery->where('kamar_id', $kamarId);
@@ -1478,7 +1505,8 @@ $santriQuery = Santri::query();
 
         $allWaktu = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'];
 
-        $santriQuery = Santri::query();
+        $santriQuery = Santri::query()
+            ->where('is_pengajar', true);
 
         if ($kamarId !== 'all' && $kamarId !== null && $kamarId !== '') {
             $santriQuery->where('kamar_id', $kamarId);
@@ -1756,7 +1784,8 @@ $santriQuery = Santri::query();
             $temp->addDay();
         }
 
-        $santriQuery = Santri::query();
+        $santriQuery = Santri::query()
+            ->where('is_pengajar', true);
         if ($kamarId !== 'all' && $kamarId !== null && $kamarId !== '') {
             $santriQuery->where('kamar_id', $kamarId);
         }

@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Cetak Rekap Presensi ΓÇö SIJAMAAH</title>
+    <title>Cetak Rekap Presensi — SANTRI.ID</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @page { size: A4 landscape; margin: 8mm 6mm; }
@@ -276,7 +276,7 @@
             font-size: 11pt; font-weight: 600;
         }
 
-        /* === RESPONSIVE (layar HP) ΓÇö tidak memengaruhi cetak/PDF === */
+        /* === RESPONSIVE (layar HP) — tidak memengaruhi cetak/PDF === */
         @media screen and (max-width: 820px) {
             body { font-size: 10pt; }
             .screen-only { margin: 0 12px 12px; }
@@ -342,12 +342,12 @@
     {{-- ============ DOCUMENT HEADER ============ --}}
     <div class="doc-header">
 
-        {{-- Kop: Logo ΓÇö Judul ΓÇö Spacer --}}
+        {{-- Kop: Logo — Judul — Spacer --}}
         <div class="kop anim-in anim-d1">
             <img src="{{ asset('images/image.png') }}" alt="Logo" class="logo">
             <div class="title-block">
                 <h1>Rekap Presensi Sholat Berjamaah</h1>
-                <h2>Pesantren SIJAMAAH</h2>
+                <h2>Pesantren SANTRI.ID</h2>
             </div>
             <div class="spacer"></div>
         </div>
@@ -551,7 +551,7 @@
                             style="background: #9ca3af !important; color: #fff; font-size: 6pt; font-weight: 800;
                             border-color: #6b7280; border-right: 2.5px solid #6b7280 !important;">
                             M{{ $wk['num'] }}<br>
-                            <span style="font-size:5pt; font-weight:400; opacity:0.85;">{{ $wk['start']->isoFormat('D') }}ΓÇô{{ $wk['end']->isoFormat('D/M') }}</span>
+                            <span style="font-size:5pt; font-weight:400; opacity:0.85;">{{ $wk['start']->isoFormat('D') }}–{{ $wk['end']->isoFormat('D/M') }}</span>
                         </th>
                     @endforeach
                     <th rowspan="2" class="rating-col">{{ $isFiltered ? ($statusLabels[$filterStatus] ?? '%') : '%' }}</th>
@@ -725,7 +725,7 @@
 
     {{-- FOOTER --}}
     <div class="footer anim-in anim-d6">
-        <div class="meta">Dicetak otomatis dari SIJAMAAH &mdash; {{ \Carbon\Carbon::now()->tz('Asia/Jakarta')->isoFormat('D MMMM YYYY, HH:mm') }} WIB</div>
+        <div class="meta">Dicetak otomatis dari SANTRI.ID &mdash; {{ \Carbon\Carbon::now()->tz('Asia/Jakarta')->isoFormat('D MMMM YYYY, HH:mm') }} WIB</div>
         <div class="sign-line">Sandy Nursa'ban</div>
     </div>
     </div>
@@ -798,3 +798,4 @@
     </script>
 </body>
 </html>
+

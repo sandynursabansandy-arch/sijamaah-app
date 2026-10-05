@@ -4,7 +4,7 @@
     @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Pengajuan Izin — SIJAMAAH</title>
+    <title>Edit Pengajuan Izin — SANTRI.ID</title>
     @vite(['resources/css/app.css'])
     <style>
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -89,9 +89,10 @@
 
             <div class="flex gap-3">
                 <a href="{{ route('izin.index') }}" class="flex-1 text-center bg-slate-100 text-slate-600 py-2.5 rounded-lg font-semibold text-sm hover:bg-slate-200 transition">Batal</a>
-                <button type="submit" class="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-2.5 rounded-lg font-semibold text-sm shadow-lg hover:opacity-90 transition">Simpan Perubahan</button>
+                <button type="submit" class="flex-1 bg-gradient-to-r from-teal-500 to-teal-600 text-white py-2.5 rounded-lg font-semibold text-sm shadow-lg hover:opacity-90 transition">Simpan Perubahan</button>
             </div>
         </form>
     </div>
 </body>
 </html>
+

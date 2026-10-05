@@ -4,7 +4,7 @@
     @include('partials.pwa-head')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kritik &amp; Saran &mdash; SIJAMAAH</title>
+    <title>Kritik &amp; Saran &mdash; SANTRI.ID</title>
     @vite(['resources/css/app.css'])
     <style>
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -56,7 +56,7 @@
                 <div class="mt-1 text-right text-[11px] text-slate-400"><span id="charCount">0</span>/1000</div>
             </div>
 
-            <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-2.5 rounded-lg font-semibold text-sm shadow-lg hover:opacity-90 transition">
+            <button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white py-2.5 rounded-lg font-semibold text-sm shadow-lg hover:opacity-90 transition">
                 Kirim Kritik &amp; Saran
             </button>
         </form>
