@@ -1,0 +1,133 @@
+# ============================================================
+#  .htaccess untuk DEPLOY (docroot = root project, seperti hosting SANTRI.ID)
+# ============================================================
+#  File INI yang dipakai di server, BUKAN `public/.htaccess`.
+#  Di hosting, document root diarahkan ke root project, jadi `index.php`
+#  dan aturan rewrite harus ada di `.htaccess` paling atas.
+#
+#  `public/.htaccess` dipakai untuk pengembangan lokal (Laragon) dan
+#  isinya berbeda dengan sengaja - jangan disamakan.
+#
+#  Deploy: upload file ini sebagai `.htaccess` di root project server.
+#
+#  PENTING: tanpa BOM. Apache di host Linux menolak SELURUH file kalau
+#  diawali UTF-8 BOM, dan seluruh situs jadi 500 - bukan cuma baris itu.
+# ============================================================
+
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # ===== PROTEKSI BERKAS SENSITIF (jangan bisa diakses lewat browser) =====
+    # Tanpa ini, kode sumber, log Laravel, .env, composer.json, dll. bisa diunduh siapa saja.
+    #
+    # `storage` dan `vendor` SENGAJA TIDAK ikut diblokir di baris pertama:
+    # keduanya punya isi yang memang perlu diakses lewat browser.
+    RewriteRule ^(?:app|bootstrap|config|database|resources|routes|tests|node_modules|sijamaah-app)(?:/|$) - [F,L]
+
+    # Cukup izinkan /vendor/turbo/turbo.min.js, yang dipakai
+    # resources/views/partials/pwa-head.blade.php. Sisanya tetap tertutup.
+    RewriteRule ^vendor/(?!turbo/) - [F,L]
+
+    # `storage` dipakai Laravel untuk compiled blade dan log, jadi keduanya
+    # harus tertutup. Tapi storage/app/public berisi foto yang ditautkan dari
+    # halaman cetak dan edit Santri lewat asset('storage/...'), jadi jangan
+    # ikut ditutup - memotongnya membuat foto hilang tanpa jejak.
+    RewriteRule ^storage/(?:framework|logs)/ - [F,L]
+    RewriteRule ^storage/app/(?!public/) - [F,L]
+
+    RewriteRule ^(?:composer\.(?:json|lock)|package(?:-lock)?\.json|phpunit\.xml|artisan|vite\.config\.js|\.npmrc)$ - [F,L]
+
+    # Semua dotfile lain ditutup juga. `.well-known` dikecualikan supaya
+    # penerbitan sertifikat HTTPS tetap bisa lewat.
+    RewriteRule (?:^|/)\.(?!well-known)[^/]+$ - [F,L]
+
+    # PHP selain index.php: file debug/tes yang tertinggal tidak boleh
+    # dieksekusi maupun dibaca.
+    RewriteRule ^(?!index\.php$).*\.php$ - [F,L]
+
+    # Arsip dan berkas log: jangan pernah bisa diunduh lewat browser.
+    RewriteRule \.(?:log|sql|sqlite|md|bak|old|ini|zip|tar|gz|tgz|7z|rar)$ - [F,L]
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Handle X-XSRF-Token Header
+    RewriteCond %{HTTP:x-xsrf-token} .
+    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# ===== PENOLAKAN BERKAS SENSITIF (lapis kedua, tetap jalan bila mod_rewrite mati) =====
+<IfModule mod_authz_core.c>
+    <FilesMatch "^(?!index\.php$).*\.php$|^\.(?!well-known)[^.]|^(?:composer\.(?:json|lock)|package(?:-lock)?\.json|phpunit\.xml|artisan|vite\.config\.js)$|\.(?:log|sql|sqlite|md|bak|old|ini|zip|tar|gz|tgz|7z|rar)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    <FilesMatch "^(?!index\.php$).*\.php$|^\.(?!well-known)[^.]|^(?:composer\.(?:json|lock)|package(?:-lock)?\.json|phpunit\.xml|artisan|vite\.config\.js)$|\.(?:log|sql|sqlite|md|bak|old|ini|zip|tar|gz|tgz|7z|rar)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>
+
+# ===== GZIP KOMPRESI (menghemat bandwidth & mempercepat transfer) =====
+# Dibungkus mod_filter: satu directive yang tidak dikenali membuat Apache
+# menolak SELURUH file .htaccess, jadi satu situs 500, bukan hanya bagian ini.
+<IfModule mod_filter.c>
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json application/xml application/x-javascript image/svg+xml
+    SetOutputFilter DEFLATE
+    BrowserMatch ^Mozilla/4 gzip-only-text/html
+    BrowserMatch ^Mozilla/4\.0[678] no-gzip
+    BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+    Header append Vary User-Agent
+</IfModule>
+</IfModule>
+
+# ===== CACHE BROWSER untuk aset statis (file di-hash, aman cache lama) =====
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css                 "access plus 1 year"
+    ExpiresByType application/javascript   "access plus 1 year"
+    ExpiresByType application/json         "access plus 1 year"
+    ExpiresByType image/gif                "access plus 1 month"
+    ExpiresByType image/jpg                "access plus 1 month"
+    ExpiresByType image/jpeg               "access plus 1 month"
+    ExpiresByType image/png                "access plus 1 month"
+    ExpiresByType image/webp               "access plus 1 month"
+    ExpiresByType image/svg+xml            "access plus 1 month"
+    ExpiresByType application/font-woff    "access plus 1 year"
+    ExpiresByType application/font-woff2   "access plus 1 year"
+    ExpiresByType application/vnd.ms-fontobject "access plus 1 year"
+    ExpiresByType font/ttf                 "access plus 1 year"
+    ExpiresByType font/otf                 "access plus 1 year"
+    ExpiresByType text/html                "access plus 0 seconds"
+    ExpiresByType text/plain               "access plus 0 seconds"
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(css|js|mjs|json)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    <FilesMatch "\.(jpg|jpeg|png|gif|webp|svg|ico)$">
+        Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+    <FilesMatch "\.(woff|woff2|ttf|otf|eot)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    Header unset X-Powered-By
+</IfModule>
