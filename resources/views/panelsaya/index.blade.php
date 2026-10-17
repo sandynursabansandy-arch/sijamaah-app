@@ -133,9 +133,10 @@
                         fetch('/pesan-user/baca-semua', {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json'}}).then(function(){ location.reload(); }).catch(function(){});
                     }
                     function pesanDelete(id) {
-                        if (!confirm('Hapus pesan ini dari panel Anda?')) return;
-                        hideUserNotifDot();
-                        fetch('/pesan-user/' + id, {method:'DELETE', headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json'}}).then(function(){ location.reload(); }).catch(function(){});
+                        glConfirm('Hapus Pesan', 'Hapus pesan ini dari panel Anda?', function () {
+                            hideUserNotifDot();
+                            fetch('/pesan-user/' + id, {method:'DELETE', headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json'}}).then(function(){ location.reload(); }).catch(function(){});
+                        }, { ya: 'Ya, Hapus', warna: 'merah', ikon: 'merah' });
                     }
                 </script>
             @endif

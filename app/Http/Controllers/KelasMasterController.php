@@ -570,6 +570,29 @@ class KelasMasterController extends Controller
      */
     public function naikPengajian(Request $request)
     {
+        return $this->pindahPengajian($request, 'naik');
+    }
+
+    /**
+     * Kembalikan kelas pengajian orang-orang yang dipilih ke kelas lain.
+     *
+     * Dipakai untuk membatalkan kenaikan yang salah input: arahnya ke
+     * kelas yang lebih rendah, tapi secara teknis sama dengan naikPengajian
+     * (memindahkan anggota antar kelas pengajian). Hanya kalimat suksesnya
+     * yang berbeda supaya admin tidak bingung arah perpindahannya.
+     */
+    public function turunkanPengajian(Request $request)
+    {
+        return $this->pindahPengajian($request, 'turun');
+    }
+
+    /**
+     * Inti pemindahan anggota antar kelas pengajian, dipakai bersama
+     * naikPengajian dan turunkanPengajian. $mode hanya mengubah kalimat
+     * sukses ("naik" vs "dikembalikan").
+     */
+    protected function pindahPengajian(Request $request, string $mode)
+    {
         $this->pastikanTabelKelas();
 
         $data = $request->validate([
@@ -649,18 +672,29 @@ class KelasMasterController extends Controller
         }
 
         $sisaKursi = $ke->sisaKursi();
-        $pesan = sprintf(
-            '%d Santri naik dari "%s" ke "%s". %d orang tetap di "%s".',
-            count($terpilih),
-            $dari->nama,
-            $ke->nama,
-            $this->hitungSantri($dari),
-            $dari->nama
-        );
+        $naik = $mode === 'naik';
+        $pesan = $naik
+            ? sprintf(
+                '%d Santri naik dari "%s" ke "%s". %d orang tetap di "%s".',
+                count($terpilih),
+                $dari->nama,
+                $ke->nama,
+                $this->hitungSantri($dari),
+                $dari->nama
+            )
+            : sprintf(
+                '%d Santri dikembalikan dari "%s" ke "%s" (batal naik). %d orang tetap di "%s".',
+                count($terpilih),
+                $dari->nama,
+                $ke->nama,
+                $this->hitungSantri($dari),
+                $dari->nama
+            );
 
         // Penuh bukan error: di pengajian memang bisa lebih dari patokan karena
         // ada yang belum layak naik. Cukup diberi tahu supaya terlihat.
-        if ($sisaKursi !== null && $sisaKursi <= 0) {
+        // (Hanya relevan saat naik; saat turun, kelas tujuan memang lebih rendah.)
+        if ($naik && $sisaKursi !== null && $sisaKursi <= 0) {
             $pesan .= sprintf(
                 ' Perhatian: "%s" sekarang lewat patokan %d orang — jelas berarti ada yang belum naik.',
                 $ke->nama,

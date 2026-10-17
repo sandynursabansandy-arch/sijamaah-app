@@ -166,7 +166,7 @@ class PanelSayaController extends Controller
             ->select('santri_id', \DB::raw('COUNT(*) as c'))
             ->pluck('c', 'santri_id');
 
-        $rankedQuery = Santri::query();
+        $rankedQuery = Santri::query()->where('is_pengajar', true);
         if (\App\Support\SchemaCache::hasColumn('santris', 'status')) {
             $rankedQuery->where('status', 'Aktif');
         }

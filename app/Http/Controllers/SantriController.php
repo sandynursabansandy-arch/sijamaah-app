@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Santri;
 use App\Models\Kamar;
 use App\Models\KelasMaster;
+use App\Support\SchemaCache;
 use App\Support\TahunAjar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -130,17 +131,185 @@ class SantriController extends Controller
         });
     }
 
+    /**
+     * Tambah kolom jenis_kelamin bila belum ada.
+     *
+     * Shared hosting tidak bisa menjalankan `php artisan migrate`, jadi
+     * migrasi dijalankan sendiri lewat halaman ini memakai file migrasi
+     * yang sama (idempotent: IF NOT EXISTS). Setelah kolom terbentuk,
+     * fungsi ini hanya melakukan satu query INFORMATION_SCHEMA dan
+     * langsung keluar.
+     */
+    protected function pastikanKolomJenisKelamin(): void
+    {
+        try {
+            if (Schema::hasColumn('santris', 'jenis_kelamin')) {
+                return;
+            }
+
+            $file = database_path('migrations/2026_10_10_000001_add_jenis_kelamin_to_santris_table.php');
+
+            if (is_file($file)) {
+                $migration = require $file;
+
+                if (is_object($migration) && method_exists($migration, 'up')) {
+                    $migration->up();
+                }
+            }
+
+            SchemaCache::flush();
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
+     * Parameter filter daftar santri yang dibawa bolak-balik ke form
+     * tambah/ubah/hapus, supaya setelah kembali ke daftar santri
+     * filter yang dipakai tidak reset ke "semua santri".
+     *
+     * `page` ikut dibawa supaya kembali ke halaman daftar yang
+     * sama (mis. edit dari halaman 2 → kembali ke halaman 2,
+     * bukan ke halaman 1).
+     *
+     * @return array<string, string>
+     */
+    protected function filterKembali(Request $request): array
+    {
+        return array_filter(
+            $request->only([
+                'page', 'search', 'kamar_id', 'filter', 'tahun_ajar', 'kelas_id',
+                'jenis_kelas', 'kelas_pengajian_id', 'kelas_sekolah_id',
+                'filter_jenis_kelamin',
+            ]),
+            fn ($v) => $v !== null && $v !== ''
+        );
+    }
+
+    /**
+     * Daftar kamar untuk dropdown filter: hanya kamar yang masih
+     * ditempati santri. Kamar yang sudah tidak ada santrinya
+     * disembunyikan otomatis dari dropdown.
+     *
+     * Kamar yang sedang dipilih tetap ditampilkan walau sudah kosong,
+     * supaya filter yang aktif tidak menghilang dari dropdown.
+     */
+    protected function daftarKamarFilter(string $kamarId = ''): \Illuminate\Support\Collection
+    {
+        $idTerpakai = Santri::pluck('kamar_id')->unique()->filter()->all();
+
+        $daftar = Kamar::whereIn('id', $idTerpakai)->get();
+
+        if ($kamarId !== '' && !$daftar->contains('id', (int) $kamarId)) {
+            $kamar = Kamar::find((int) $kamarId);
+
+            if ($kamar) {
+                $daftar = $daftar->push($kamar);
+            }
+        }
+
+        return Kamar::urutRayon($daftar);
+    }
+
+    /**
+     * Daftar kelas master yang masih dipakai santri untuk dropdown
+     * filter. Kelas yang sudah tidak ada santrinya disembunyikan
+     * otomatis — baik dipakai lewat foreign key maupun hanya
+     * tersimpan sebagai teks (santri lama).
+     *
+     * Kelas yang sedang dipilih tetap ditampilkan walau sudah kosong,
+     * supaya filter yang aktif tidak menghilang dari dropdown.
+     */
+    protected function daftarKelasFilter(string $tahunAjar, string $kelasPengajianId, string $kelasSekolahId): \Illuminate\Support\Collection
+    {
+        $semua = KelasMaster::tahunAjar($tahunAjar)
+            ->orderBy('tingkat')
+            ->orderBy('nama')
+            ->get();
+
+        if ($semua->isEmpty()) {
+            return $semua;
+        }
+
+        $idPengajian = Schema::hasColumn('santris', 'kelas_pengajian_id')
+            ? Santri::whereNotNull('kelas_pengajian_id')->pluck('kelas_pengajian_id')->map(fn ($v) => (int) $v)->unique()->all()
+            : [];
+        $idSekolah = Schema::hasColumn('santris', 'kelas_sekolah_id')
+            ? Santri::whereNotNull('kelas_sekolah_id')->pluck('kelas_sekolah_id')->map(fn ($v) => (int) $v)->unique()->all()
+            : [];
+        $teksPengajian = Schema::hasColumn('santris', 'kelas_pengajian')
+            ? Santri::whereNull('kelas_pengajian_id')->whereNotNull('kelas_pengajian')->pluck('kelas_pengajian')->unique()->all()
+            : [];
+        $teksSekolah = Schema::hasColumn('santris', 'kelas_sekolah')
+            ? Santri::whereNull('kelas_sekolah_id')->whereNotNull('kelas_sekolah')->pluck('kelas_sekolah')->unique()->all()
+            : [];
+
+        // Kolom cermin lama (`kelas` + `kelas_master_id`): santri yang
+        // dibuat sebelum kelas dua jalur, atau import format lama,
+        // hanya punya nilai di sini. Ikut dihitung supaya kelasnya
+        // tidak salah disembunyikan (sama seperti filter `kelas_id`).
+        $idLama = Schema::hasColumn('santris', 'kelas_master_id')
+            ? Santri::whereNotNull('kelas_master_id')->pluck('kelas_master_id')->map(fn ($v) => (int) $v)->unique()->all()
+            : [];
+        $teksLama = Schema::hasColumn('santris', 'kelas')
+            ? Santri::whereNull('kelas_master_id')->where('kelas', '!=', '-')->whereNotNull('kelas')->pluck('kelas')->unique()->all()
+            : [];
+
+        $terpakai = $semua->filter(function ($k) use ($idPengajian, $idSekolah, $idLama, $teksPengajian, $teksSekolah, $teksLama) {
+            $id = (int) $k->id;
+
+            return in_array($id, $idPengajian, true)
+                || in_array($id, $idSekolah, true)
+                || in_array($id, $idLama, true)
+                || in_array($k->nama, $teksPengajian, true)
+                || in_array($k->nama, $teksSekolah, true)
+                || in_array($k->nama, $teksLama, true);
+        });
+
+        // Kelas yang sedang dipilih tetap tampil walau sudah kosong.
+        $terpilih = array_filter([
+            $kelasPengajianId !== '' ? (int) $kelasPengajianId : null,
+            $kelasSekolahId !== '' ? (int) $kelasSekolahId : null,
+        ], fn ($v) => $v !== null);
+
+        if ($terpilih !== []) {
+            $ada = $terpakai->pluck('id')->map(fn ($v) => (int) $v)->all();
+            $kurang = array_values(array_diff($terpilih, $ada));
+
+            if ($kurang !== []) {
+                $terpakai = $terpakai->merge(KelasMaster::whereIn('id', $kurang)->get())
+                    ->sortBy(fn ($k) => [$k->tingkat, $k->nama])
+                    ->values();
+            }
+        }
+
+        return $terpakai;
+    }
+
     // Tampilkan daftar santri
     public function index(Request $request)
     {
-        $search = $request->get('search', '');
-        $kamarId = $request->get('kamar_id', '');
-        $filter = $request->get('filter', '');
+        $this->pastikanKolomJenisKelamin();
+
+        // Cast ke string: middleware ConvertEmptyStringsToNull
+        // mengubah nilai kosong (?kamar_id=) jadi null, dan
+        // null lolos ke parameter bertipe string di bawah.
+        $search = (string) $request->get('search', '');
+        $kamarId = (string) $request->get('kamar_id', '');
+        $filter = (string) $request->get('filter', '');
         $tahunAjar = (string) $request->get('tahun_ajar', '');
         $kelasId = (string) $request->get('kelas_id', '');
         $jenisKelas = (string) $request->get('jenis_kelas', '');
         $kelasPengajianId = (string) $request->get('kelas_pengajian_id', '');
         $kelasSekolahId = (string) $request->get('kelas_sekolah_id', '');
+        $jenisKelamin = (string) $request->get('filter_jenis_kelamin', '');
+
+        // Filter jenis kelamin hanya menerima dua nilai yang ada
+        // di kolom; nilai lain diabaikan supaya tidak ada query
+        // mencurigakan yang lolos.
+        if (!in_array($jenisKelamin, ['Laki-laki', 'Perempuan'], true)) {
+            $jenisKelamin = '';
+        }
 
         // Dua jalur kelas punya foreign key masing-masing, jadi filter perlu
         // tahu kelas yang dipilih itu pengajian atau sekolah.
@@ -156,6 +325,10 @@ class SantriController extends Controller
 
         if ($kamarId) {
             $query->where('kamar_id', $kamarId);
+        }
+
+        if ($jenisKelamin !== '' && Schema::hasColumn('santris', 'jenis_kelamin')) {
+            $query->where('jenis_kelamin', $jenisKelamin);
         }
 
         if ($filter === 'pengajar') {
@@ -199,7 +372,15 @@ class SantriController extends Controller
         }
 
         $santris = $query->orderBy('nama', 'asc')->paginate(15)->withQueryString();
-        $daftarKamar = Kamar::all();
+        $daftarKamar = Kamar::urutRayon(Kamar::all());
+
+        // Dropdown filter hanya menampilkan nilai yang masih dipakai
+        // santri: kamar atau kelas yang sudah tidak ada santrinya
+        // disembunyikan otomatis. $daftarKamar (semua kamar) dipakai
+        // statistik Total Kamar; popup cetak rekap pakai daftar filter.
+        $daftarKamarFilter = $this->daftarKamarFilter($kamarId);
+        $kolomJenisKelamin = Schema::hasColumn('santris', 'jenis_kelamin');
+        $filterKembali = $this->filterKembali($request);
 
         // Master kelas untuk filter. Tahun ajar default: yang sedang berjalan
         // atau terbaru yang tersedia.
@@ -216,21 +397,51 @@ class SantriController extends Controller
                     : ($daftarTahunAjar[0] ?? '');
             }
             if ($tahunAjar !== '') {
-                $daftarKelas = KelasMaster::tahunAjar($tahunAjar)
-                    ->orderBy('tingkat')
-                    ->orderBy('nama')
-                    ->get();
+                $daftarKelas = $this->daftarKelasFilter($tahunAjar, $kelasPengajianId, $kelasSekolahId);
             }
         }
 
         $santriDetailData = $santris->map(function ($s) {
+            // Kenaikan kelas sekolah (jalur formal): naik 1 tingkat tiap
+            // tahun ajar, atau tamat kalau sudah di tingkat tertinggi.
+            $kelasSekolah = $s->namaKelasSekolah();
+            $naikSekolah = '-';
+            if ($kelasSekolah !== '' && $kelasSekolah !== '-') {
+                $parsed = TahunAjar::parseNamaKelas((string) $s->kelas_sekolah);
+                $berikut = TahunAjar::namaKelasBerikutnya((string) $s->kelas_sekolah);
+                if ($parsed['tingkat'] === null) {
+                    $naikSekolah = $kelasSekolah . ' (tidak dapat ditentukan)';
+                } elseif ($berikut === null) {
+                    $naikSekolah = $kelasSekolah . ' → Tamat (tidak naik lagi)';
+                } else {
+                    $naikSekolah = $kelasSekolah . ' → ' . $berikut . ' (naik)';
+                }
+            }
+
+            // Kenaikan kelas pengajian: kelas pengajian TIDAK naik tingkat
+            // saat tahun ajar berganti, jadi namanya tetap.
+            $kelasPengajian = $s->namaKelasPengajian();
+            $naikPengajian = '-';
+            if ($kelasPengajian !== '' && $kelasPengajian !== '-') {
+                $naikPengajian = $kelasPengajian . ' → ' . $kelasPengajian . ' (tidak naik, pengajian tetap)';
+            }
+
+            // Status: Nonaktif -> "Non-aktif", lainnya -> "Aktif".
+            $status = ($s->status === 'Nonaktif') ? 'Non-aktif' : 'Aktif';
+
             return [
                 'id' => $s->id,
                 'nama' => $s->nama,
                 'kamar' => $s->kamar?->nama_kamar ?? '-',
                 'kelas' => $s->kelas_gabungan,
-                'kelas_pengajian' => $s->namaKelasPengajian(),
-                'kelas_sekolah' => $s->namaKelasSekolah(),
+                'kelas_pengajian' => $kelasPengajian,
+                'kelas_sekolah' => $kelasSekolah,
+                'naik_sekolah' => $naikSekolah,
+                'naik_pengajian' => $naikPengajian,
+                'tahun_ajar' => TahunAjar::sekarang(),
+                'tahun_ajar_berikutnya' => TahunAjar::berikutnya(TahunAjar::sekarang()),
+                'status' => $status,
+                'dibuat' => $s->created_at ? $s->created_at->format('d M Y H:i') : '-',
                 'jabatan' => $s->jabatan ?? '-',
                 'is_pengajar' => $s->is_pengajar ? 'Ya' : 'Tidak',
                 'no_hp_wali' => $s->no_hp_wali ?? '-',
@@ -244,7 +455,8 @@ class SantriController extends Controller
         return view('santri.index', compact(
             'santris', 'daftarKamar', 'search', 'kamarId', 'filter', 'santriDetailData',
             'daftarTahunAjar', 'daftarKelas', 'tahunAjar', 'kelasId', 'jenisKelas',
-            'kelasPengajianId', 'kelasSekolahId'
+            'kelasPengajianId', 'kelasSekolahId', 'jenisKelamin', 'daftarKamarFilter',
+            'kolomJenisKelamin', 'filterKembali'
         ));
     }
 
@@ -326,10 +538,16 @@ class SantriController extends Controller
     // Form create santri
     public function create()
     {
-        $daftarKamar = Kamar::all();
-        $daftarKelas = $this->daftarKelasForm();
+        $this->pastikanKolomJenisKelamin();
 
-        return view('santri.create', compact('daftarKamar', 'daftarKelas'));
+        $daftarKamar = Kamar::urutRayon(Kamar::all());
+        $daftarKelas = $this->daftarKelasForm();
+        $filterKembali = $this->filterKembali(request());
+        $kolomJenisKelamin = Schema::hasColumn('santris', 'jenis_kelamin');
+
+        return view('santri.create', compact(
+            'daftarKamar', 'daftarKelas', 'filterKembali', 'kolomJenisKelamin'
+        ));
     }
 
     /**
@@ -354,6 +572,7 @@ class SantriController extends Controller
     {
         $rules = [
             'nama' => 'required|string|max:100',
+            'jenis_kelamin' => 'nullable|in:Laki-laki,Perempuan',
             'kamar' => 'required|string|max:100',
             'kelas_pengajian' => 'nullable|string|max:100',
             'kelas_sekolah' => 'nullable|string|max:100',
@@ -382,12 +601,16 @@ class SantriController extends Controller
             'nis' => uniqid('S'),
         ];
 
+        if (Schema::hasColumn('santris', 'jenis_kelamin')) {
+            $santriData['jenis_kelamin'] = ($validated['jenis_kelamin'] ?? '') ?: null;
+        }
+
         $santriData = array_merge($santriData, $this->dataKelasDariForm($request));
         $santriData = array_merge($santriData, $this->getAddressData($request));
 
         Santri::create($santriData);
 
-        return redirect()->route('santri.create')
+        return redirect()->route('santri.create', $this->filterKembali($request))
                        ->with('success', 'Data Santri berhasil disimpan.')
                        ->with('success_judul', 'Sudah Disimpan');
     }
@@ -395,10 +618,16 @@ class SantriController extends Controller
     // Form edit santri
     public function edit(Santri $santri)
     {
-        $daftarKamar = Kamar::all();
-        $daftarKelas = $this->daftarKelasForm();
+        $this->pastikanKolomJenisKelamin();
 
-        return view('santri.edit', compact('santri', 'daftarKamar', 'daftarKelas'));
+        $daftarKamar = Kamar::urutRayon(Kamar::all());
+        $daftarKelas = $this->daftarKelasForm();
+        $filterKembali = $this->filterKembali(request());
+        $kolomJenisKelamin = Schema::hasColumn('santris', 'jenis_kelamin');
+
+        return view('santri.edit', compact(
+            'santri', 'daftarKamar', 'daftarKelas', 'filterKembali', 'kolomJenisKelamin'
+        ));
     }
 
     // Update santri
@@ -406,6 +635,7 @@ class SantriController extends Controller
     {
         $rules = [
             'nama' => 'required|string|max:100',
+            'jenis_kelamin' => 'nullable|in:Laki-laki,Perempuan',
             'kamar' => 'required|string|max:100',
             'kelas_pengajian' => 'nullable|string|max:100',
             'kelas_sekolah' => 'nullable|string|max:100',
@@ -433,22 +663,28 @@ class SantriController extends Controller
             'no_hp_wali' => $validated['no_hp_wali'] ?? null,
         ];
 
+        if (Schema::hasColumn('santris', 'jenis_kelamin')) {
+            $santriData['jenis_kelamin'] = ($validated['jenis_kelamin'] ?? '') ?: null;
+        }
+
         $santriData = array_merge($santriData, $this->dataKelasDariForm($request));
         $santriData = array_merge($santriData, $this->getAddressData($request));
 
         $santri->update($santriData);
 
-        return redirect()->route('santri.edit', $santri->id)
+        return redirect()->route('santri.edit', array_merge(['santri' => $santri->id], $this->filterKembali($request)))
                        ->with('success', 'Data Santri berhasil diperbaharui.')
                        ->with('success_judul', 'Sudah Diperbaharui');
     }
 
     // Delete santri
-    public function destroy(Santri $santri)
+    public function destroy(Santri $santri, Request $request)
     {
         $santri->delete();
 
-        return redirect()->route('santri.index')
+        // Bawa kembali parameter filter supaya daftar santri tidak
+        // reset ke "semua santri" setelah satu baris dihapus.
+        return redirect()->route('santri.index', $this->filterKembali($request))
                        ->with('success', '✅ Santri berhasil dihapus!');
     }
 
@@ -463,7 +699,7 @@ class SantriController extends Controller
     // Form import santri dari CSV
     public function importForm()
     {
-        $daftarKamar = Kamar::all();
+        $daftarKamar = Kamar::urutRayon(Kamar::all());
         return view('santri.import', compact('daftarKamar'));
     }
 
@@ -480,14 +716,14 @@ class SantriController extends Controller
             'Nama Santri', 'Rayon/Kamar', 'Kelas Pengajian', 'Kelas Sekolah', 'Jabatan',
             'No. HP Wali', 'No. WhatsApp', 'Provinsi', 'Kabupaten/Kota',
             'Kecamatan', 'Desa/Kelurahan', 'Dusun/Kampung', 'RT', 'RW',
-            'Jalan', 'No. Rumah', 'Kode Pos',
+            'Jalan', 'No. Rumah', 'Kode Pos', 'Jenis Kelamin',
         ];
     }
 
     // Lebar kolom template (sesuai urutan kolomTemplateImport()).
     protected function lebarKolomTemplateImport(): array
     {
-        return [24, 16, 16, 14, 14, 16, 16, 16, 18, 16, 20, 16, 7, 7, 24, 12, 12];
+        return [24, 16, 16, 14, 14, 16, 16, 16, 18, 16, 20, 16, 7, 7, 24, 12, 12, 14];
     }
 
     // Baris judul pada template (boleh dihapus pengguna, import tetap jalan).
@@ -519,7 +755,7 @@ class SantriController extends Controller
             'nama' => [0, 'nama', 'namasantri', 'namasantri_lengkap'],
             'kamar' => [1, 'rayon', 'rayonkamar', 'rayon_kamar', 'kamar', 'kamarasrama'],
             'kelas_pengajian' => [2, 'kelaspengajian', 'kelas_pengajian', 'pengajian', 'majelis'],
-            'kelas_sekolah' => [3, 'kelassekolah', 'kelas_sekolah', 'sekolah', 'formal'],
+            'kelas_sekolah' => [3, 'kelassekolah', 'kelas_sekolah', 'sekolah', 'formal', 'jenjangpendidikan', 'jenjang'],
             'kelas' => [4, 'kelas'],
             'jabatan' => [5, 'jabatan'],
             'no_hp_wali' => [6, 'nohpwali', 'no_hp_wali', 'hp_wali', 'nohp'],
@@ -534,7 +770,27 @@ class SantriController extends Controller
             'alamat_jalan' => [15, 'jalan', 'alamat'],
             'alamat_nomor_rumah' => [16, 'norumah', 'no_rumah', 'nomor_rumah', 'norumah'],
             'kode_pos' => [17, 'kodepos', 'kode_pos'],
+            'jenis_kelamin' => [18, 'jeniskelamin', 'jenis_kelamin', 'kelamin', 'jk', 'gender'],
         ];
+    }
+
+    /**
+     * Normalisasi nilai jenis kelamin dari file import.
+     *
+     * Menerima variasi umum — Laki-laki/Laki/Pria/Cowok/Lelaki,
+     * Perempuan/Wanita/Cewek, singkatan L/P — dan mengembalikan
+     * nilai baku kolom. Nilai kosong atau tidak dikenal jadi null
+     * (kolom jenis kelamin opsional, baris tetap diimport).
+     */
+    protected function normalisasiJenisKelamin(string $nilai): ?string
+    {
+        $kunci = strtolower(preg_replace('/[^a-z]/i', '', trim($nilai)));
+
+        return match ($kunci) {
+            'l', 'laki', 'lakilaki', 'pria', 'cowok', 'lelaki' => 'Laki-laki',
+            'p', 'perempuan', 'wanita', 'cewek' => 'Perempuan',
+            default => null,
+        };
     }
 
     /**
@@ -587,11 +843,15 @@ class SantriController extends Controller
         }
 
         // Tidak ada baris judul kolom: pakai urutan baku template.
+        // Jenis Kelamin sengaja di posisi terakhir supaya file
+        // tanpa header (urutan baku lama) tetap terbaca dengan
+        // posisi yang sama seperti sebelumnya.
         $peta = [];
         $urutan = ['nama', 'kamar', 'kelas_pengajian', 'kelas_sekolah', 'jabatan',
             'no_hp_wali', 'no_whatsapp', 'alamat_provinsi', 'alamat_kabupaten',
             'alamat_kecamatan', 'alamat_desa', 'alamat_dusun', 'alamat_rt',
-            'alamat_rw', 'alamat_jalan', 'alamat_nomor_rumah', 'kode_pos'];
+            'alamat_rw', 'alamat_jalan', 'alamat_nomor_rumah', 'kode_pos',
+            'jenis_kelamin'];
 
         foreach ($urutan as $i => $field) {
             $peta[$field] = $i;
@@ -1005,6 +1265,7 @@ class SantriController extends Controller
             $nama = $ambil('nama');
             $kamarNama = $ambil('kamar');
             $jabatan = $ambil('jabatan');
+            $jenisKelamin = $this->normalisasiJenisKelamin($ambil('jenis_kelamin'));
 
             $no_hp_wali = $ambil('no_hp_wali');
             $no_whatsapp = $ambil('no_whatsapp');
@@ -1053,6 +1314,10 @@ class SantriController extends Controller
                     'no_hp_wali' => $no_hp_wali !== '' ? $no_hp_wali : null,
                     'nis' => uniqid('S'),
                 ];
+
+                if ($jenisKelamin !== null && Schema::hasColumn('santris', 'jenis_kelamin')) {
+                    $createData['jenis_kelamin'] = $jenisKelamin;
+                }
 
                 // Kelas ganda disinkronkan lewat Request palsu supaya form dan
                 // import memakai aturan persis yang sama (termasuk master kelas
@@ -1105,6 +1370,11 @@ class SantriController extends Controller
             $query->where('is_pengajar', true);
         } elseif ($filter === 'santri') {
             $query->where('is_pengajar', false);
+        }
+
+        $jenisKelamin = $this->filterJenisKelamin($request);
+        if ($jenisKelamin !== '' && Schema::hasColumn('santris', 'jenis_kelamin')) {
+            $query->where('jenis_kelamin', $jenisKelamin);
         }
 
         $santris = $query->orderBy('nama', 'asc')->get();
@@ -1171,7 +1441,22 @@ class SantriController extends Controller
         ])->deleteFileAfterSend(true);
     }
 
-    /** Query dasar untuk export FDF & Excel (search, kamar, filter pengajar). */
+    /**
+     * Nilai filter jenis kelamin yang sah dari request:
+     * hanya "Laki-laki" atau "Perempuan"; nilai lain dikosongkan.
+     */
+    protected function filterJenisKelamin(Request $request): string
+    {
+        $jenisKelamin = (string) $request->get('filter_jenis_kelamin', '');
+
+        if (!in_array($jenisKelamin, ['Laki-laki', 'Perempuan'], true)) {
+            return '';
+        }
+
+        return $jenisKelamin;
+    }
+
+    /** Query dasar untuk export FDF & Excel (search, kamar, filter pengajar, jenis kelamin). */
     protected function querySantriForExport(Request $request)
     {
         $query = Santri::with('kamar');
@@ -1191,6 +1476,11 @@ class SantriController extends Controller
             $query->where('is_pengajar', true);
         } elseif ($filter === 'santri') {
             $query->where('is_pengajar', false);
+        }
+
+        $jenisKelamin = $this->filterJenisKelamin($request);
+        if ($jenisKelamin !== '' && Schema::hasColumn('santris', 'jenis_kelamin')) {
+            $query->where('jenis_kelamin', $jenisKelamin);
         }
 
         return $query->orderBy('nama', 'asc');
@@ -1398,15 +1688,19 @@ class SantriController extends Controller
         $search = $request->get('search', '');
         $kamarId = $request->get('kamar_id', '');
         $filter = $request->get('filter', '');
+        $jenisKelamin = $this->filterJenisKelamin($request);
 
         $query = Santri::with('kamar');
         if ($search) $query->where('nama', 'like', '%' . $search . '%');
         if ($kamarId) $query->where('kamar_id', $kamarId);
         if ($filter === 'pengajar') $query->where('is_pengajar', true);
         elseif ($filter === 'santri') $query->where('is_pengajar', false);
+        if ($jenisKelamin !== '' && Schema::hasColumn('santris', 'jenis_kelamin')) {
+            $query->where('jenis_kelamin', $jenisKelamin);
+        }
 
         $santris = $query->orderBy('nama', 'asc')->get();
 
-        return view('santri.cetak', compact('santris', 'search', 'kamarId', 'filter'));
+        return view('santri.cetak', compact('santris', 'search', 'kamarId', 'filter', 'jenisKelamin'));
     }
 }

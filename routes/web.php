@@ -128,6 +128,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/kelas/{kelas}', [KelasMasterController::class, 'destroy'])->name('kelas.destroy');
         Route::post('/kelas/naik', [KelasMasterController::class, 'naikKelas'])->name('kelas.naik');
         Route::post('/kelas/naik-pengajian', [KelasMasterController::class, 'naikPengajian'])->name('kelas.naik-pengajian');
+        Route::post('/kelas/turunkan-pengajian', [KelasMasterController::class, 'turunkanPengajian'])->name('kelas.turunkan-pengajian');
         Route::post('/kelas/buka-tahun-ajar', [KelasMasterController::class, 'bukaTahunAjar'])->name('kelas.buka-tahun-ajar');
         Route::patch('/kelas/{kelas}/jenis', [KelasMasterController::class, 'jenis'])->name('kelas.jenis');
         Route::get('/kelas/{kelas}/pratinjau', [KelasMasterController::class, 'pratinjau'])->name('kelas.pratinjau');
@@ -166,4 +167,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profil', [AuthController::class, 'showProfile'])->name('profile.show');
     Route::put('/profil', [AuthController::class, 'updateProfile'])->name('profile.update');
     Route::post('/profil/font-size', [AuthController::class, 'updateFontSize'])->name('profile.font-size');
+    Route::get('/profil/foto', [AuthController::class, 'lihatFoto'])->name('profile.foto');
+    Route::post('/profil/foto', [AuthController::class, 'updateFoto'])->name('profile.foto.update');
+    Route::delete('/profil/foto', [AuthController::class, 'hapusFoto'])->name('profile.foto.hapus');
 });

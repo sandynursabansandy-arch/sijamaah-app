@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Santri extends Model
 {
     protected $fillable = [
-        'nis', 'nama', 'kamar_id', 'kelas', 'kelas_master_id',
+        'nis', 'nama', 'jenis_kelamin', 'kamar_id', 'kelas', 'kelas_master_id',
         'kelas_pengajian', 'kelas_pengajian_id',
         'kelas_sekolah', 'kelas_sekolah_id',
         'jabatan', 'is_pengajar',
@@ -66,6 +66,179 @@ class Santri extends Model
         $nama = trim((string) ($this->kelas_sekolah ?? ''));
 
         return $nama !== '' ? $nama : '-';
+    }
+
+    // Koreksi jenis kelamin dari nama (token => jenis
+    // kelamin), hasil verifikasi user 13 Okt 2026.
+    // Diutamakan atas tebakan otomatis.
+    private const KOREKSI_JENIS_KELAMIN = [
+        'ramdani' => 'Laki-laki',
+        'ramdhani' => 'Laki-laki',
+        'sihabudin' => 'Laki-laki',
+        'sihabuddin' => 'Laki-laki',
+        'rino' => 'Laki-laki',
+        'mubarok' => 'Laki-laki',
+        'wahyu' => 'Laki-laki',
+        'wahyudi' => 'Laki-laki',
+        'rini' => 'Perempuan',
+        'apriliani' => 'Perempuan',
+        'rifa' => 'Perempuan',
+        'muslimah' => 'Perempuan',
+        'rhania' => 'Perempuan',
+        'marta' => 'Perempuan',
+        'sita' => 'Perempuan',
+        'rayagina' => 'Perempuan',
+        'aeni' => 'Perempuan',
+    ];
+
+    // Token nama yang lazim dipakai perempuan / laki-laki
+    // (huruf kecil), dipakai tebakJenisKelamin().
+    private const NAMA_PEREMPUAN = [
+        'adiba', 'adilah', 'afifah', 'aisha', 'aishah', 'aisyah', 'ajeng',
+        'alifa', 'alifah', 'amirah', 'anisa', 'anissa', 'anggraeni', 'anggraaini',
+        'aqila', 'aqilah', 'arifah', 'ayu', 'azizah', 'badiah', 'badriyah',
+        'bahiyah', 'barkah', 'bilqis', 'cahyati', 'cici', 'diah', 'dina',
+        'dini', 'dira', 'dewi', 'elis', 'eni', 'era', 'erni', 'esty', 'eva',
+        'fatimah', 'firda', 'fitri', 'fitria', 'fitriani', 'futri', 'gita',
+        'heni', 'hafidha', 'hartati', 'hidayah', 'idayah', 'ika', 'ikah',
+        'imah', 'indah', 'irma', 'isma', 'jannah', 'juni', 'juita', 'kamilah',
+        'kania', 'kayla', 'khadijah', 'khaulah', 'khoiriyah', 'kumala',
+        'laila', 'lailatul', 'lala', 'laras', 'latifah', 'lestari', 'lia',
+        'lili', 'lisa', 'lita', 'luthfia', 'maesaroh', 'maghfurah', 'malika',
+        'mardiyah', 'maria', 'mariyam', 'marwah', 'masturah', 'masitoh',
+        'maryam', 'maya', 'mega', 'melati', 'melisa', 'mia', 'mila', 'minah',
+        'mirna', 'misnah', 'mubarokah', 'mulia', 'munawaroh', 'musfiroh',
+        'nabila', 'nadia', 'nafisah', 'najwa', 'nanda', 'nani', 'nania',
+        'nawang', 'nazwa', 'neni', 'neny', 'nisa', 'nisfa', 'nila', 'nilam',
+        'nurlaila', 'nuraini', 'nurjanah', 'nurhayati', 'nurhidayah',
+        'nurmala', 'nurrohmah', 'nursyifa', 'nyimas', 'paramitha', 'pratiwi',
+        'puspita', 'puti', 'putri', 'rahayu', 'rahma', 'rahmawati', 'ratih',
+        'ratna', 'restu', 'retno', 'reva', 'ria', 'riani', 'rida', 'rizkia',
+        'risma', 'rismahwati', 'rita', 'rohmah', 'rosidah', 'rosihah',
+        'rubaidah', 'sabrina', 'saadah', 'safitri', 'sakinah', 'salmah',
+        'salsa', 'salsabila', 'salsabilla', 'salwa', 'samidah', 'sari',
+        'sariyah', 'sasmi', 'saudah', 'sela', 'selvi', 'septi', 'shafira',
+        'sholihah', 'solihah', 'siti', 'sodiqah', 'sri', 'sukma', 'suci',
+        'sumarni', 'sumi', 'susanti', 'sutarni', 'tania', 'tanti', 'tasya',
+        'tahani', 'tahira', 'tia', 'tiani', 'tika', 'tutik', 'ucy', 'umy',
+        'unayah', 'urifah', 'utami', 'vani', 'vera', 'veronica', 'via',
+        'vina', 'vivi', 'wafiqah', 'wahyuni', 'wanda', 'wardah', 'wati',
+        'widya', 'wika', 'winda', 'windi', 'wini', 'winingsih', 'wulandari',
+        'yani', 'yanti', 'yasinah', 'yelda', 'yola', 'yulia', 'yuliana',
+        'yulianti', 'yunita', 'yuniarti', 'yunidar', 'yumna', 'zahra',
+        'zahrah', 'zahwa', 'zainab', 'zahira', 'zulfa', 'zulaikha', 'zuliani',
+    ];
+
+    private const NAMA_LAKI = [
+        'abdul', 'abdulaziz', 'abdulhadi', 'abduljalil', 'abduljamil',
+        'abdulkarim', 'abdulmalik', 'abdulrahim', 'abdurrahman',
+        'abdulrahman', 'abdulwahab', 'abdulwahid', 'abdullah', 'abu',
+        'agus', 'ahmad', 'akbar', 'alif', 'anwar', 'andi', 'aqil', 'arif',
+        'arifin', 'aziz', 'azizan', 'badrun', 'bagas', 'bambang', 'bahrul',
+        'bahrun', 'bilal', 'dani', 'dany', 'danu', 'darma', 'dedi', 'dimas',
+        'eko', 'fachri', 'fajar', 'fathan', 'faisal', 'faiz', 'faizal',
+        'fauzan', 'fauzi', 'feri', 'fiqri', 'firdaus', 'galih', 'ghani',
+        'ghufron', 'habib', 'haidar', 'hadi', 'hafidz', 'hafiz', 'hafizh',
+        'hamzah', 'hanafi', 'hanif', 'haris', 'harits', 'hasan', 'hasbi',
+        'haziq', 'hendro', 'hilal', 'hidayat', 'hudan', 'ibrahim', 'idris',
+        'ikbal', 'ilham', 'irfan', 'iqbal', 'jafar', 'jalal', 'jaya',
+        'joko', 'joni', 'jundullah', 'kamil', 'kamal', 'karim', 'kazim',
+        'khalid', 'kholid', 'khoirul', 'khusnul', 'labib', 'latif',
+        'luqman', 'luthfi', 'lukman', 'majid', 'malik', 'maliki', 'mansur',
+        'maulana', 'marwan', 'masrur', 'miftah', 'misbah', 'moh', 'mohamad',
+        'mohammad', 'muh', 'muhamad', 'muhammad', 'muhajir', 'mushlich',
+        'najib', 'nashrullah', 'nasir', 'naufal', 'nazir', 'nizar', 'omar',
+        'oka', 'pasha', 'parhan', 'purnomo', 'qadri', 'qasim', 'qomar',
+        'qurayshi', 'rafif', 'rafli', 'rahman', 'ramadhan', 'razan',
+        'rasyid', 'rayhan', 'ridho', 'ridlwan', 'ridwan', 'rifai', 'rifaldi',
+        'rizal', 'rizki', 'rizky', 'rizwan', 'ruhul', 'rudi', 'sahrul',
+        'saif', 'saifullah', 'salam', 'sami', 'samir', 'salim', 'shadiq',
+        'sharif', 'shiddiq', 'sholeh', 'syafiq', 'syahrul', 'syahril',
+        'syamsul', 'syarif', 'syarifuddin', 'syukri', 'syukur', 'sigit',
+        'slamet', 'sukarno', 'suwarno', 'subagio', 'sudarmo', 'sudiro',
+        'sumarno', 'sutrisno', 'suyoto', 'tahir', 'tamim', 'tarmizi',
+        'taufik', 'tejo', 'tarno', 'tono', 'tsabit', 'tsoriq', 'ujang',
+        'umayr', 'umar', 'urwah', 'usman', 'utsman', 'vicky', 'vino',
+        'wafi', 'wahid', 'wail', 'walid', 'waskito', 'wawan', 'wibowo',
+        'wibisono', 'widi', 'wicaksono', 'wiro', 'yadi', 'yahya', 'yakub',
+        'yamin', 'yazid', 'yoga', 'yulianto', 'yulius', 'yusak', 'yusuf',
+        'yustian', 'zaelani', 'zakaria', 'zaki', 'zakiy', 'zainal', 'zaini',
+        'zainuddin', 'zamroni', 'zamzami', 'zidan', 'zaidan', 'zahid',
+        'zahir', 'zuhri', 'zuhairi', 'zulfaqar', 'zulfikar', 'zulham',
+        'zulqarnain', 'zulkifli', 'zulkarnain', 'putra', 'bin',
+    ];
+
+    /**
+     * Perkiraan jenis kelamin dari nama santri, dipakai
+     * melengkapi kolom cetak bila `jenis_kelamin` masih
+     * kosong. Hanya tebakan dari nama yang lazim dipakai;
+     * nama tanpa petunjuk diasumsikan laki-laki.
+     */
+    public function tebakJenisKelamin(): string
+    {
+        $nama = strtolower((string) ($this->nama ?? ''));
+
+        $kata = preg_split('/[^\p{L}\p{N}]+/u', $nama, -1, PREG_SPLIT_NO_EMPTY);
+
+        // Koreksi manual (hasil verifikasi user) didahulukan.
+        foreach ($kata as $token) {
+            if (isset(self::KOREKSI_JENIS_KELAMIN[$token])) {
+                return self::KOREKSI_JENIS_KELAMIN[$token];
+            }
+        }
+
+        // Tanda pasti: putra/bin (laki-laki), putri/binti (perempuan).
+        if (preg_match('/\b(putri|binti|bint)\b/', $nama)) {
+            return 'Perempuan';
+        }
+        if (preg_match('/\b(putra|bin)\b/', $nama)) {
+            return 'Laki-laki';
+        }
+
+        $skorPerempuan = 0;
+        $skorLaki = 0;
+        foreach ($kata as $token) {
+            if (in_array($token, self::NAMA_PEREMPUAN, true)) {
+                $skorPerempuan++;
+            }
+            if (in_array($token, self::NAMA_LAKI, true)) {
+                $skorLaki++;
+            }
+        }
+
+        return $skorPerempuan > $skorLaki ? 'Perempuan' : 'Laki-laki';
+    }
+
+    /**
+     * Nilai `no_whatsapp` bila berisi nomor telepon. Kolom ini
+     * ada yang terisi nama kabupaten/kota (salah input atau
+     * impor), jadi nilai yang memuat huruf bukan nomor.
+     */
+    public function noWhatsappTelepon(): string
+    {
+        $nilai = trim((string) ($this->no_whatsapp ?? ''));
+
+        if ($nilai === '' || preg_match('/\p{L}/u', $nilai)) {
+            return '';
+        }
+
+        return $nilai;
+    }
+
+    /**
+     * Nama kabupaten/kota untuk cetak: nilai yang tersimpan di
+     * kolom `no_whatsapp` bila berisi nama (bukan nomor), atau
+     * dari bagian alamat kabupaten.
+     */
+    public function kabupatenKotaCetak(): string
+    {
+        $nilai = trim((string) ($this->no_whatsapp ?? ''));
+
+        if ($nilai !== '' && preg_match('/\p{L}/u', $nilai)) {
+            return $nilai;
+        }
+
+        return trim((string) ($this->alamat_kabupaten ?? ''));
     }
 
     /**

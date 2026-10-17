@@ -36,12 +36,9 @@
             </div>
         </div>
 
-        <!-- Success / Error -->
+        <!-- Notifikasi hasil aksi (popup layar penuh) -->
         @if(session('success'))
-            <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg flex items-center gap-2 text-sm alert-animate animate-fade-in">
-                <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
-                {{ session('success') }}
-            </div>
+            <script>glAlert('Berhasil', @json(session('success')), { jenis: 'sukses' });</script>
         @endif
         @if($errors->any())
             <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-2 text-sm alert-animate animate-fade-in">
@@ -127,10 +124,10 @@
                                 <td class="px-4 py-2.5">
                                     @if($user->id !== auth()->id())
                                         <form method="POST" action="{{ route('user.updateRole', $user) }}" class="inline-flex items-center gap-1"
-                                              onsubmit="return confirm('Ubah role {{ $user->name }} menjadi ' + document.getElementById('role-{{ $user->id }}').value + '?')">
+                                              onsubmit='return glConfirmForm(this, "Ubah Role", "Ubah role " + @json($user->name) + " menjadi " + document.getElementById("role-{{ $user->id }}").value + "?", { ya: "Ya, Ubah" })'>
                                             @csrf
                                             @method('PUT')
-                                            <select name="role" id="role-{{ $user->id }}" onchange="this.closest('form').submit()"
+                                            <select name="role" id="role-{{ $user->id }}" onchange="var f=this.closest('form'); if (f && f.requestSubmit) f.requestSubmit(); else if (f) f.submit()"
                                                 class="border border-slate-200 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide focus:outline-none cursor-pointer
                                                     {{ $user->role === 'admin' ? 'bg-red-50 text-red-600' : ($user->role === 'musyrif' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600') }}">
                                                 <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin</option>
@@ -160,7 +157,7 @@
                                         <!-- Hapus -->
                                         @if($user->id !== auth()->id())
                                             <form method="POST" action="{{ route('user.destroy', $user) }}" class="inline"
-                                                  onsubmit="return confirm('Hapus user {{ $user->name }}? Tindakan ini tidak bisa dibatalkan.')">
+                                                  onsubmit='return glConfirmForm(this, "Hapus User", @json("Hapus user " . $user->name . "? Tindakan ini tidak bisa dibatalkan."), { ya: "Ya, Hapus", warna: "merah", ikon: "merah" })'>
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" title="Hapus user"

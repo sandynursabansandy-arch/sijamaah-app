@@ -31,7 +31,7 @@ class PesanController extends Controller
         AdminPesan::ensureTable();
 
         $santris = Santri::where('status', 'Aktif')->orderBy('nama')->get();
-        $kamars = Kamar::all();
+        $kamars = Kamar::urutRayon(Kamar::all());
 
         $list = [];
 

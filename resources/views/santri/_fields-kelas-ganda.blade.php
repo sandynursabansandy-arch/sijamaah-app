@@ -39,7 +39,7 @@
 </div>
 
 <div class="input-group">
-    <label class="block text-[13px] font-semibold text-slate-700 mb-1">Kelas Sekolah</label>
+    <label class="block text-[13px] font-semibold text-slate-700 mb-1">Jenjang Pendidikan</label>
     <input type="text" name="kelas_sekolah" list="daftar-kelas-sekolah" value="{{ $namaSekolah }}"
         placeholder="Contoh: 7 SMP, Ibtida 3" maxlength="100"
         class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px]">
@@ -57,11 +57,14 @@
 </div>
 
 <style>
-    /* Dua utility di bawah dipakai blade ini tapi belum ada di build CSS, dan
-       build CSS produksi tidak bisa di-refresh (file statisanya dilayani cache
-       openresty). Ditulis inline supaya tampilannya sama persis di lokal dan
-       di hosting. Lihat AGENTS.md bagian "Batasan File Build di Hosting". */
-    .md\:col-span-2 { grid-column: span 2 / span 2; }
+    /* Utility di bawah dipakai blade ini tapi belum ada di build CSS, dan
+       build CSS produksi tidak bisa di-refresh (file statisanya dilayani
+       cache openresty). Ditulis inline supaya tampilannya sama persis di lokal
+       dan di hosting. Lihat AGENTS.md bagian "Batasan File Build di Hosting".
+
+       PENTING: col-span-2 hanya boleh berlaku >=768px. Bila didefinisikan
+       tanpa media query, paragraf info akan span 2 kolom bahkan di grid
+       1-kolom (mobile) dan meluap keluar form. */
     @media (min-width: 768px) { .md\:col-span-2 { grid-column: span 2 / span 2; } }
     .-mt-1 { margin-top: -0.25rem; }
 </style>

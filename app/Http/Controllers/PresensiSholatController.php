@@ -210,7 +210,7 @@ class PresensiSholatController extends Controller
         $perOrangWaktu = $request->get('per_orang_waktu', 'all');
         $perOrangKeterangan = $request->get('per_orang_keterangan', 'all');
 
-        $daftarKamar = Kamar::all();
+        $daftarKamar = Kamar::urutRayon(Kamar::all());
 
         $santriQuery = Santri::query()
             ->where('is_pengajar', true);
@@ -272,7 +272,7 @@ class PresensiSholatController extends Controller
         if (auth()->check() && !auth()->user()->isAdmin()) {
             $perOrangFilterNama = auth()->user()->name;
         }
-        $perOrangData = $this->buildPerOrangData($kamarId, $perOrangPeriode, $perOrangStart, $perOrangEnd, $perOrangWaktu, $perOrangFilterNama, $perOrangKeterangan);
+        $perOrangData = $this->buildPerOrangData($kamarId, $perOrangPeriode, $perOrangStart, $perOrangEnd, $perOrangWaktu, $perOrangFilterNama, $perOrangKeterangan, $latestTanggal);
 
         $topRating = $santris->sortByDesc('rating')->values();
 
@@ -463,22 +463,29 @@ class PresensiSholatController extends Controller
         $dayIndex = (int) now()->dayOfWeek;
 
         if ($santri) {
-            $weekPresensi = PresensiSholat::where('santri_id', $santri->id)
+            // Angka mingguan dari SATU query agregat
+            // (sebelumnya semua baris minggu ini di-hydrate).
+            $weekStats = PresensiSholat::where('santri_id', $santri->id)
                 ->whereBetween('tanggal', [$startWeek->format('Y-m-d'), $endWeek->format('Y-m-d')])
-                ->get();
+                ->selectRaw('status, COUNT(*) as c')
+                ->groupBy('status')
+                ->pluck('c', 'status');
 
-            $monthPresensi = PresensiSholat::where('santri_id', $santri->id)
-                ->whereBetween('tanggal', [$startMonth->format('Y-m-d'), $endMonth->format('Y-m-d')])
-                ->get();
-
-            $totalWeek = $weekPresensi->count();
-            $hadirWeek = $weekPresensi->where('status', 'Jamaah')->count();
-            $alfaWeek = $weekPresensi->where('status', 'Alfa')->count();
+            $totalWeek = (int) $weekStats->sum();
+            $hadirWeek = (int) ($weekStats['Jamaah'] ?? 0);
+            $alfaWeek = (int) ($weekStats['Alfa'] ?? 0);
             $pctWeek = $totalWeek > 0 ? round(($hadirWeek / $totalWeek) * 100, 1) : 0;
 
+            // Status per tanggal untuk streak alfa. Hanya 2 kolom
+            // yang diambil (sebelumnya seluruh kolom baris).
+            $monthPresensi = PresensiSholat::where('santri_id', $santri->id)
+                ->whereBetween('tanggal', [$startMonth->format('Y-m-d'), $endMonth->format('Y-m-d')])
+                ->get(['tanggal', 'status']);
+
+            $monthStats = $monthPresensi->countBy('status');
             $totalMonth = $monthPresensi->count();
-            $alfaMonth = $monthPresensi->where('status', 'Alfa')->count();
-            $pctMonth = $totalMonth > 0 ? round(($monthPresensi->where('status', 'Jamaah')->count() / $totalMonth) * 100, 1) : 0;
+            $alfaMonth = (int) ($monthStats['Alfa'] ?? 0);
+            $pctMonth = $totalMonth > 0 ? round(((int) ($monthStats['Jamaah'] ?? 0) / $totalMonth) * 100, 1) : 0;
 
             $alfaStreak = 0;
             $today = $now->copy();
@@ -1045,15 +1052,26 @@ class PresensiSholatController extends Controller
     protected function buildStatusBreakdown(string $tanggal, string $waktu, ?int $santriId = null): array
     {
         $statuses = ['Jamaah', 'Masbuq', 'Izin', 'Alfa'];
-        $breakdown = [];
 
+        // SATU query untuk semua status (sebelumnya 4 query terpisah + 8 query
+        // eager-load santri/kamar per status). Eager-load dijalankan sekali untuk
+        // seluruh baris, lalu difilter per status di PHP.
+        $rows = PresensiSholat::where('tanggal', $tanggal)
+            ->where('waktu_sholat', $waktu)
+            ->whereIn('status', $statuses)
+            ->when($santriId, fn ($q) => $q->where('santri_id', $santriId))
+            ->with(['santri:id,nama,nis,kamar_id,jabatan', 'santri.kamar:id,nama_kamar'])
+            ->get();
+
+        $breakdown = [];
         foreach ($statuses as $status) {
-            $santris = PresensiSholat::where('tanggal', $tanggal)
-                ->where('waktu_sholat', $waktu)
+            // ->values() wajib: ->where() mempertahankan key asli (0,1,4,5,...)
+            // sehingga json_encode menghasilkan OBJEK, bukan ARRAY.
+            // JS (copyStatusChartToClipboard, showStatusDetail, updateStatusCounts)
+            // memakai santris.length / santris.forEach / santris.map yang hanya
+            // ada di array.
+            $breakdown[$status === 'Jamaah' ? 'Hadir' : $status] = $rows
                 ->where('status', $status)
-                ->when($santriId, fn ($q) => $q->where('santri_id', $santriId))
-                ->with(['santri:id,nama,nis,kamar_id,jabatan', 'santri.kamar:id,nama_kamar'])
-                ->get()
                 ->map(function ($presensi) {
                     return [
                         'nama' => $presensi->santri?->nama ?? 'Unknown',
@@ -1061,17 +1079,18 @@ class PresensiSholatController extends Controller
                         'kamar' => $presensi->santri?->kamar?->nama_kamar ?? '-',
                         'jabatan' => $presensi->santri?->jabatan ?? '-',
                     ];
-                });
-
-            $breakdown[$status === 'Jamaah' ? 'Hadir' : $status] = $santris;
+                })
+                ->values();
         }
 
         return $breakdown;
     }
 
-    protected function buildPerOrangData(?string $kamarId, string $periode = 'minggu', ?string $startDate = null, ?string $endDate = null, ?string $waktuSholat = null, ?string $filterNama = null, ?string $filterKeterangan = null): array
+    protected function buildPerOrangData(?string $kamarId, string $periode = 'minggu', ?string $startDate = null, ?string $endDate = null, ?string $waktuSholat = null, ?string $filterNama = null, ?string $filterKeterangan = null, ?string $latestDate = null): array
     {
-        $latestDate = PresensiSholat::max('tanggal') ?? date('Y-m-d');
+        // Tanggal terakhir sudah dihitung di index(); bila tidak dikirim
+        // (pemanggil lain), hitung sendiri agar tidak ada query ganda.
+        $latestDate = $latestDate ?? (PresensiSholat::max('tanggal') ?? date('Y-m-d'));
         $ref = Carbon::parse($latestDate);
         switch ($periode) {
             case 'bulan':
@@ -1204,7 +1223,7 @@ class PresensiSholatController extends Controller
         $kamarId = $request->get('kamar_id', 'all');
         $periodRating = $request->get('period', 7);
 
-        $daftarKamar = Kamar::all();
+        $daftarKamar = Kamar::urutRayon(Kamar::all());
 
         $santriQuery = Santri::query()
             ->where('is_pengajar', true);
@@ -1275,7 +1294,7 @@ class PresensiSholatController extends Controller
                 break;
         }
 
-        $daftarKamar = Kamar::all();
+        $daftarKamar = Kamar::urutRayon(Kamar::all());
 
         $allDates = [];
         $temp = $tanggalMulai->copy();
@@ -1445,7 +1464,7 @@ class PresensiSholatController extends Controller
         $kamarId = $request->get('kamar_id', 'all');
         $start_date = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $end_date = $request->get('end_date', Carbon::now()->format('Y-m-d'));
-        $daftarKamar = Kamar::all();
+        $daftarKamar = Kamar::urutRayon(Kamar::all());
 
         $santriQuery = Santri::query()
             ->where('is_pengajar', true);
@@ -1458,25 +1477,36 @@ class PresensiSholatController extends Controller
             $santriQuery->where('status', 'Aktif');
         }
 
-        $santris = $santriQuery->with(['presensis' => function ($query) use ($start_date, $end_date) {
-            $query->whereIn('status', ['Alfa', 'Masbuq', 'Izin'])
-                  ->whereBetween('tanggal', [$start_date, $end_date]);
-        }])->get();
+        $santris = $santriQuery->with(['kamar:id,nama_kamar'])->get();
 
         // Bobot poin pelanggaran
         $bobot = ['Alfa' => 5, 'Masbuq' => 2, 'Izin' => 1];
 
-        $rankingData = $santris->map(function ($santri) use ($bobot) {
-            $alfaCount = 0; $masbuqCount = 0; $izinCount = 0; $poin = 0;
-            foreach ($santri->presensis as $p) {
-                match ($p->status) {
-                    'Alfa'   => $alfaCount++,
-                    'Masbuq' => $masbuqCount++,
-                    'Izin'   => $izinCount++,
-                    default  => null,
-                };
-                $poin += $bobot[$p->status] ?? 0;
-            }
+        // Angka pelanggaran dari SATU query agregat. Sebelumnya SELURUH baris
+        // presensi (Alfa/Masbuq/Izin) di-hydrate jadi model Eloquent per santri
+        // lalu dihitung di PHP — N+1 dan memori besar untuk rentang panjang.
+        $agg = [];
+        if ($santris->isNotEmpty()) {
+            DB::table('presensi_sholats')
+                ->select('santri_id', 'status', DB::raw('COUNT(*) as c'))
+                ->whereIn('santri_id', $santris->pluck('id')->all())
+                ->whereIn('status', ['Alfa', 'Masbuq', 'Izin'])
+                ->whereBetween('tanggal', [$start_date, $end_date])
+                ->groupBy('santri_id', 'status')
+                ->get()
+                ->each(function ($row) use (&$agg) {
+                    $agg[(int) $row->santri_id][(string) $row->status] = (int) $row->c;
+                });
+        }
+
+        $rankingData = $santris->map(function ($santri) use ($bobot, $agg) {
+            $rows = $agg[$santri->id] ?? [];
+            $alfaCount = $rows['Alfa'] ?? 0;
+            $masbuqCount = $rows['Masbuq'] ?? 0;
+            $izinCount = $rows['Izin'] ?? 0;
+            $poin = $alfaCount * $bobot['Alfa']
+                + $masbuqCount * $bobot['Masbuq']
+                + $izinCount * $bobot['Izin'];
 
             return [
                 'id' => $santri->id,
@@ -1501,7 +1531,7 @@ class PresensiSholatController extends Controller
         $kamarId = $request->get('kamar_id', 'all');
         $start_date = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $end_date = $request->get('end_date', Carbon::now()->format('Y-m-d'));
-        $daftarKamar = Kamar::all();
+        $daftarKamar = Kamar::urutRayon(Kamar::all());
 
         $allWaktu = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'];
 
@@ -1516,40 +1546,36 @@ class PresensiSholatController extends Controller
             $santriQuery->where('status', 'Aktif');
         }
 
-        $santris = $santriQuery->with(['presensis' => function ($query) use ($start_date, $end_date) {
-            $query->whereBetween('tanggal', [$start_date, $end_date]);
-        }])->get();
+        $santris = $santriQuery->with(['kamar:id,nama_kamar'])->get();
 
-        $rankingData = $santris->map(function ($santri) use ($allWaktu, $start_date, $end_date) {
-            $presensiByDate = $santri->presensis->keyBy(fn($p) => $p->tanggal->format('Y-m-d') . '|' . $p->waktu_sholat);
+        // Angka kehadiran dari SATU query agregat. Sebelumnya SELURUH
+        // baris presensi di-hydrate jadi model per santri, lalu di-loop
+        // hari-per-hari x 5 waktu di PHP. Dengan unique key
+        // (santri_id, tanggal, waktu_sholat), COUNT per status = hasil loop.
+        $agg = [];
+        if ($santris->isNotEmpty()) {
+            DB::table('presensi_sholats')
+                ->select('santri_id', 'status', DB::raw('COUNT(*) as c'))
+                ->whereIn('santri_id', $santris->pluck('id')->all())
+                ->whereIn('waktu_sholat', $allWaktu)
+                ->whereBetween('tanggal', [$start_date, $end_date])
+                ->groupBy('santri_id', 'status')
+                ->get()
+                ->each(function ($row) use (&$agg) {
+                    $agg[(int) $row->santri_id][(string) $row->status] = (int) $row->c;
+                });
+        }
 
-            $totalJadwal = 0;
-            $hadirCount = 0;
-            $masbuqCount = 0;
-            $izinCount = 0;
-            $alfaCount = 0;
+        $rankingData = $santris->map(function ($santri) use ($allWaktu, $start_date, $end_date, $agg) {
+            $rows = $agg[$santri->id] ?? [];
+            $hadirCount = $rows['Jamaah'] ?? 0;
+            $masbuqCount = $rows['Masbuq'] ?? 0;
+            $izinCount = $rows['Izin'] ?? 0;
+            $alfaCount = $rows['Alfa'] ?? 0;
 
             $start = Carbon::parse($start_date);
             $end = Carbon::parse($end_date);
-            $temp = $start->copy();
-
-            while ($temp->lte($end)) {
-                foreach ($allWaktu as $waktu) {
-                    $totalJadwal++;
-                    $key = $temp->format('Y-m-d') . '|' . $waktu;
-                    $presensi = $presensiByDate->get($key);
-                    if ($presensi) {
-                        match ($presensi->status) {
-                            'Jamaah' => $hadirCount++,
-                            'Masbuq' => $masbuqCount++,
-                            'Izin'   => $izinCount++,
-                            'Alfa'   => $alfaCount++,
-                            default  => null,
-                        };
-                    }
-                }
-                $temp->addDay();
-            }
+            $totalJadwal = max(0, $start->diffInDays($end) + 1) * count($allWaktu);
 
             $totalIsi = $hadirCount + $masbuqCount + $izinCount + $alfaCount;
             $persentase = $totalJadwal > 0 ? round(($hadirCount / $totalJadwal) * 100) : 0;
@@ -1583,7 +1609,7 @@ class PresensiSholatController extends Controller
         [$rekapData, $allDates, $showWaktu, $tanggalMulai, $tanggalSelesai] =
             $this->buildRekapBulanan($bulan, $kamarId, $waktuFilter);
 
-        $daftarKamar = Kamar::all();
+        $daftarKamar = Kamar::urutRayon(Kamar::whereHas('santris')->get());
 
         $weeks = [
             ['label' => 'Minggu 1', 'range' => '1-' . min(7, $tanggalSelesai->day) . ' ' . $tanggalMulai->shortMonthName, 'start' => 1, 'end' => 7],
@@ -1794,25 +1820,38 @@ class PresensiSholatController extends Controller
         }
 
         $santris = $santriQuery
-            ->with(['presensis' => function ($q) use ($tanggalMulai, $tanggalSelesai) {
-                $q->where('tanggal', '>=', $tanggalMulai->format('Y-m-d'))
-                  ->where('tanggal', '<=', $tanggalSelesai->format('Y-m-d'));
-            }])
+            ->with(['kamar:id,nama_kamar'])
             ->orderBy('nama', 'asc')
             ->get();
 
-        $rekapData = $santris->map(function ($santri) use ($allDates, $showWaktu) {
-            $presensiKeyed = $santri->presensis->keyBy(
-                fn($p) => $p->tanggal->format('Y-m-d') . '|' . $p->waktu_sholat
-            );
+        // Status presensi dari SATU query baris mentah (DB::table),
+        // tanpa menghydrate tiap baris jadi model Eloquent. Untuk
+        // 300 santri x 30 hari x 5 waktu, hydrate model sebelumnya
+        // memakan memori besar dan waktu — pemicu "502 Bad Gateway".
+        $presensiBySantri = [];
+        if ($santris->isNotEmpty()) {
+            DB::table('presensi_sholats')
+                ->select('santri_id', 'tanggal', 'waktu_sholat', 'status')
+                ->whereIn('santri_id', $santris->pluck('id')->all())
+                ->where('tanggal', '>=', $tanggalMulai->format('Y-m-d'))
+                ->where('tanggal', '<=', $tanggalSelesai->format('Y-m-d'))
+                ->whereIn('waktu_sholat', $showWaktu)
+                ->get()
+                ->each(function ($row) use (&$presensiBySantri) {
+                    $presensiBySantri[(int) $row->santri_id]
+                        [$row->tanggal . '|' . $row->waktu_sholat] = $row->status;
+                });
+        }
+
+        $rekapData = $santris->map(function ($santri) use ($allDates, $showWaktu, $presensiBySantri) {
+            $keyed = $presensiBySantri[$santri->id] ?? [];
 
             $hariDetail = [];
             foreach ($allDates as $date) {
                 $dateStr = $date->format('Y-m-d');
                 $statuses = [];
                 foreach ($showWaktu as $waktu) {
-                    $presensi = $presensiKeyed->get($dateStr . '|' . $waktu);
-                    $statuses[$waktu] = $presensi ? $presensi->status : '-';
+                    $statuses[$waktu] = $keyed[$dateStr . '|' . $waktu] ?? '-';
                 }
                 $hariDetail[] = [
                     'date' => $dateStr,

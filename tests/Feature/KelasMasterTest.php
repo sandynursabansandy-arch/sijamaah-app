@@ -485,8 +485,11 @@ class KelasMasterTest extends TestCase
 
         $response->assertOk();
         $this->assertSame(3, $response->viewData('santris')->total());
-        // Dropdown tetap menampilkan semua kelas di tahun ajar aktif supaya bisa diganti.
-        $this->assertCount(5, $response->viewData('daftarKelas'));
+        // Dropdown hanya menampilkan kelas yang masih ada santrinya:
+        // 10 SMA tidak punya santri, jadi tidak muncul di pilihan.
+        $namaKelas = $response->viewData('daftarKelas')->pluck('nama')->all();
+        $this->assertContains('8 SMP', $namaKelas);
+        $this->assertNotContains('10 SMA', $namaKelas);
         $this->assertSame($this->tahun, $response->viewData('tahunAjar'));
         $this->assertSame($master->id, (int) $response->viewData('kelasId'));
     }
@@ -496,7 +499,37 @@ class KelasMasterTest extends TestCase
         $response = $this->actingAs($this->admin())->get('/santri');
 
         $response->assertOk();
-        $this->assertCount(5, $response->viewData('daftarKelas'));
+        // 4 dari 5 kelas ada santrinya; 10 SMA kosong dan
+        // disembunyikan dari dropdown filter.
+        $namaKelas = $response->viewData('daftarKelas')->pluck('nama')->all();
+        $this->assertCount(4, $namaKelas);
+        $this->assertNotContains('10 SMA', $namaKelas);
+    }
+
+    public function test_dropdown_filter_menyembunyikan_kelas_yang_tidak_ada_santrinya(): void
+    {
+        // Kelas baru yang belum pernah diisi santri tidak boleh
+        // muncul di dropdown filter halaman santri.
+        $this->kelas('11 SMA');
+
+        $response = $this->actingAs($this->admin())->get('/santri');
+
+        $namaKelas = $response->viewData('daftarKelas')->pluck('nama')->all();
+        $this->assertNotContains('11 SMA', $namaKelas);
+        $this->assertContains('8 SMP', $namaKelas);
+    }
+
+    public function test_dropdown_filter_tetap_menampilkan_kelas_terpilih_walau_kosong(): void
+    {
+        // Kelas yang sedang difilter tetap tampil walau sudah tidak
+        // ada santrinya, supaya filter yang aktif tidak hilang.
+        $kosong = $this->kelas('10 SMA');
+
+        $response = $this->actingAs($this->admin())
+            ->get('/santri?tahun_ajar=' . $this->tahun . '&kelas_sekolah_id=' . $kosong->id);
+
+        $namaKelas = $response->viewData('daftarKelas')->pluck('nama')->all();
+        $this->assertContains('10 SMA', $namaKelas);
     }
 
     public function test_simpan_santri_otomatis_mendaftarkan_kelas_baru(): void

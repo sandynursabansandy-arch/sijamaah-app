@@ -68,6 +68,7 @@
 
         .input-group {
             animation: slideUp 0.5s ease-out both;
+            min-width: 0;
         }
 
         .input-group:nth-child(1) { animation-delay: 0s; }
@@ -139,7 +140,7 @@
         <div class="mb-5 animate-slide-in">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <a href="{{ route('santri.index') }}" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 mb-3 text-xs font-medium transition-smooth">
+                    <a href="{{ route('santri.index', $filterKembali) }}" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 mb-3 text-xs font-medium transition-smooth">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                         </svg>
@@ -241,6 +242,12 @@
                 @method('PUT')
             @endif
 
+            {{-- Bawa parameter filter daftar santri, supaya setelah
+                 disimpan dan kembali ke daftar, filter tidak reset. --}}
+            @foreach($filterKembali as $kunci => $nilai)
+                <input type="hidden" name="{{ $kunci }}" value="{{ $nilai }}">
+            @endforeach
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Nama -->
                 <div class="input-group">
@@ -253,6 +260,22 @@
                     @enderror
                 </div>
 
+                @if($kolomJenisKelamin)
+                    <!-- Jenis Kelamin -->
+                    <div class="input-group">
+                        <label class="block text-[13px] font-semibold text-slate-700 mb-1">Jenis Kelamin</label>
+                        <select name="jenis_kelamin"
+                            class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-smooth text-[13px] bg-white">
+                            <option value="">- Pilih -</option>
+                            <option value="Laki-laki" {{ old('jenis_kelamin', $santri->jenis_kelamin ?? '') === 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+                            <option value="Perempuan" {{ old('jenis_kelamin', $santri->jenis_kelamin ?? '') === 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
+                        </select>
+                        @error('jenis_kelamin')
+                            <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span>
+                        @enderror
+                    </div>
+                @endif
+
                 <!-- Kamar/Asrama -->
                 <div class="input-group">
                     <label class="block text-[13px] font-semibold text-slate-700 mb-1">Kamar/Asrama</label>
@@ -264,7 +287,7 @@
                     @enderror
                 </div>
 
-                {{-- Kelas Pengajian + Kelas Sekolah (dua jalur terpisah). --}}
+                {{-- Kelas Pengajian + Jenjang Pendidikan (dua jalur terpisah). --}}
                 @include('santri._fields-kelas-ganda')
 
                 <!-- Jabatan -->
@@ -280,7 +303,7 @@
 
                 <!-- Is Pengajar -->
                 <div class="input-group">
-                    <label class="flex items-center gap-2 text-[13px] font-semibold text-slate-700 mb-1 cursor-pointer">
+                    <label class="flex flex-wrap items-center gap-2 text-[13px] font-semibold text-slate-700 mb-1 cursor-pointer">
                         <input type="checkbox" name="is_pengajar" value="1" {{ old('is_pengajar') ? 'checked' : '' }} class="rounded border-slate-300 text-teal-600 focus:ring-teal-500">
                         <span>Ikut presensi (pengajar/mudir/mustahik/munawwib)</span>
                     </label>
@@ -487,7 +510,7 @@
                     </svg>
                     {{ isset($santri) ? 'Perbarui Santri' : 'Simpan Santri' }}
                 </button>
-                <a href="{{ route('santri.index') }}" class="flex-1 bg-slate-200 text-slate-700 px-5 py-2.5 rounded-lg font-semibold text-sm hover-lift shadow-sm transform transition-smooth flex items-center justify-center gap-2">
+                <a href="{{ route('santri.index', $filterKembali) }}" class="flex-1 bg-slate-200 text-slate-700 px-5 py-2.5 rounded-lg font-semibold text-sm hover-lift shadow-sm transform transition-smooth flex items-center justify-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>

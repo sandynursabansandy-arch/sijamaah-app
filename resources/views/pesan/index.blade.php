@@ -40,10 +40,10 @@
         </div>
 
         @if(session('success'))
-            <div class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg px-4 py-2.5 text-sm alert-animate animate-fade-in">{{ session('success') }}</div>
+            <script>glAlert('Berhasil', @json(session('success')), { jenis: 'sukses' });</script>
         @endif
         @if(session('error'))
-            <div class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2.5 text-sm alert-animate animate-fade-in">{{ session('error') }}</div>
+            <script>glAlert('Gagal', @json(session('error')), { jenis: 'error' });</script>
         @endif
 
         <!-- Kirim Pesan -->
@@ -123,7 +123,7 @@
                                 </details>
                             @endif
                         </div>
-                        <form method="POST" action="{{ route('pesan.destroy', $m['batch_id']) }}" onsubmit="return confirm('Hapus pesan ini untuk semua penerima?')" class="shrink-0">
+                        <form method="POST" action="{{ route('pesan.destroy', $m['batch_id']) }}" onsubmit="return glConfirmForm(this, 'Hapus Pesan', 'Hapus pesan ini untuk semua penerima?', { ya: 'Ya, Hapus', warna: 'merah', ikon: 'merah' })" class="shrink-0">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-semibold text-[11px] shadow transition-smooth">Hapus</button>

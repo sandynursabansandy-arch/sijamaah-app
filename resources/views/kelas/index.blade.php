@@ -446,6 +446,8 @@
                                                     class="aksi bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Simpan</button>
                                             <button type="button" class="aksi bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition"
                                                     onclick="isiNaikPengajian('{{ $k->id }}')">Naik</button>
+                                            <button type="button" class="aksi bg-amber-50 text-amber-700 hover:bg-amber-100 transition"
+                                                    onclick="isiTurunkanPengajian('{{ $k->id }}')">Turunkan</button>
                                             <button type="submit" form="formHapus{{ $k->id }}"
                                                     class="aksi bg-red-50 text-red-600 hover:bg-red-100 transition">Hapus</button>
                                         </div>
@@ -536,8 +538,16 @@
         <!-- ========== PANEL: KENAIKAN KELAS PENGAJIAN (per orang) ========== -->
         <div id="panelPengajian" class="bg-white rounded-xl shadow-sm border border-emerald-200 overflow-hidden animate-slide-up mt-4" style="animation-delay:0.25s">
             <div class="px-4 py-3 border-b border-emerald-100 bg-emerald-50">
-                <h2 class="text-[12px] font-bold uppercase tracking-wide text-emerald-700">Kenaikan Kelas Pengajian</h2>
-                <p class="text-[11px] text-emerald-800 mt-1 leading-relaxed">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h2 id="judulPanelPengajian" class="text-[12px] font-bold uppercase tracking-wide text-emerald-700">Kenaikan Kelas Pengajian</h2>
+                    <div class="flex items-center gap-1" role="group" aria-label="Mode perpindahan">
+                        <button type="button" id="modeNaikBtn" onclick="aturModePengajian('naik')"
+                                class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-600 text-white shadow-sm">Naik</button>
+                        <button type="button" id="modeTurunBtn" onclick="aturModePengajian('turun')"
+                                class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50 transition">Turunkan</button>
+                    </div>
+                </div>
+                <p id="deskPanelPengajian" class="text-[11px] text-emerald-800 mt-1 leading-relaxed">
                     Naik <strong>per orang</strong>, bukan per kelas. Centang yang sudah layak naik; yang tidak
                     dicentang <strong>tetap</strong> di kelasnya. Kelas sekolah mereka tidak ikut berubah.
                 </p>
@@ -552,13 +562,13 @@
                     </p>
                 </div>
             @else
-                <form method="POST" action="{{ route('kelas.naik-pengajian') }}" class="px-4 py-4 space-y-3">
+                <form id="formPengajian" method="POST" action="{{ route('kelas.naik-pengajian') }}" class="px-4 py-4 space-y-3">
                     @csrf
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="label-kelas" for="naikDariPengajian">Kelas Asal</label>
-                            <select id="naikDariPengajian" class="input-kelas" onchange="muatAnggotaPengajian()">
+                            <select id="naikDariPengajian" name="dari_kelas_id" class="input-kelas" onchange="muatAnggotaPengajian()">
                                 @foreach($kelasPengajian as $k)
                                     <option value="{{ $k->id }}">{{ $k->nama }} ({{ (int) $k->santris_pengajian_count }} orang)</option>
                                 @endforeach
@@ -566,7 +576,7 @@
                         </div>
                         <div>
                             <label class="label-kelas" for="naikKePengajian">Kelas Tujuan</label>
-                            <select id="naikKePengajian" class="input-kelas" required>
+                            <select id="naikKePengajian" name="ke_kelas_id" class="input-kelas" required>
                                 <option value="">- pilih kelas tujuan -</option>
                                 @foreach($kelasPengajian as $k)
                                     <option value="{{ $k->id }}" data-nama="{{ $k->nama }}" data-sisa="{{ $k->sisaKursi() }}">
@@ -594,7 +604,7 @@
                     </div>
 
                     <div class="flex flex-wrap items-center justify-between gap-2">
-                        <p class="text-[11px] text-slate-500 leading-relaxed" style="max-width:34rem;">
+                        <p id="catatanPengajian" class="text-[11px] text-slate-500 leading-relaxed" style="max-width:34rem;">
                             Kalau kelas tujuan sudah lewat target, peningkatannya tetap jalan &mdash; itu tandanya
                             masih ada yang belum layak naik, dan pesannya akan mengatakannya.
                         </p>
@@ -986,10 +996,57 @@
             };
 
             window.isiNaikPengajian = function (kelasId) {
+                aturModePengajian('naik');
                 var panel = document.getElementById('panelPengajian');
                 panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 selectDari.value = kelasId;
                 window.muatAnggotaPengajian();
+            };
+
+            // Batalkan kenaikan: pindahkan anggota kelas ini kembali
+            // ke kelas pengajian lain (biasanya yang lebih rendah).
+            window.isiTurunkanPengajian = function (kelasId) {
+                aturModePengajian('turun');
+                var panel = document.getElementById('panelPengajian');
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                selectDari.value = kelasId;
+                window.muatAnggotaPengajian();
+            };
+
+            var FORM_PENGAJIAN_NAIK = @json(route('kelas.naik-pengajian'));
+            var FORM_PENGAJIAN_TURUN = @json(route('kelas.turunkan-pengajian'));
+
+            // Ganti panel antara mode "naik" dan "turunkan" (batalkan
+            // kenaikan). Judul, keterangan, tombol, dan action form
+            // semuanya mengikuti mode supaya admin tidak salah arah.
+            window.aturModePengajian = function (mode) {
+                var turun = mode === 'turun';
+                var form = document.getElementById('formPengajian');
+                var judul = document.getElementById('judulPanelPengajian');
+                var desk = document.getElementById('deskPanelPengajian');
+                var catatan = document.getElementById('catatanPengajian');
+                var tombol = document.getElementById('tombolNaikPengajian');
+                var btnNaik = document.getElementById('modeNaikBtn');
+                var btnTurun = document.getElementById('modeTurunBtn');
+
+                if (form) { form.action = turun ? FORM_PENGAJIAN_TURUN : FORM_PENGAJIAN_NAIK; }
+                if (judul) { judul.textContent = turun ? 'Penurunan Kelas Pengajian' : 'Kenaikan Kelas Pengajian'; }
+                if (desk) {
+                    desk.innerHTML = turun
+                        ? 'Batalkan kenaikan yang <strong>salah input</strong>. Centang orang yang ingin dikembalikan ke kelas pengajian lain; kelas sekolah mereka tidak ikut berubah.'
+                        : 'Naik <strong>per orang</strong>, bukan per kelas. Centang yang sudah layak naik; yang tidak dicentang <strong>tetap</strong> di kelasnya. Kelas sekolah mereka tidak ikut berubah.';
+                }
+                if (catatan) {
+                    catatan.textContent = turun
+                        ? 'Pastikan kelas tujuan benar: orang yang dicentang akan dipindah keluar dari kelas asal.'
+                        : 'Kalau kelas tujuan sudah lewat target, peningkatannya tetap jalan — itu tandanya masih ada yang belum layak naik, dan pesannya akan mengatakannya.';
+                }
+                if (tombol) { tombol.textContent = turun ? 'Turunkan yang dipilih' : 'Naikkan yang dipilih'; }
+
+                var aktif = 'px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-600 text-white shadow-sm';
+                var nonaktif = 'px-2.5 py-1 rounded-md text-[11px] font-bold bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50 transition';
+                if (btnNaik) { btnNaik.className = turun ? nonaktif : aktif; }
+                if (btnTurun) { btnTurun.className = turun ? aktif : nonaktif; }
             };
 
             if (selectDari) {

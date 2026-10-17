@@ -68,7 +68,7 @@ class SkenarioDuaKelasTest extends TestCase
         $this->assertStringContainsString('name="kelas_sekolah"', $html, 'Kolom Kelas Sekolah harus ada.');
         $this->assertStringNotContainsString('name="kelas"', $html, 'Kolom kelas tunggal harus hilang, diganti dua kolom.');
         $this->assertStringContainsString('Kelas Pengajian', $html);
-        $this->assertStringContainsString('Kelas Sekolah', $html);
+        $this->assertStringContainsString('Jenjang Pendidikan', $html);
     }
 
     public function test_form_ubah_santri_juga_punya_dua_kolom_kelas_terpisah(): void
@@ -241,7 +241,7 @@ class SkenarioDuaKelasTest extends TestCase
         $html = $this->actingAs($this->admin())->get('/santri')->assertOk()->getContent();
 
         $this->assertStringContainsString('Kelas Pengajian', $html);
-        $this->assertStringContainsString('Kelas Sekolah', $html);
+        $this->assertStringContainsString('Jenjang Pendidikan', $html);
         $this->assertStringContainsString('Takhosus I', $html);
         $this->assertStringContainsString('7 SMP', $html);
     }

@@ -241,20 +241,9 @@
             </div>
         </div>
 
-        <!-- Success Message (toast) -->
+        <!-- Notifikasi hasil aksi (popup layar penuh) -->
         @if(session('success'))
-            <script>
-                (function() {
-                    var container = document.getElementById('toast-container');
-                    if (!container) return;
-                    var toast = document.createElement('div');
-                    toast.className = 'toast success';
-                    toast.innerHTML = '<svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>{{ session('success') }}';
-                    container.appendChild(toast);
-                    setTimeout(function() { toast.classList.add('fade-out'); }, 2800);
-                    setTimeout(function() { toast.remove(); }, 3100);
-                })();
-            </script>
+            <script>glAlert('Berhasil', @json(session('success')), { jenis: 'sukses' });</script>
         @endif
 
         <!-- Filter & Search Section -->
@@ -272,13 +261,23 @@
                     <label class="block text-[10px] font-bold uppercase tracking-wide mb-1 text-slate-600 pl-0.5">Filter Rayon</label>
                     <select name="kamar_id" class="border-0 py-1.5 px-2.5 rounded-md focus:ring-2 focus:ring-emerald-300 text-slate-800 transition-smooth focus:outline-none text-[13px] bg-slate-50 h-[34px] box-border">
                         <option value="">Semua Rayon</option>
-                        @foreach($daftarKamar as $kamar)
+                        @foreach($daftarKamarFilter as $kamar)
                             <option value="{{ $kamar->id }}" {{ $kamarId == $kamar->id ? 'selected' : '' }}>
                                 {{ $kamar->nama_kamar }}
                             </option>
                         @endforeach
                     </select>
                 </div>
+                @if($kolomJenisKelamin)
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wide mb-1 text-slate-600 pl-0.5">Jenis Kelamin</label>
+                        <select name="filter_jenis_kelamin" class="border-0 py-1.5 px-2.5 rounded-md focus:ring-2 focus:ring-emerald-300 text-slate-800 transition-smooth focus:outline-none text-[13px] bg-slate-50 h-[34px] box-border">
+                            <option value="">Semua</option>
+                            <option value="Laki-laki" {{ $jenisKelamin === 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+                            <option value="Perempuan" {{ $jenisKelamin === 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
+                        </select>
+                    </div>
+                @endif
                 {{-- Dua jalur kelas dipisah, bukan satu dropdown "Kelas": satu
                      Santri bisa punya kelas pengajian dan kelas sekolah sekaligus,
                      jadi satu filter tidak cukup untuk menjangkaunya. --}}
@@ -301,7 +300,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wide mb-1 text-slate-600 pl-0.5">Kelas Sekolah</label>
+                        <label class="block text-[10px] font-bold uppercase tracking-wide mb-1 text-slate-600 pl-0.5">Jenjang Pendidikan</label>
                         <select name="kelas_sekolah_id" class="border-0 py-1.5 px-2.5 rounded-md focus:ring-2 focus:ring-emerald-300 text-slate-800 transition-smooth focus:outline-none text-[13px] bg-slate-50 h-[34px] box-border">
                             <option value="">Semua</option>
                             @foreach($daftarKelas->reject->isPengajian() as $k)
@@ -317,7 +316,7 @@
                 </div>
                 <div class="ml-auto flex items-center gap-2">
                     @if($kelasPengajianId !== '' || $kelasSekolahId !== '')
-                        <a href="{{ route('santri.index', array_filter(['kamar_id' => $kamarId, 'filter' => $filter, 'search' => $search])) }}"
+                        <a href="{{ route('santri.index', array_filter(['kamar_id' => $kamarId, 'filter' => $filter, 'search' => $search, 'tahun_ajar' => $tahunAjar, 'filter_jenis_kelamin' => $jenisKelamin])) }}"
                            class="text-[12px] font-semibold text-slate-500 hover:text-slate-700">Reset kelas</a>
                     @endif
                     <button type="submit" class="bg-emerald-500 text-white py-1.5 px-4 rounded-md font-semibold hover:bg-emerald-600 shadow transition-smooth text-[13px] h-[34px] box-border">
@@ -329,13 +328,13 @@
 
         <!-- Add Button -->
         <div class="mb-5 flex items-center justify-between animate-slide-up">
-            @if(auth()->user()?->canManagePresensi())
-                <a href="{{ route('santri.create') }}" class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover-lift shadow-lg transform transition-smooth">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Tambah Santri
-                </a>
+             @if(auth()->user()?->canManagePresensi())
+                 <a href="{{ route('santri.create', $filterKembali) }}" class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover-lift shadow-lg transform transition-smooth">
+                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                     </svg>
+                     Tambah Santri
+                 </a>
                 <a href="{{ route('santri.import.form') }}" class="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover-lift shadow-lg transform transition-smooth">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
@@ -363,7 +362,7 @@
                                 <th class="px-2 py-2.5 text-left w-[22%]"><span class="th-badge">Nama</span></th>
                                 <th class="px-2 py-2.5 text-left w-[13%]"><span class="th-badge">Kamar</span></th>
                                 <th class="px-2 py-2.5 text-left w-[13%]"><span class="th-badge">Kelas Pengajian</span></th>
-                                <th class="px-2 py-2.5 text-left w-[10%]"><span class="th-badge">Kelas Sekolah</span></th>
+                                <th class="px-2 py-2.5 text-left w-[10%]"><span class="th-badge">Jenjang Pendidikan</span></th>
                                 <th class="px-2 py-2.5 text-center w-[9%]"><span class="th-badge">Jabatan</span></th>
                                 <th class="px-2 py-2.5 text-left w-[24%]"><span class="th-badge">Kontak &amp; Alamat</span></th>
                                 @if(auth()->user()?->canManagePresensi())
@@ -380,7 +379,14 @@
                                         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-blue-400 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
                                             {{ substr($santri->nama, 0, 1) }}
                                         </div>
-                                        <p class="font-semibold text-slate-900 text-[13px]">{{ $santri->nama }}</p>
+                                        <div class="min-w-0">
+                                            <p class="font-semibold text-slate-900 text-[13px] truncate">{{ $santri->nama }}</p>
+                                            <p class="text-[10px] text-slate-400 whitespace-nowrap">
+                                                <span class="inline-block w-1.5 h-1.5 rounded-full align-middle {{ $santri->status === 'Nonaktif' ? 'bg-red-400' : 'bg-emerald-400' }}"></span>
+                                                {{ $santri->status === 'Nonaktif' ? 'Non-aktif' : 'Aktif' }}
+                                                <span class="text-slate-300">·</span> diinput {{ $santri->created_at->format('d M Y') }}
+                                            </p>
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="px-3 py-2.5 text-slate-600 text-[13px]">{{ $santri->kamar->nama_kamar }}</td>
@@ -432,10 +438,10 @@
                                 @if(auth()->user()?->canManagePresensi())
                                     <td class="px-3 py-2.5 text-center">
                                         <div class="flex gap-1.5 justify-center">
-                                            <a href="{{ route('santri.edit', $santri->id) }}"
-                                                class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md text-[11px] font-semibold transition-smooth">
-                                                Edit
-                                            </a>
+                                             <a href="{{ route('santri.edit', array_merge(['santri' => $santri->id], $filterKembali)) }}"
+                                                 class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md text-[11px] font-semibold transition-smooth">
+                                                 Edit
+                                             </a>
                                             <button type="button" onclick="showSantriDetail({{ $santri->id }})"
                                                 class="w-8 h-8 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center transition-colors duration-200"
                                                 title="Lihat Detail Lengkap">
@@ -444,10 +450,13 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                                 </svg>
                                             </button>
-                                            <form method="POST" action="{{ route('santri.destroy', $santri->id) }}" class="inline"
-                                                    onsubmit="return confirm('Yakin ingin menghapus santri ini?');">
-                                                @csrf
-                                                @method('DELETE')
+                                             <form method="POST" action="{{ route('santri.destroy', $santri->id) }}" class="inline"
+                                                     onsubmit="return glConfirmForm(this, 'Hapus Santri', 'Yakin ingin menghapus santri ini?', { ya: 'Ya, Hapus', warna: 'merah', ikon: 'merah' });">
+                                                 @csrf
+                                                 @method('DELETE')
+                                                 @foreach($filterKembali as $kunci => $nilai)
+                                                     <input type="hidden" name="{{ $kunci }}" value="{{ $nilai }}">
+                                                 @endforeach
                                                 <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-[11px] font-semibold transition-smooth">
                                                     Hapus
                                                 </button>
@@ -513,7 +522,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9h.01M10 9h.01"/></svg>
                     Semua Santri
                 </a>
-                @foreach($daftarKamar as $kamar)
+                @foreach($daftarKamarFilter as $kamar)
                     <a href="{{ route('santri.cetak') . '?kamar_id=' . $kamar->id }}"
                        class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9h.01M10 9h.01"/></svg>
@@ -588,11 +597,36 @@
                     <div><span class="font-semibold text-slate-600">Nama</span><p id="det-nama" class="text-slate-800"></p></div>
                     <div><span class="font-semibold text-slate-600">Kamar</span><p id="det-kamar" class="text-slate-800"></p></div>
                     <div><span class="font-semibold text-slate-600">Kelas Pengajian</span><p id="det-kelas-pengajian" class="text-slate-800"></p></div>
-                    <div><span class="font-semibold text-slate-600">Kelas Sekolah</span><p id="det-kelas-sekolah" class="text-slate-800"></p></div>
+                    <div><span class="font-semibold text-slate-600">Jenjang Pendidikan</span><p id="det-kelas-sekolah" class="text-slate-800"></p></div>
                     <div><span class="font-semibold text-slate-600">Jabatan</span><p id="det-jabatan" class="text-slate-800"></p></div>
                     <div><span class="font-semibold text-slate-600">Status Pengajar</span><p id="det-is-pengajar" class="text-slate-800"></p></div>
                     <div><span class="font-semibold text-slate-600">No. HP Wali</span><p id="det-hp-wali" class="text-slate-800"></p></div>
                     <div><span class="font-semibold text-slate-600">No. WhatsApp</span><p id="det-wa" class="text-slate-800"></p></div>
+                </div>
+                <!-- Status, tanggal input, & kenaikan kelas -->
+                <div class="pt-3 border-t border-slate-100">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="font-semibold text-slate-600">Status Santri</span>
+                            <p class="mt-0.5"><span id="det-status" class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold"></span></p>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-slate-600">Diinput ke Web</span>
+                            <p id="det-dibuat" class="text-slate-800 mt-0.5"></p>
+                        </div>
+                    </div>
+                    <div class="mt-3 space-y-2">
+                        <div class="bg-slate-50 rounded-lg p-2.5">
+                            <span class="font-semibold text-slate-600 text-[11px] uppercase tracking-wide">Kenaikan Kelas Sekolah</span>
+                            <p id="det-naik-sekolah" class="text-slate-800 text-[13px] mt-0.5"></p>
+                            <p class="text-[10px] text-slate-400">Berlaku tahun ajar <span id="det-ta-berikut"></span></p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-2.5">
+                            <span class="font-semibold text-slate-600 text-[11px] uppercase tracking-wide">Kenaikan Kelas Pengajian</span>
+                            <p id="det-naik-pengajian" class="text-slate-800 text-[13px] mt-0.5"></p>
+                            <p class="text-[10px] text-slate-400">Berlaku tahun ajar <span id="det-ta-berikut2"></span></p>
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <span class="font-semibold text-slate-600">Alamat Lengkap</span>
@@ -620,6 +654,14 @@
             document.getElementById('det-is-pengajar').textContent = d.is_pengajar;
             document.getElementById('det-hp-wali').textContent = d.no_hp_wali;
             document.getElementById('det-wa').textContent = d.no_whatsapp;
+            var statusEl = document.getElementById('det-status');
+            statusEl.textContent = d.status;
+            statusEl.className = 'inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ' + (d.status === 'Aktif' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600');
+            document.getElementById('det-dibuat').textContent = d.dibuat;
+            document.getElementById('det-naik-sekolah').textContent = d.naik_sekolah;
+            document.getElementById('det-naik-pengajian').textContent = d.naik_pengajian;
+            document.getElementById('det-ta-berikut').textContent = d.tahun_ajar_berikutnya;
+            document.getElementById('det-ta-berikut2').textContent = d.tahun_ajar_berikutnya;
             document.getElementById('det-alamat').textContent = d.alamat;
             document.getElementById('det-gps').textContent = (d.latitude !== '-' || d.longitude !== '-') ? d.latitude + ', ' + d.longitude : '-';
             var modal = document.getElementById('detailModal');

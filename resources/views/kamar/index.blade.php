@@ -33,12 +33,9 @@
             </div>
         </div>
 
-        <!-- Success / Error -->
+        <!-- Notifikasi hasil aksi (popup layar penuh) -->
         @if(session('success'))
-            <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-teal-600 rounded-lg flex items-center gap-2 text-sm alert-animate animate-fade-in">
-                <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
-                {{ session('success') }}
-            </div>
+            <script>glAlert('Berhasil', @json(session('success')), { jenis: 'sukses' });</script>
         @endif
         @if($errors->any())
             <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-2 text-sm alert-animate animate-fade-in">
@@ -108,7 +105,7 @@
                                             Edit
                                         </button>
                                         <form method="POST" action="{{ route('kamar.destroy', $kamar) }}" class="inline"
-                                              onsubmit="return confirm('Hapus kamar {{ $kamar->nama_kamar }}?')">
+                                              onsubmit='return glConfirmForm(this, "Hapus Kamar", @json("Hapus kamar " . $kamar->nama_kamar . "?"), { ya: "Ya, Hapus", warna: "merah", ikon: "merah" })'>
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="px-2 py-1 rounded text-[10px] font-semibold bg-red-100 text-red-600 hover:bg-red-200 transition">

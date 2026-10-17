@@ -122,10 +122,7 @@
         </div>
 
         @if(session('success'))
-            <div class="alert-animate mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg flex items-center gap-2 text-sm">
-                <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
-                {{ session('success') }}
-            </div>
+            <script>glAlert('Berhasil', @json(session('success')), { jenis: 'sukses' });</script>
         @endif
 
         @if(!empty($notifData) && count($notifData) > 0)
@@ -340,11 +337,11 @@
                                 <button type="button" onclick="copyStatusChartToClipboard()" title="Salin daftar nama &rarr; paste di WhatsApp" class="w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-violet-600 transition-smooth">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" /></svg>
                                 </button>
-                                <a href="{{ $prevWaktuUrl }}" title="Waktu sebelumnya" class="w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-violet-600 transition-smooth">
+                                <a href="{{ $prevWaktuUrl }}" title="Waktu sebelumnya" class="keep-scroll w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-violet-600 transition-smooth">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                                 </a>
                                 <span class="text-[11px] font-bold text-violet-600 min-w-[48px] text-center">{{ $waktu }}</span>
-                                <a href="{{ $nextWaktuUrl }}" title="Waktu berikutnya" class="w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-violet-600 transition-smooth">
+                                <a href="{{ $nextWaktuUrl }}" title="Waktu berikutnya" class="keep-scroll w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-violet-600 transition-smooth">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                 </a>
                             </div>
@@ -899,6 +896,34 @@
             }
         });
 
+        // === JAGA POSISI SCROLL SAAT NAVIGASI FILTER (full-page) ===
+        // Simpan posisi scroll sebelum pindah halaman, restore setelah halaman baru
+        // termuat, agar filter / prev-next waktu tidak membuat dashboard lompat ke atas.
+        function navigateKeepScroll(url) {
+            try { sessionStorage.setItem('presensiKeepScroll', String(window.scrollY)); } catch (e) {}
+            window.location.href = url;
+        }
+        (function restorePresensiScroll() {
+            var y = null;
+            try {
+                y = sessionStorage.getItem('presensiKeepScroll');
+                if (y !== null) sessionStorage.removeItem('presensiKeepScroll');
+            } catch (e) {}
+            if (y === null) return;
+            var yy = parseInt(y, 10);
+            if (isNaN(yy) || yy <= 0) return;
+            function apply() { window.scrollTo(0, yy); }
+            apply();
+            window.addEventListener('load', apply);
+            setTimeout(apply, 300);
+        })();
+        // Link ber-class keep-scroll: simpan posisi scroll sebelum navigasi default
+        document.addEventListener('click', function (e) {
+            var a = e.target.closest ? e.target.closest('a.keep-scroll') : null;
+            if (!a) return;
+            try { sessionStorage.setItem('presensiKeepScroll', String(window.scrollY)); } catch (err) {}
+        });
+
         const tanggal = "{{ $tanggal }}";
         const waktuSholat = "{{ $waktu }}";
         const IS_PERSONAL_MODE = @json($isPersonalMode);
@@ -929,7 +954,7 @@
             const status = getCurrentStatus(santriId);
 
             if (!status) {
-                alert('Pilih status kehadiran terlebih dahulu sebelum menambah catatan!');
+                glAlert('Status Belum Dipilih', 'Pilih status kehadiran terlebih dahulu sebelum menambah catatan!', { jenis: 'warning' });
                 return;
             }
 
@@ -987,7 +1012,7 @@
             });
 
             if (!hasStatus) {
-                alert('Silakan pilih status kehadiran terlebih dahulu!');
+                glAlert('Status Belum Dipilih', 'Silakan pilih status kehadiran terlebih dahulu!', { jenis: 'warning' });
                 return;
             }
 
@@ -1111,37 +1136,41 @@
             return html;
         }
 
-        // Status detail
+        // Status detail (donut) — samakan gayanya dgn diagram lain:
+        // ringkasan + kartu "Rincian Kehadiran" berisi nama (lazy-load dari server).
         function showStatusDetail(status) {
             const data = JSON.parse(document.getElementById('statusBreakdownData').textContent);
             const statusData = data.find(s => s.status === status);
-            const santris = statusData?.santris || [];
+            const santris = (statusData && statusData.santris) || [];
+            let totalAll = 0;
+            data.forEach(s => { totalAll += (s.santris ? s.santris.length : 0); });
+            const pct = totalAll > 0 ? Math.round((santris.length / totalAll) * 100) : 0;
+            const color = getStatusColor(status);
 
-            let content = '';
-            if (santris.length === 0) {
-                content = '<p class="text-slate-500 text-center py-6">Tidak ada santri dengan status ini</p>';
-            } else {
-                content = `
-                    <p class="text-sm text-slate-600 mb-4">Total: <span class="font-semibold text-slate-900">${santris.length} santri</span></p>
-                    <div class="space-y-2">
-                        ${santris.map((s, i) => `
-                            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-smooth">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <span class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-blue-400 flex items-center justify-center text-white text-xs font-bold">${i + 1}</span>
-                                        <div>
-                                            <p class="font-semibold text-slate-900 text-sm">${s.nama}</p>
-                                            <p class="text-[11px] text-slate-500">${s.kamar} ${s.jabatan}</p>
-                                        </div>
-                                    </div>
-                                    <span class="px-3 py-1 rounded-full text-xs font-semibold text-white" style="background-color: ${getStatusColor(status)};">${status}</span>
-                                </div>
-                            </div>
-                        `).join('')}
+            const content = `
+                <div class="space-y-4">
+                    <div class="text-center p-4 rounded-xl border" style="background:${color}14;border-color:${color}33;">
+                        <p class="text-sm text-slate-600 mb-1">${status} &mdash; ${waktuSholat}, ${tanggal}</p>
+                        <p class="text-3xl font-bold" style="color:${color}">${santris.length} santri</p>
+                        <p class="text-xs text-slate-500 mt-1">${pct}% dari ${totalAll} santri terdata</p>
                     </div>
-                `;
-            }
+                    <div class="space-y-2">
+                        <h4 class="font-bold text-slate-800 text-sm">Rincian Kehadiran</h4>
+                        <div class="space-y-2" id="statusBreakdownBox">${breakdownLoadingHtml('orang')}</div>
+                    </div>
+                </div>
+            `;
             openModal('Detail: ' + status, content);
+
+            fetchDetailNames(tanggal, tanggal, waktuSholat)
+                .then(names => {
+                    const box = document.getElementById('statusBreakdownBox');
+                    if (box) box.innerHTML = breakdownCardsHtml(names, 'orang');
+                })
+                .catch(() => {
+                    const box = document.getElementById('statusBreakdownBox');
+                    if (box) box.innerHTML = '<p class="text-rose-500 text-[11px] italic">Gagal memuat daftar nama.</p>';
+                });
         }
 
         // Waktu detail (lazy-load daftar nama)
@@ -1279,17 +1308,20 @@
         }
 
         // Copy teks via metode klasik (sinkron, tanpa permission) lalu fallback Clipboard API
+        // Scroll dikunci agar halaman tidak bergeser saat focus/select textarea sementara
         function copyTextVia(text) {
+            const sx = window.scrollX, sy = window.scrollY;
             const ta = document.createElement('textarea');
             ta.value = text;
             ta.style.cssText = 'position:fixed;top:0;left:0;width:2em;height:2em;padding:0;border:0;opacity:0.01;font-size:14px;z-index:-1000;';
             document.body.appendChild(ta);
-            ta.focus();
+            ta.focus({ preventScroll: true });
             ta.select();
             ta.setSelectionRange(0, text.length);
             let ok = false;
             try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
             document.body.removeChild(ta);
+            window.scrollTo(sx, sy);
             return ok;
         }
 
@@ -1314,13 +1346,13 @@
             box.appendChild(body);
             bg.appendChild(box);
             document.body.appendChild(bg);
-            ta.focus();
+            ta.focus({ preventScroll: true });
             ta.select();
             ta.setSelectionRange(0, text.length);
         }
 
         // Salin daftar nama (Status Kehadiran) sebagai TEKS ke clipboard utk paste di WhatsApp
-        async function copyStatusChartToClipboard() {
+        async                         function copyStatusChartToClipboard() {
             try {
                 const donut = document.getElementById('statusDonut');
                 const card = donut ? donut.closest('.bg-white') : null;
@@ -1360,7 +1392,8 @@
                     if (santris.length === 0) return;
                     lines.push('\u2022 ' + s.status + ' (' + santris.length + ' orang):');
                     santris.forEach(function (p, i) {
-                        let nm = stripGelar(p.nama || '');
+                        // Ambil nama asli tanpa strip gelar apapun (untuk WhatsApp)
+                        let nm = String(p.nama || '').trim();
                         if (!nm) nm = '?';
                         lines.push((i + 1) + '. ' + nm);
                     });
@@ -1546,7 +1579,7 @@
                 params.delete('chart_end');
             }
 
-            window.location.href = '?' + params.toString();
+            navigateKeepScroll('?' + params.toString());
         }
 
         // Show initial date range if filter is hari/minggu/bulan/tahun
@@ -1608,7 +1641,7 @@
                 if (e) params.set('per_orang_end', e);
             }
 
-            window.location.href = '?' + params.toString();
+            navigateKeepScroll('?' + params.toString());
         }
 
         if (currentPerOrangFilter === 'minggu') {

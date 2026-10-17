@@ -31,13 +31,14 @@ class TemplateCsvTest extends TestCase
         $this->assertStringContainsString('Kode Pos', $baris[2]);
 
         $kolom = str_getcsv($baris[2], ',');
-        $this->assertSame(17, count($kolom));
+        $this->assertSame(18, count($kolom));
         $this->assertStringContainsString('nama', strtolower($kolom[0]));
 
         // Kelas dipecah jadi dua jalur supaya pengajian (tidak naik otomatis,
         // tidak semua orang naik) tidak tertukar dengan kelas sekolah.
         $this->assertStringContainsString('kelas pengajian', strtolower($kolom[2]));
         $this->assertStringContainsString('kelas sekolah', strtolower($kolom[3]));
+        $this->assertStringContainsString('jenis kelamin', strtolower($kolom[17]));
     }
 
     public function test_template_excel_punya_judul_garis_dan_bisa_langsung_diimport(): void
@@ -60,7 +61,7 @@ class TemplateCsvTest extends TestCase
         $this->assertStringContainsString('borderId="1"', $parts['xl/styles.xml']);
         $this->assertStringContainsString('<border><left style="thin">', $parts['xl/styles.xml']);
         $this->assertStringContainsString('<c r="A1" s="3"', $parts['xl/worksheets/sheet1.xml']);
-        $this->assertStringContainsString('<mergeCell ref="A1:Q1"/>', $parts['xl/worksheets/sheet1.xml']);
+        $this->assertStringContainsString('<mergeCell ref="A1:R1"/>', $parts['xl/worksheets/sheet1.xml']);
         $this->assertStringContainsString('<c r="A4" s="2"/>', $parts['xl/worksheets/sheet1.xml']);
         $this->assertStringContainsString('<c r="A3" s="1"', $parts['xl/worksheets/sheet1.xml']);
 
@@ -71,7 +72,8 @@ class TemplateCsvTest extends TestCase
         $this->assertSame('Kelas Pengajian', trim($rows[2][2]));
         $this->assertSame('Kelas Sekolah', trim($rows[2][3]));
         $this->assertSame('Kode Pos', trim($rows[2][16]));
-        $this->assertCount(17, $rows[2]);
+        $this->assertSame('Jenis Kelamin', trim($rows[2][17]));
+        $this->assertCount(18, $rows[2]);
 
         $this->UbahSelXlsx($path, 4, 0, 'Ahmad Fauzi');
         $this->UbahSelXlsx($path, 4, 1, 'Rayon 1');

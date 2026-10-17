@@ -1,5 +1,5 @@
 {{-- ============ PWA: Manifest, Ikon, Service Worker ============ --}}
-<link rel="manifest" href="{{ asset('pwa/manifest.css') }}">
+    <link rel="manifest" href="{{ asset('pwa/manifest.css?v=2') }}">
 <meta name="theme-color" content="#047857">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">

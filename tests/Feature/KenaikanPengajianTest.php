@@ -373,6 +373,108 @@ class KenaikanPengajianTest extends TestCase
     }
 
     // ------------------------------------------------------------------
+    // 4b) Penurunan / pembatalan kenaikan pengajian (salah input)
+    // ------------------------------------------------------------------
+
+    public function test_turunkan_pengajian_mengembalikan_santri_ke_kelas_asal(): void
+    {
+        $kelas1 = $this->kelasPengajian('Kelas 1');
+        $kelas2 = $this->kelasPengajian('Kelas 2');
+
+        $s = $this->buatSantri('Salah Naik', 'Kelas 1');
+
+        // Naik dulu ke Kelas 2...
+        $this->actingAs($this->admin())
+            ->post('/kelas/naik-pengajian', [
+                'dari_kelas_id' => $kelas1->id,
+                'ke_kelas_id' => $kelas2->id,
+                'santri_ids' => [$s->id],
+            ])
+            ->assertSessionHas('success');
+
+        $this->assertSame('Kelas 2', $s->fresh()->kelas_pengajian);
+
+        // ...lalu dikembalikan ke Kelas 1 karena salah input.
+        $this->actingAs($this->admin())
+            ->post('/kelas/turunkan-pengajian', [
+                'dari_kelas_id' => $kelas2->id,
+                'ke_kelas_id' => $kelas1->id,
+                'santri_ids' => [$s->id],
+            ])
+            ->assertSessionHas('success');
+
+        $s->refresh();
+        $this->assertSame('Kelas 1', $s->kelas_pengajian);
+        $this->assertSame($kelas1->id, $s->kelas_pengajian_id);
+        $this->assertSame(1, $kelas1->fresh()->jumlahSantri());
+        $this->assertSame(0, $kelas2->fresh()->jumlahSantri());
+        $this->assertStringContainsString('dikembalikan', (string) session('success'));
+    }
+
+    public function test_turunkan_pengajian_tidak_menyentuh_kelas_sekolah(): void
+    {
+        $kelas1 = $this->kelasPengajian('Kelas 1');
+        $kelas2 = $this->kelasPengajian('Kelas 2');
+        $sma = $this->kelasSekolah('2 SMA');
+
+        $d = $this->buatSantri('Dzikra Zaedan', 'Kelas 2', '2 SMA');
+
+        $this->actingAs($this->admin())
+            ->post('/kelas/turunkan-pengajian', [
+                'dari_kelas_id' => $kelas2->id,
+                'ke_kelas_id' => $kelas1->id,
+                'santri_ids' => [$d->id],
+            ])
+            ->assertSessionHas('success');
+
+        $d->refresh();
+        $this->assertSame('Kelas 1', $d->kelas_pengajian);
+        $this->assertSame('2 SMA', $d->kelas_sekolah, 'Kelas sekolah tidak boleh ikut turun.');
+        $this->assertSame($sma->id, $d->kelas_sekolah_id);
+        $this->assertSame('2 SMA', $d->kelas, 'Kolom cermin ikut jalur sekolah.');
+        $this->assertSame($sma->id, $d->kelas_master_id);
+    }
+
+    public function test_turunkan_pengajian_ditolak_ke_kelas_sekolah(): void
+    {
+        $kelas2 = $this->kelasPengajian('Kelas 2');
+        $sma = $this->kelasSekolah('2 SMA');
+        $s = $this->buatSantri('Dzikra Zaedan', 'Kelas 2', '2 SMA');
+
+        $this->actingAs($this->admin())
+            ->post('/kelas/turunkan-pengajian', [
+                'dari_kelas_id' => $kelas2->id,
+                'ke_kelas_id' => $sma->id,
+                'santri_ids' => [$s->id],
+            ])
+            ->assertSessionHas('error');
+
+        $s->refresh();
+        $this->assertSame('Kelas 2', $s->kelas_pengajian);
+        $this->assertSame('2 SMA', $s->kelas_sekolah);
+    }
+
+    public function test_turunkan_pengajian_ditolak_bila_bukan_anggota_kelas_asal(): void
+    {
+        $kelas1 = $this->kelasPengajian('Kelas 1');
+        $kelas2 = $this->kelasPengajian('Kelas 2');
+        $kelas3 = $this->kelasPengajian('Kelas 3');
+
+        $orangLain = $this->buatSantri('Santri Kelas Tiga', 'Kelas 3');
+
+        $this->actingAs($this->admin())
+            ->post('/kelas/turunkan-pengajian', [
+                'dari_kelas_id' => $kelas2->id,
+                'ke_kelas_id' => $kelas1->id,
+                'santri_ids' => [$orangLain->id],
+            ])
+            ->assertSessionHas('error');
+
+        $this->assertSame('Kelas 3', $orangLain->fresh()->kelas_pengajian);
+        $this->assertSame(0, $kelas1->fresh()->jumlahSantri());
+    }
+
+    // ------------------------------------------------------------------
     // 5) Endpoint anggota untuk panel
     // ------------------------------------------------------------------
 

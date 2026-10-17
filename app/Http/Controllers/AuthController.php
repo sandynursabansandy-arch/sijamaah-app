@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
 {
@@ -152,5 +153,88 @@ class AuthController extends Controller
         $user->update(['font_size' => $request->font_size]);
 
         return back()->with('success', 'Ukuran font berhasil diubah.');
+    }
+
+    /**
+     * Upload foto profil.
+     *
+     * Foto disimpan di storage/app/foto-profil/ (bukan public/) lalu
+     * disajikan lewat route /profil/foto. Alasannya: web server produksi
+     * (openresty) hanya melayani file statis yang sudah ada saat server
+     * start, sehingga foto yang baru diupload ke public/ akan 404.
+     * Route PHP dibaca lewat filesystem, jadi foto selalu bisa disajikan.
+     */
+    public function updateFoto(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'foto' => 'required|image|mimes:jpeg,jpg,png,webp|max:2048',
+        ], [
+            'foto.required' => 'Pilih foto terlebih dahulu.',
+            'foto.image' => 'File harus berupa gambar.',
+            'foto.mimes' => 'Format foto: JPG, PNG, atau WEBP.',
+            'foto.max' => 'Ukuran foto maksimal 2 MB.',
+        ]);
+
+        $file = $request->file('foto');
+        $ext = strtolower($file->getClientOriginalExtension());
+        $nama = 'u' . $user->id . '.' . $ext;
+
+        // Buang foto lama sebelum menimpa.
+        $this->hapusFileFoto($user);
+
+        $file->storeAs('foto-profil', $nama, 'local');
+        $user->update(['foto' => $nama]);
+
+        return back()->with('success', 'Foto profil berhasil diperbarui.');
+    }
+
+    /** Hapus foto profil, kembali ke inisial nama. */
+    public function hapusFoto(Request $request)
+    {
+        $user = Auth::user();
+
+        $this->hapusFileFoto($user);
+        $user->update(['foto' => null]);
+
+        return back()->with('success', 'Foto profil berhasil dihapus.');
+    }
+
+    /** Sajikan foto profil sebagai gambar (dipakai tag <img>). */
+    public function lihatFoto(Request $request)
+    {
+        $user = Auth::user();
+        $foto = $user->foto ? basename($user->foto) : null;
+        $rel = $foto ? 'foto-profil/' . $foto : null;
+
+        if (! $rel || ! Storage::disk('local')->exists($rel)) {
+            abort(404);
+        }
+
+        $path = Storage::disk('local')->path($rel);
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $mime = match ($ext) {
+            'png' => 'image/png',
+            'webp' => 'image/webp',
+            'gif' => 'image/gif',
+            default => 'image/jpeg',
+        };
+
+        return response()->file($path, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline',
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
+    }
+
+    private function hapusFileFoto($user): void
+    {
+        if ($user->foto) {
+            $rel = 'foto-profil/' . basename($user->foto);
+            if (Storage::disk('local')->exists($rel)) {
+                Storage::disk('local')->delete($rel);
+            }
+        }
     }
 }

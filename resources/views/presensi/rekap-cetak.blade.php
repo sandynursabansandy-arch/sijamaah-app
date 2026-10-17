@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Absensi Mustahik & Munawib — SANTRI.ID</title>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#eee;font-family:Arial,sans-serif;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -41,13 +42,13 @@ button{cursor:pointer;background:#fff900;font-weight:bold}
  body{background:#fff}
  .page{width:100%;margin:0;border:2px solid #222;padding:20px}
   .controls,.save-status{display:none}
- @page{size:A4 landscape;margin:8mm}
- th,td{font-size:8px;height:18px;padding:2px}
+ @page{size:A4 landscape;margin:5mm}
+ th,td{font-size:8px;height:15px;padding:2px}
   .name{width:115px}.no{width:25px}.date{width:22px}
-  .recap-no{width:20px}
-  .recap-page{page-break-before:always;break-before:page;min-height:172mm}
-  .recap-page .section-title{margin-top:0}
-  .recap-page .recap th,.recap-page .recap td{height:18px;font-size:8px}
+ .recap-no{width:20px}
+ .recap-page{page-break-inside:auto}
+ .recap-page .section-title{margin-top:0}
+ .recap-page .recap th,.recap-page .recap td{height:15px;font-size:8px}
   .recap-legend{margin-top:12px;padding-top:0;font-size:10px}
   .status-H{background-color:#c8f7c5 !important}
   .status-M{background-color:#ffe58a !important}
@@ -63,6 +64,21 @@ button{cursor:pointer;background:#fff900;font-weight:bold}
   h1{font-size:18px}
  .info{font-size:10px}
 }
+body.pdf-export .page{width:1400px;margin:0 auto;padding:18px 22px;border:1px solid #222}
+body.pdf-export h1{font-size:17px;margin:0 0 6px}
+body.pdf-export .info{font-size:10px;line-height:1.35;margin-bottom:6px}
+body.pdf-export th,body.pdf-export td{font-size:8px;height:14px;padding:2px}
+body.pdf-export .name{width:115px}
+body.pdf-export .no{width:25px}
+body.pdf-export .date{width:21px}
+body.pdf-export .recap-no{width:20px}
+body.pdf-export .section-title{font-size:14px;margin:8px 0 4px}
+body.pdf-export .recap-grid{gap:14px}
+body.pdf-export .recap th,body.pdf-export .recap td{height:14px;font-size:8px}
+body.pdf-export .recap-legend{margin-top:8px;font-size:10px}
+body.pdf-export .anim-in,body.pdf-export .anim-in-fast{opacity:1 !important;animation:none !important}
+/* Saat ekspor: jangan biarkan wrapper scroll memotong kolom tabel yg lebar */
+body.pdf-export .table-wrap{overflow:visible !important}
 </style>
 </head>
 <body>
@@ -201,60 +217,124 @@ button{cursor:pointer;background:#fff900;font-weight:bold}
 </div>
 <script>
 function saveAttendancePdf() {
-    var button = document.getElementById('savePdfButton');
+    var btn = document.getElementById('savePdfButton');
     var status = document.getElementById('savePdfStatus');
-    var element = document.querySelector('.page');
-    var controls = document.querySelector('.controls');
 
-    if (typeof html2pdf !== 'function') {
-        status.textContent = 'Simpan PDF tidak tersedia. Gunakan Cetak lalu pilih Save as PDF.';
+    if (typeof html2canvas === 'undefined' || !(window.jspdf && window.jspdf.jsPDF)) {
+        status.textContent = 'Pustaka PDF belum siap dimuat. Tunggu sebentar lalu klik lagi.';
         return;
     }
 
-    var originalControlsDisplay = controls.style.display;
-    var originalStatusDisplay = status.style.display;
-    button.disabled = true;
-    status.textContent = 'Menyiapkan PDF...';
-    controls.style.display = 'none';
-    status.style.display = 'none';
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    status.textContent = 'Menyiapkan file PDF, mohon tunggu...';
 
-    var filename = ('Absensi_Mustahik_Munawib_' + button.dataset.period)
-        .replace(/[^a-z0-9_-]+/gi, '_') + '.pdf';
-    var options = {
-        margin: [8, 6, 8, 6],
-        filename: filename,
-        image: {type: 'jpeg', quality: 0.95},
-        html2canvas: {
-            scale: 2,
-            useCORS: true,
-            letterRendering: true,
-            scrollY: 0,
-            windowWidth: element.scrollWidth || document.documentElement.scrollWidth,
-            backgroundColor: '#ffffff'
-        },
-        jsPDF: {unit: 'mm', format: 'a4', orientation: 'landscape'},
-        pagebreak: {
-            mode: ['css', 'legacy'],
-            before: function(node) {
-                return node && node.classList && node.classList.contains('recap-page');
-            },
-            avoid: ['tr', '.recap-grid', '.recap-legend']
-        }
+    var element = document.querySelector('.page');
+    var controls = element.querySelector('.controls');
+    var prevControlsDisplay = controls ? controls.style.display : '';
+
+    // Sembunyikan kontrol & matikan animasi agar seluruh elemen terrekam penuh.
+    if (controls) controls.style.display = 'none';
+    document.body.classList.add('pdf-export');
+    var prevScrollY = window.scrollY;
+    window.scrollTo(0, 0);
+
+    var finish = function () {
+        document.body.classList.remove('pdf-export');
+        if (controls) controls.style.display = prevControlsDisplay || '';
+        window.scrollTo(0, prevScrollY);
+        btn.disabled = false;
+        btn.style.opacity = '1';
     };
 
-    html2pdf().set(options).from(element).save()
-        .then(function() {
-            controls.style.display = originalControlsDisplay;
-            status.style.display = originalStatusDisplay;
-            button.disabled = false;
-            status.textContent = 'PDF berhasil disimpan.';
-        })
-        .catch(function() {
-            controls.style.display = originalControlsDisplay;
-            status.style.display = originalStatusDisplay;
-            button.disabled = false;
-            status.textContent = 'Gagal membuat PDF. Gunakan Cetak lalu pilih Save as PDF.';
+    // Skala tinggi agar teks tetap tajam saat diperkecil ke lebar A4.
+    // Diturunkan otomatis bila halaman sangat panjang agar tidak kehabisan memori.
+    var SCALE = 2;
+    if (element.scrollHeight > 5000) SCALE = 1.5;
+    if (element.scrollHeight > 9000) SCALE = 1.2;
+
+    // Tunggu logo/gambar selesai dimuat sebelum merekam.
+    var imgs = Array.prototype.slice.call(element.querySelectorAll('img'));
+    var waitImgs = Promise.all(imgs.map(function (img) {
+        return img.complete ? Promise.resolve() : new Promise(function (res) { img.onload = img.onerror = res; });
+    }));
+
+    waitImgs.then(function () {
+        return html2canvas(element, {
+            scale: SCALE,
+            useCORS: true,
+            allowTaint: false,
+            backgroundColor: '#ffffff',
+            logging: false,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: element.scrollWidth,
+            windowHeight: element.scrollHeight
         });
+    }).then(function (canvas) {
+        var jsPDF = window.jspdf.jsPDF;
+        var pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
+
+        var marginMm = 5;
+        var innerWidthMm = 297 - marginMm * 2;   // A4 landscape lebar 297mm
+        var innerHeightMm = 210 - marginMm * 2;
+        var mmPerPx = innerWidthMm / canvas.width; // seluruh lebar konten dipetakan ke lebar halaman
+        var pageHeightPx = innerHeightMm / mmPerPx;
+
+        // Titik potong halaman diambil dari batas bawah tiap baris tabel / blok
+        // agar tidak ada baris yang terbelah di antara dua halaman.
+        var elRect = element.getBoundingClientRect();
+        var breaks = [0, canvas.height];
+        var nodes = element.querySelectorAll('tr, .section-title, .recap-legend, h1, .info');
+        Array.prototype.forEach.call(nodes, function (n) {
+            var r = n.getBoundingClientRect();
+            var bottom = Math.round((r.bottom - elRect.top) * SCALE);
+            if (bottom > 0 && bottom < canvas.height) breaks.push(bottom);
+        });
+        breaks.sort(function (a, b) { return a - b; });
+
+        var cuts = [0];
+        var start = 0;
+        while (start < canvas.height - 1) {
+            var ideal = start + pageHeightPx;
+            if (ideal >= canvas.height) { cuts.push(canvas.height); break; }
+            var chosen = -1;
+            for (var i = 0; i < breaks.length; i++) {
+                if (breaks[i] > start + 1 && breaks[i] <= ideal) chosen = breaks[i];
+            }
+            if (chosen < 0) chosen = Math.round(ideal);
+            cuts.push(chosen);
+            start = chosen;
+        }
+
+        for (var p = 0; p < cuts.length - 1; p++) {
+            var y0 = cuts[p];
+            var hPx = cuts[p + 1] - y0;
+            if (hPx <= 0) continue;
+
+            var slice = document.createElement('canvas');
+            slice.width = canvas.width;
+            slice.height = hPx;
+            var ctx = slice.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, slice.width, slice.height);
+            ctx.drawImage(canvas, 0, y0, canvas.width, hPx, 0, 0, canvas.width, hPx);
+
+            var imgData = slice.toDataURL('image/jpeg', 0.92);
+            if (p > 0) pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', marginMm, marginMm, innerWidthMm, hPx * mmPerPx);
+        }
+
+        var period = (btn.getAttribute('data-period') || '').replace(/[^\w]+/g, '_');
+        pdf.save('Absensi_' + period + '.pdf');
+    }).then(function () {
+        status.textContent = '';
+        finish();
+    }).catch(function (e) {
+        console.error(e);
+        status.textContent = 'Gagal membuat PDF. Coba lagi atau gunakan tombol "Cetak".';
+        finish();
+    });
 }
 </script>
 </body>

@@ -54,10 +54,10 @@
         </div>
 
         @if(session('success'))
-            <div class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg px-4 py-2.5 text-sm alert-animate animate-fade-in">{{ session('success') }}</div>
+            <script>glAlert('Berhasil', @json(session('success')), { jenis: 'sukses' });</script>
         @endif
         @if(session('error'))
-            <div class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2.5 text-sm alert-animate animate-fade-in">{{ session('error') }}</div>
+            <script>glAlert('Gagal', @json(session('error')), { jenis: 'error' });</script>
         @endif
 
         <!-- Filter status -->
@@ -108,11 +108,11 @@
                                     <a href="{{ route('izin.edit', $izin->id) }}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold text-xs shadow transition-smooth">Edit</a>
                                 @endif
                                 @if(auth()->user()?->canManagePresensi())
-                                    <form method="POST" action="{{ route('izin.setujui', $izin->id) }}" onsubmit="return confirm('Setujui pengajuan ini? Presensi Izin akan dibuat otomatis.')">
+                                    <form method="POST" action="{{ route('izin.setujui', $izin->id) }}" onsubmit="return glConfirmForm(this, 'Setujui Pengajuan', 'Setujui pengajuan ini? Presensi Izin akan dibuat otomatis.', { ya: 'Ya, Setujui', warna: 'hijau', ikon: 'hijau' })">
                                         @csrf
                                         <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold text-xs shadow transition-smooth">Setujui</button>
                                     </form>
-                                    <form method="POST" action="{{ route('izin.tolak', $izin->id) }}" onsubmit="return confirm('Tolak pengajuan ini?')">
+                                    <form method="POST" action="{{ route('izin.tolak', $izin->id) }}" onsubmit="return glConfirmForm(this, 'Tolak Pengajuan', 'Tolak pengajuan ini?', { ya: 'Ya, Tolak', warna: 'merah', ikon: 'merah' })">
                                         @csrf
                                         <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold text-xs shadow transition-smooth">Tolak</button>
                                     </form>

@@ -1,17 +1,20 @@
-/* SIJAMAAH Service Worker — PWA nyata (v3).
+/* SANTRI.ID Service Worker — PWA nyata (v5).
+ * v5: manifest pakai ?v=2 — bypass cache immutable browser yang masih
+ *     menyimpan manifest lama; cache name v5 agar re-precache.
+ * v4: rename ke SANTRI.ID (manifest + cache name).
  * v3: perbaikan bug titik merah — JANGAN pernah serve cache basi non-HTML
  *     (entri JSON /pesan-user/jumlah dll. dari cache v1 yang kedaluwarsa).
  * - aset statis/ber-hash -> cache-first (immutable)
  * - HTML halaman        -> stale-while-revalidate, HANYA entri cache yang terbukti text/html asli
  * - API/JSON dsb.       -> langsung ke jaringan, tidak di-cache, tidak di-serve basi
  */
-var CACHE = 'sijamaah-v3';
+var CACHE = 'santri-id-v5';
 var PRECACHE = [
     '/build/assets/app-fNfoOVRA.css',
     '/vendor/turbo/turbo.min.js',
     '/icons/icon-192.png',
     '/icons/apple-touch-icon.png',
-    '/pwa/manifest.css',
+    '/pwa/manifest.css?v=2',
 ];
 
 function isAsset(url) {
@@ -23,7 +26,7 @@ function isHtml(response) {
     return ct.indexOf('text/html') !== -1;
 }
 
-/* Cache/pertahankan HTML hanya bila halaman SIJAMAAH asli (bukan challenge anti-bot / error / JSON). */
+/* Cache/pertahankan HTML hanya bila halaman SANTRI.ID asli (bukan challenge anti-bot / error / JSON). */
 function isRealAppHtml(response) {
     if (!response.ok) return false;
     if (!isHtml(response)) return false;

@@ -7,7 +7,7 @@
     <title>Cetak Rekap Presensi — SANTRI.ID</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        @page { size: A4 landscape; margin: 8mm 6mm; }
+        @page { size: A4 landscape; margin: 5mm; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -47,6 +47,10 @@
         /* Saat ekspor PDF: matikan animasi agar semua elemen terrekam sempurna */
         body.pdf-export .anim-in,
         body.pdf-export .anim-in-fast { opacity: 1 !important; animation: none !important; }
+        body.pdf-export table th { font-size: 5.5pt; }
+        body.pdf-export table td { font-size: 6.5pt; padding: 1.5px 2px; }
+        body.pdf-export .info-bar .info-item { padding: 1px 3px; }
+        body.pdf-export .stat-card { min-height: 40px; padding: 3px 2px; }
 
         /* === SCREEN TOOLBAR === */
         .screen-only {
@@ -314,6 +318,7 @@
     </style>
 </head>
 <body>
+@include('partials.popup-global')
     {{-- ============ SCREEN-ONLY TOOLBAR ============ --}}
     <div class="screen-only anim-in-fast anim-d1">
         <a href="{{ route('presensi.rekapBerjamaah') }}">&larr; Kembali ke Rekap</a>
@@ -770,15 +775,14 @@
                     filename:    filename,
                     image:       { type: 'jpeg', quality: 0.95 },
                     html2canvas: {
-                        scale: 2,
+                        scale: 1.5,
                         useCORS: true,
-                        letterRendering: true,
                         scrollY: 0,
                         windowWidth: element.scrollWidth || document.documentElement.scrollWidth,
                         backgroundColor: '#ffffff'
                     },
                     jsPDF:       { unit: 'mm', format: 'a4', orientation: 'landscape' },
-                    pagebreak:   { mode: ['css', 'legacy'], avoid: ['tr', '.doc-header', '.footer'] }
+                    pagebreak:   { mode: ['css', 'legacy'], avoid: ['tr'] }
                 };
 
                 return html2pdf().set(opt).from(element).save();
@@ -792,7 +796,7 @@
                 btn.disabled = false;
                 btn.style.opacity = '1';
                 statusEl.style.display = 'none';
-                alert('Gagal membuat PDF. Gunakan Cetak Sekarang sebagai alternatif.');
+                glAlert('Gagal Membuat PDF', 'Gagal membuat PDF. Gunakan Cetak Sekarang sebagai alternatif.', { jenis: 'error' });
             });
         }
     </script>

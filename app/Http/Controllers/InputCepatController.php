@@ -17,7 +17,9 @@ class InputCepatController extends Controller
         $waktu = $request->get('waktu_sholat', 'Subuh');
         $kamarId = $request->get('kamar_id', 'all');
 
-        $daftarKamar = Kamar::all();
+        $daftarKamar = Kamar::urutRayon(
+            Kamar::whereIn('id', Santri::where('is_pengajar', true)->pluck('kamar_id')->unique())->get()
+        );
 
         $query = Santri::query()
             ->where('is_pengajar', true);

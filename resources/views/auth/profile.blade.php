@@ -29,19 +29,19 @@
             </div>
         </div>
 
-        <!-- Success -->
+        <!-- Notifikasi hasil aksi (popup layar penuh) -->
         @if(session('success'))
-            <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg flex items-center gap-2 text-sm alert-animate animate-fade-in">
-                <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
-                {{ session('success') }}
-            </div>
+            <script>glAlert('Berhasil', @json(session('success')), { jenis: 'sukses' });</script>
         @endif
 
         <!-- Avatar + Info Card -->
         <div class="bg-white rounded-xl shadow-lg p-6 mb-4 animate-slide-up" style="animation-delay:0.05s">
             <div class="flex items-center gap-4">
-                <div class="w-16 h-16 shrink-0 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-extrabold text-2xl ring-4 ring-emerald-100 select-none">
-                    {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
+                <div class="w-16 h-16 shrink-0 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-extrabold text-2xl ring-4 ring-emerald-100 overflow-hidden relative select-none">
+                    <span>{{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}</span>
+                    @if($user->foto)
+                        <img src="{{ route('profile.foto') }}?v={{ $user->updated_at->timestamp }}" alt="Foto profil" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">
+                    @endif
                 </div>
                 <div class="min-w-0">
                     <p class="text-lg font-bold text-slate-800 truncate">{{ $user->name }}</p>
@@ -62,6 +62,51 @@
                 </div>
             </div>
         </div>
+
+        <!-- Foto Profil -->
+        <form method="POST" action="{{ route('profile.foto.update') }}" enctype="multipart/form-data" class="bg-white rounded-xl shadow-lg p-6 mb-4 animate-slide-up" style="animation-delay:0.08s">
+            @csrf
+            <div class="flex items-center gap-2 mb-3">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <h2 class="text-[12px] font-bold uppercase tracking-wide text-slate-500">Foto Profil</h2>
+            </div>
+
+            <p class="text-[12px] text-slate-500 mb-3">Ganti foto profil Anda. Jika belum diubah, yang tampil adalah huruf awal nama.</p>
+
+            <div class="flex items-center gap-4">
+                <div class="w-20 h-20 shrink-0 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-extrabold text-3xl ring-4 ring-emerald-100 overflow-hidden relative select-none">
+                    <span>{{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}</span>
+                    @if($user->foto)
+                        <img src="{{ route('profile.foto') }}?v={{ $user->updated_at->timestamp }}" alt="Foto profil" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">
+                    @endif
+                </div>
+                <div class="min-w-0 flex-1">
+                    <input type="file" name="foto" accept="image/*"
+                        class="block w-full text-[12px] text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-[12px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                    @error('foto')
+                        <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p>
+                    @enderror
+                    <p class="text-[10px] text-slate-400 mt-1">JPG, PNG, WEBP &middot; maks. 2 MB</p>
+                </div>
+            </div>
+
+            <div class="flex gap-2 mt-4">
+                <button type="submit"
+                    class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold text-[12px] tracking-wide hover:from-emerald-600 hover:to-emerald-700 transition-all">
+                    Simpan Foto
+                </button>
+                @if($user->foto)
+                    <form method="POST" action="{{ route('profile.foto.hapus') }}" class="shrink-0" onsubmit="return confirm('Hapus foto profil? Foto akan kembali ke huruf awal nama.');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit"
+                            class="py-2.5 px-4 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-[12px] hover:bg-slate-50 transition-all">
+                            Hapus
+                        </button>
+                    </form>
+                @endif
+            </div>
+        </form>
 
         <!-- Detail Info -->
         <div class="bg-white rounded-xl shadow-lg p-5 mb-4 animate-slide-up" style="animation-delay:0.1s">

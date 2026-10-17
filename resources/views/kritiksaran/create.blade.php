@@ -43,7 +43,7 @@
         @endif
 
         @if(session('success'))
-            <div class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg px-4 py-2.5 text-sm alert-animate animate-fade-in">{{ session('success') }}</div>
+            <script>glAlert('Berhasil', @json(session('success')), { jenis: 'sukses' });</script>
         @endif
 
         <form method="POST" action="{{ route('kritik-saran.store') }}" class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 space-y-4 animate-slide-up">

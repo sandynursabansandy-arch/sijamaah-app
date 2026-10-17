@@ -9,7 +9,7 @@
 {{-- ===== HEADER 1: INSTANSI ===== --}}
 <header id="app-header" class="bg-white" style="margin:0;">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center gap-3">
-        <div class="w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-full overflow-hidden ring-2 ring-emerald-200 bg-white">
+        <div class="w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-full overflow-hidden bg-white">
             <img src="{{ asset('images/image.png') }}" alt="Logo Yayasan" class="w-full h-full object-cover">
         </div>
         <div class="min-w-0">
@@ -23,6 +23,10 @@
 html { margin: 0 !important; padding: 0 !important; }
     body { margin: 0 !important; padding: 0 !important; }
     #app-header { margin-top: 0 !important; border: 0 !important; box-shadow: none !important; }
+    /* Garis buram (soft shadow) antara Header 1 (logo) dan Header 2 (akun).
+       Shadow diarahkan ke ATAS dari Header 2 supaya terlihat di atasnya
+       (shadow ke bawah dari Header 1 akan tertutup latar Header 2). */
+    #header2 { box-shadow: 0 -4px 12px -2px rgba(15,23,42,0.12), 0 1px 3px rgba(15,23,42,0.06) !important; }
     html.nav-open { overflow: hidden !important; overflow-x: clip !important; scrollbar-gutter: stable !important; }
     body.nav-open { overflow: hidden !important; overflow-x: clip !important; position: fixed !important; left: 0 !important; right: 0 !important; }
     #navPanel { position: fixed !important; top: 0 !important; left: -300px !important; bottom: 0 !important; width: 280px !important; max-width: 80vw !important; z-index: 2147483647 !important; background: #fff !important; box-shadow: 4px 0 24px rgba(0,0,0,0.25) !important; transition: left 0.4s cubic-bezier(0.4,0,0.2,1) !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch !important; overscroll-behavior: contain !important; }
@@ -107,8 +111,11 @@ html { margin: 0 !important; padding: 0 !important; }
                     default => ucfirst($u->role ?? 'Pengguna'),
                 };
             @endphp
-            <div class="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 text-white flex items-center justify-center font-extrabold text-sm ring-2 ring-emerald-100 select-none">
-                {{ strtoupper(substr($u->name ?? 'U', 0, 1)) }}
+            <div class="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 text-white flex items-center justify-center font-extrabold text-sm ring-2 ring-emerald-100 overflow-hidden relative select-none">
+                <span>{{ strtoupper(substr($u->name ?? 'U', 0, 1)) }}</span>
+                @if($u->foto)
+                    <img src="{{ route('profile.foto') }}?v={{ $u->updated_at->timestamp }}" alt="Foto" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">
+                @endif
             </div>
             <div class="min-w-0 leading-tight">
                 <p class="text-sm font-bold text-slate-800 truncate">{{ $u->name }}</p>
@@ -197,14 +204,10 @@ html { margin: 0 !important; padding: 0 !important; }
 @endif
 
 {{-- ===== DRAWER MENU (tirai penuh dari kiri ke kanan) ===== --}}
-<style>
-    /* View transition lintas halaman (progressive enhancement, tanpa-JS fallback aman) */
-    @view-transition { navigation: auto; }
-    ::view-transition-old(root) { animation: 90ms ease-out both fadeAway; }
-    ::view-transition-new(root) { animation: 90ms ease-in both fadeIn; }
-    @keyframes fadeAway { to { opacity: 0; } }
-    @keyframes fadeIn { from { opacity: 0; } }
-</style>
+{{-- Catatan: @view-transition { navigation:auto } sengaja dihapus —
+     di Chrome fitur itu meninggalkan garis 1px di atas header instansi
+     (latar body berupa gradient). Transisi fade lintas halaman tidak
+     penting dibanding tampilan yang bersih. --}}
 <aside id="navPanel" aria-label="Menu navigasi utama">
     <div class="p-3 space-y-1 pt-4">
 @php
@@ -703,3 +706,6 @@ html { margin: 0 !important; padding: 0 !important; }
         start();
     })();
 </script>
+
+{{-- ===== POPUP GLOBAL: konfirmasi & notifikasi (pengganti confirm()/alert()) ===== --}}
+@include('partials.popup-global')
